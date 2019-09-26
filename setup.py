@@ -11,18 +11,18 @@ with open("requirements.txt", "r") as f:
 
 def get_version():
     here = os.path.abspath(os.path.dirname(__file__))
-    version_file = os.path.join(here, "sage-analysis", "__version__.py")
+    version_file = os.path.join(here, "sage_analysis", "__version__.py")
 
     with open(version_file, "r") as vf:
         lines = vf.read()
-        version = re.search(r"^_*version_* = ["\"]([^"\"]*)["\"]", lines, re.M).group(1)
+        version = re.search(r"^_*version_* = ['\"]([^'\"]*)['\"]", lines, re.M).group(1)
         return version
 
 
 sage_analysis_version = get_version()
 
 setup(
-    name="sage-analysis",
+    name="sage_analysis",
     version=sage_analysis_version,
     author="Jacob Seiler",
     author_email="jacob.seiler94@gmail.com",
@@ -44,7 +44,7 @@ setup(
         "Operating System :: MacOS",
         "Operating System :: Unix",
         ],
-    package_dir={"sage-analysis": "sage-analysis"},
+    package_dir={"sage_analysis": "sage_analysis"},
     packages=find_packages(),
     keywords=("SAGE redshift astronomy astrophysics galaxy semi-analytic model")
 )
