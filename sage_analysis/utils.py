@@ -127,7 +127,7 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
     return func_dict
 
 
-def select_random_indices(inds, global_num_inds, global_sample_inds):
+def select_random_indices(inds, global_num_inds_available, global_num_inds_requested):
     """
     Flag this with Manodeep to exactly use a descriptive docstring.
 
@@ -137,8 +137,11 @@ def select_random_indices(inds, global_num_inds, global_sample_inds):
     vals: :obj:`~numpy.ndarray` of values
         Values that the random subset is selected from.
 
-    global_num_vals: int
-        The total number of values.
+    global_num_inds_available: int
+        The total number of indices available across all files.
+
+    global_num_inds_requested: int
+        The total number of indices requested across all files.
 
     Returns
     -------
@@ -150,39 +153,45 @@ def select_random_indices(inds, global_num_inds, global_sample_inds):
     --------
     >>> import numpy as np
     >>> np.random.seed(666)
-    >>> vals = np.arange(10)
-    >>> global_num_vals = 100
-    >>> global_sample_size = 50 # Request less than the global number of values, but more
-    ...                         # than number of values.
-    >>> select_random_values(vals, global_num_vals, global_sample_size) # Returns a random subset.
+    >>> inds = np.arange(10)
+    >>> global_num_inds_available = 100
+    >>> global_num_inds_requested = 50 # Request less than the number of inds available
+    ...                                # across all files, but more than is in this file.
+    >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested) # Returns a random subset.
     array([2, 6, 9, 4, 3])
 
     >>> import numpy as np
     >>> np.random.seed(666)
-    >>> vals = np.arange(30)
-    >>> global_num_vals = 100
-    >>> global_sample_size = 10 # Request less than the global number of values and less
-    ...                         # than number of values.
-    >>> select_random_values(vals, global_num_vals, global_sample_size) # Returns a random subset.
+    >>> inds = np.arange(30)
+    >>> global_num_inds_available = 100
+    >>> global_num_inds_requested = 10 # Request less than the number of inds available
+    ...                                # across all files, and also less than what is
+    ...                                # available in this file.
+    >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested) # Returns a random subset.
     array([12,  2, 13])
 
     >>> import numpy as np
-    >>> vals = np.arange(10)
-    >>> global_num_vals = 100
-    >>> global_sample_size = 500 # Request more than the global number of values.
-    >>> select_random_values(vals, global_num_vals, global_sample_size) # All input values are returned.
+    >>> inds = np.arange(10)
+    >>> global_num_inds_available = 100
+    >>> global_num_inds_requested = 500 # Request more than the number of inds available
+    ...                                 # across all file.
+    >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested) # All input indices are returned.
     array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     """
 
     # First find out the fraction of value that we need to select.
-    num_vals_to_choose = int(len(vals) / global_num_vals * global_sample_size)
+    num_inds_to_choose = int(len(inds) / global_num_inds_available * global_num_inds_requested)
 
     # Do we have more values than we need?
-    if len(vals) > num_vals_to_choose:
+    if len(inds) > num_inds_to_choose:
         # Randomly select them.
-        random_vals = np.random.choice(vals, size=num_vals_to_choose)
+        random_inds = np.random.choice(inds, size=num_inds_to_choose)
     else:
         # Otherwise, we will just use all the indices we were passed.
-        random_vals = vals
+        random_inds = inds
 
-    return random_vals
+    return random_inds
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

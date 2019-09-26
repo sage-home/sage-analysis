@@ -59,12 +59,6 @@ class Model(object):
             ``read_sage_file`` is set to ``False``, all model parameters must be specified
             in this dict instead.
 
-        plot_galaxies: string, {"Random", "All"}, optional
-            Controls how galaxies will be plotted for scatter plots. If specified as ``"Random"``
-            will plot ``sample_size`` random galaxies.  If ``"All"``, will plot all
-            galaxies. Selecting ``"All"`` may result in excessive memory consumption for very large
-            simulations.
-
         sample_size: int, optional
             Specifies the length of the :py:attr:`~properties` attributes stored as 1-dimensional
             :obj:`~numpy.ndarray`.  These :py:attr:`~properties` are initialized using
@@ -101,7 +95,6 @@ class Model(object):
         self.num_files = 0
 
         # Then set default values.
-        self._plot_galaxies = plot_galaxies
         self._sample_size = sample_size
         self.sSFRcut = -11.0  # The specific star formation rate above which a galaxy is
         # 'star forming'.  Units are log10.
@@ -306,19 +299,6 @@ class Model(object):
         """
 
         return self._properties
-
-        self._plot_galaxies = plot_galaxies
-
-    @property
-    def plot_galaxies(self):
-        """
-        ``{"Random", "All"}``: Controls how galaxies will be plotted for scatter plots.
-        If specified as ``"Random"`` will plot ``sample_size`` random galaxies.  If
-        ``"All"``, will plot all galaxies. Selecting ``"All"`` may result in excessive
-        memory consumption for very large simulations.
-        """
-
-        return self._plot_galaxies
 
     @property
     def sample_size(self):
