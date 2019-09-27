@@ -1,0 +1,31 @@
+sudo: required
+dist: xenial
+language: python
+
+notifications:
+  email:
+    recipients:
+      - jseiler@swin.edu.au
+    on_success: change
+    on_failure: always
+
+matrix:
+  include:
+    - os: linux
+      python: "3.6"
+    - os: linux
+      python: "3.7"
+
+    - os: osx
+      python: "3.7"
+      osx_image: xcode10.2  # Python 3.7.2 running on macOS 10.14.3
+      language: generic       # 'language: python' is an error on Travis CI macOS
+
+before_install:
+  - python3 -m pip install --upgrade pip
+
+install:
+  - python3 -m pip install -r requirements.txt
+
+script:
+  - python3 -m pip install sage-analysis

@@ -8,7 +8,7 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
     call signature for non-keyword arguments. Functions are only added when the
     ``plot_toggles`` value is non-zero.
 
-    Functions are required to be named ``<module_prefix><function_prefix><plot_toggle_key>``
+    Functions are required to be named ``<module_name><function_prefix><plot_toggle_key>``
     For example, the default calculation function are kept in the ``model.py`` module and
     are named ``calc_<toggle>``.  E.g., ``sage_analysis.model.calc_SMF()``,
     ``sage_analysis.model.calc_BTF()``, ``sage_analysis.model.calc_sSFR()`` etc.
@@ -22,7 +22,7 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
         0 denotes not plotting.  Entries with a value of 1 will be added to the function
         dictionary.
 
-    module_prefix: string
+    module_name: string
         Name of the module where the functions are located. If the functions are located
         in this module, pass an empty string "".
 
