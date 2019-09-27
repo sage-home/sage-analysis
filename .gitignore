@@ -2,3 +2,7 @@ __pycache__
 *egg-info*
 build/
 dist/
+
+# Documentation with Sphinx #
+docs/build
+docs/make.bat

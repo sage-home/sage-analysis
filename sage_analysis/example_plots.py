@@ -116,8 +116,7 @@ def plot_SMF(models, plot_output_path, plot_output_format=".png", plot_sub_popul
             ls = "-"
 
         # Set the x-axis values to be the centre of the bins.
-        bin_width = model.bins["stellar_mass_bins"][1] - model.bins["stellar_mass_bins"][0]
-        bin_middles = model.bins["stellar_mass_bins"] + bin_width
+        bin_middles = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
 
         # The SMF is normalized by the simulation volume which is in Mpc/h.
         norm_SMF = model.properties["SMF"]/model.volume*pow(model.hubble_h, 3)/bin_width
@@ -128,8 +127,8 @@ def plot_SMF(models, plot_output_path, plot_output_format=".png", plot_sub_popul
             norm_red = model.properties["red_SMF"]/model.volume*pow(model.hubble_h, 3)/bin_width
             norm_blue = model.properties["blue_SMF"]/model.volume*pow(model.hubble_h, 3)/bin_width
 
-            ax.plot(bin_middles[:-1], norm_red, "r:", lw=2, label=label + " - Red")
-            ax.plot(bin_middles[:-1], norm_blue, "b:", lw=2, label=label + " - Blue")
+            ax.plot(bin_middles, norm_red, "r:", lw=2, label=label + " - Red")
+            ax.plot(bin_middles, norm_blue, "b:", lw=2, label=label + " - Blue")
 
     # For scaling the observational data, we use the values of the zeroth
     # model.
