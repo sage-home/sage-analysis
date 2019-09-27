@@ -1,19 +1,40 @@
 Introduction
 ============
 
-``SAGE`` is a publicly available code-base for modelling galaxy formation in a
-cosmological context. A description of the model and its default calibration
-results can be found in `Croton et al. (2016) <https://arxiv.org/abs/1601.04709>`_.
-``SAGE`` is a significant update to that previously used in `Croton et al. (2006) <http://arxiv.org/abs/astro-ph/0508046>`_.
+The **SAGE**-analysis package was developed to handle the data products
+produced by the **SAGE** model, available `here`_.
 
-``SAGE`` is written in C and was built to be modular and customisable.
-It will run on any N-body simulation whose trees are organised in a supported format and contain a minimum set of basic halo properties.
-For testing purposes, treefiles for the `mini-Millennium Simulation <http://arxiv.org/abs/astro-ph/0504097>`_ are available
-`here <https://data-portal.hpc.swin.edu.au/dataset/mini-millennium-simulation>`_.
+.. _here: https://github.com/sage-home/sage-model
 
-Galaxy formation models built using ``SAGE`` on the Millennium, Bolshoi and simulations can be downloaded at the
-`Theoretical Astrophysical Observatory (TAO) <https://tao.asvo.org.au/>`_. You can also find SAGE on `ascl.net <http://ascl.net/1601.006>`_.
+Why Did We Create A New Repo?
+-----------------------------
 
-Why Use SAGE?
--------------
+**SAGE** is an extremely modular and flexible semi-analytic model. The base
+model (presented in `Croton et al., 2016`_) has been adjusted and altered to
+answer a number of science questions on a variety of topics including galactic HI and angular
+momentum properties in `DARK SAGE`_, the Epoch of Reionization in `RSAGE`_, and
+the star formation history and galactic dust in `DUSTY SAGE` _.
 
+Due to the wide array of science that **SAGE** can cover and the number of
+models that spawned from its development, there has been a need to develop a
+framework to ingest in data from (ideally) any **SAGE** variant. This repo
+represents such an effort.  It represents a series of modules intended to
+provide the easy ingestion and analysis of the base **SAGE** data, whilst
+serving as a template for analysing any other **SAGE** flavours.
+
+.. _Croton et al., 2016: https://arxiv.org/abs/1601.04709
+.. _DARK SAGE: https://arxiv.org/abs/1605.00647
+.. _RSAGE: https://arxiv.org/abs/1902.01611
+.. _DUSTY SAGE: https://arxiv.org/abs/1902.01611
+
+Advantages of the Package
+-------------------------
+
+* Easy analysis and plotting of multiple different **SAGE** models.  For
+  example, comparing **SAGE** models with/without supernova feedback.
+* Memory efficient analysis of **SAGE** output. All calculations are performed
+  using only a single output file at a time, ensuring no extra memory overhead
+  associated with opening many files.
+* Support for the user to implement their own functions to analysis + plotting.
+* Template for creating custom data classes to ingest any arbitrary **SAGE**
+  data output. Useful if you're looking to develop using **SAGE**.
