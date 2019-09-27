@@ -67,7 +67,8 @@ class Model(object):
         read_sage_file: bool, optional
             Specifies whether to read the **SAGE** file and update the ``model_dict`` dict
             with the parameters specified inside.  If set to ``False``, all model
-            parameters must be specified in ``model_dict`` instead.
+            parameters must be specified in ``model_dict`` instead.  The additional
+            properties required are
         """
 
         # Need the snapshot to specify the name of the file. However, it's acceptable to
@@ -83,6 +84,19 @@ class Model(object):
             sage_dict = self.read_sage_params(model_dict["sage_file"])
             model_dict.update(sage_dict)
 
+        # Set default values. This needs to be done BEFORE the user specified params!
+        self._sample_size = sample_size
+        self.sSFRcut = -11.0  # The specific star formation rate above which a galaxy is
+                              # 'star forming'.  Units are log10.
+        self._plot_output_format = "png"  # By default, save as a PNG.
+
+        self._bins = {}
+        self._properties = {}
+
+        # Initialize this to 0.  If the output format is binary, then the user must
+        # specify the number of output files for us to calculate the volume processed.
+        self._num_output_files = 0
+
         # Set the attributes.
         for key in model_dict:
 
@@ -92,16 +106,89 @@ class Model(object):
 
             setattr(self, key, model_dict[key])
 
-        self.num_files = 0
+    @property
+    def num_output_files(self):
+        """
+        int: The number of files that **SAGE** wrote.  This will be equal to the number of
+        processors the **SAGE** ran with.
 
-        # Then set default values.
-        self._sample_size = sample_size
-        self.sSFRcut = -11.0  # The specific star formation rate above which a galaxy is
-        # 'star forming'.  Units are log10.
-        self._plot_output_format = "png"  # By default, save as a PNG.
+        Notes
+        -----
+        If :py:attr:`~sage_output_format` is ``sage_hdf5``, this number does **NOT**
+        include the Master file. That is, it is the number of numbered output files.
+        """
 
-        self._bins = {}
-        self._properties = {}
+        return self._num_output_files
+
+    @num_output_files.setter
+    def num_output_files(self, num_output_files):
+        self._num_output_files = num_output_files
+
+    @property
+    def hubble_h(self):
+        """
+        float: Value of the fractional Hubble parameter. That is, ``H = 100*hubble_h``.
+        """
+
+        return self._hubble_h
+
+    @hubble_h.setter
+    def hubble_h(self, hubble_h):
+        self._hubble_h = hubble_h
+
+    @property
+    def box_size(self):
+        """
+        float: Size of the simulation box. Units are Mpc/h.
+        """
+
+        return self._box_size
+
+    @box_size.setter
+    def box_size(self, box_size):
+        self._box_size = box_size
+
+    @property
+    def num_sim_tree_files(self):
+        """
+        int: Number of tree files that encompass the simulation for this model.
+        """
+
+        return self._num_sim_tree_files
+
+    @num_sim_tree_files.setter
+    def num_sim_tree_files(self, num_files):
+        self._num_sim_tree_files = num_files
+
+    @property
+    def volume(self):
+        """
+        volume: Volume spanned by the trees analysed by this model.  This depends upon the
+        number of files processed, ``[:py:attr:`~first_file`, :py:attr:`~last_file`]``,
+        relative to the total number of files the simulation spans over,
+        :py:attr:`~num_sim_tree_files`.
+
+        Notes
+        -----
+
+        This is **not** necessarily :py:attr:`~box_size` cubed. It is possible that this
+        model is only analysing a subset of files and hence the volume will be less.
+        """
+
+        return self._volume
+
+    @volume.setter
+    def volume(self, vol):
+
+        if vol > pow(self.box_size,3):
+            print("The volume analysed by a model cannot exceed the volume of the box "
+                  "itself.  Error was encountered for the following model.")
+            print(self)
+
+            raise ValueError
+
+        self._volume = vol
+
 
     @property
     def plot_output_format(self):
@@ -355,6 +442,9 @@ class Model(object):
             "OutputFormat",
             "NumSimulationTreeFiles",
             "FileWithSnapList",
+            "Hubble_h",
+            "BoxSize",
+            "PartMass",
         ]
         SAGE_dict = {}
 
@@ -424,15 +514,17 @@ class Model(object):
         model_path = "{0}/{1}{2}".format(
             SAGE_dict["OutputDir"], SAGE_dict["FileNameGalaxies"], output_tag
         )
-        model_dict["model_path"] = model_path
+        model_dict["_model_path"] = model_path
 
-        model_dict["sage_output_format"] = SAGE_dict["OutputFormat"]
-        model_dict["output_path"] = "{0}/plots/".format(SAGE_dict["OutputDir"])
-        model_dict["num_tree_files_used"] = (
-            int(SAGE_dict["LastFile"]) - int(SAGE_dict["FirstFile"]) + 1
-        )
+        model_dict["_sage_output_format"] = SAGE_dict["OutputFormat"]
+        model_dict["_output_path"] = "{0}/plots/".format(SAGE_dict["OutputDir"])
+
+        model_dict["_hubble_h"] = float(SAGE_dict["Hubble_h"])
+        model_dict["_box_size"] = float(SAGE_dict["BoxSize"])
+        model_dict["_num_sim_tree_files"] = int(SAGE_dict["NumSimulationTreeFiles"])
 
         return model_dict
+
 
     def init_binned_properties(
         self, bin_low, bin_high, bin_width, bin_name, property_names

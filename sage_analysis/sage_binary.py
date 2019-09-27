@@ -24,13 +24,43 @@ class SageBinaryData():
     :py:attr:`~Model.sage_output_format` is ``sage_binary``.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, model):
         """
         Instantiates the Data Class for reading in **SAGE** binary data. In particular,
         generates the ``numpy`` structured array to read the output galaxies.
         """
 
         self.get_galaxy_struct()
+
+        # To properly scale properties that use the simulation volume (e.g., SMF), we need
+        # to know how much of the volume this model is analysing.  SAGE is formulated such
+        # that every processor writes out a single file.  However, each model here can
+        # analyse fewer files than were simulated by SAGE.
+
+        # For example, SAGE could have run on 4 processors, and hence 4 files would be
+        # produced.  To allow the quick inspection of results, we may only be running our
+        # analysis on one file. Hence, we should scale some of the properties by a factor
+        # of 4.
+
+        # Importantly: There is no way for the binary output of SAGE to know this factor!
+        # Hence, if the user is running in binary mode, they MUST specify the total number
+        # of files that SAGE output (i.e., the number of processors they ran SAGE with).
+
+        if model._num_output_files == 0:
+            print(model)
+            print("This model is running using binary SAGE output.  To ensure that "
+                  "properties are properly scaled, you must specify the number of files "
+                  "that SAGE wrote (for a single redshift); that is, the number of "
+                  "processors used to run SAGE.")
+            print("This must be specified in the input dictionary for this model as "
+                  "``num_output_files``")
+
+            raise ValueError
+
+        # If the user has specified a number of output files, then measure what proprotion
+        # of these this model is using.
+        volume_processed = (model._last_file - model._first_file + 1) / model._num_output_files
+        model._volume = pow(model._box_size, 3) * volume_processed
 
 
     def get_galaxy_struct(self):
@@ -93,49 +123,6 @@ class SageBinaryData():
         galdesc = np.dtype({"names":names, "formats":formats}, align=True)
 
         self.galaxy_struct = galdesc
-
-
-    def set_cosmology(self, model):
-        """
-        Sets the relevant cosmological values, size of the simulation box and
-        number of galaxy files for a given :py:class:`~Model`.
-
-        Parameters
-        ----------
-
-        model: :py:class:`~Model` class
-            The :py:class:`~Model` we're setting the cosmology for.
-
-        Notes
-        -----
-
-        The :py:attr:`~Model.box_size` attribute is in Mpc/h.
-        """
-
-        # Here, total_num_tree_files is the total number of tree files available to the
-        # simulation. This is NOT NECESSARILY the number on which SAGE ran.
-        if model.simulation == "Mini-Millennium":
-            model.hubble_h = 0.73
-            model.box_size = 62.5
-            model.total_num_tree_files = 8
-
-        elif model.simulation == "Millennium":
-            model.hubble_h = 0.73
-            model.box_size = 500
-            model.total_num_tree_files = 512
-
-        elif model.simulation == "Genesis-L500-N2160":
-            model.hubble_h = 0.6751
-            model.box_size = 500.00
-            model.total_num_tree_files = 125
-
-        else:
-            raise ValueError("Please pick a valid simulation.")
-
-        # Scale the volume by the number of tree files used compared to the number that
-        # were used for the entire simulation.  This ensures properties scaled by volume
-        # (e.g., SMF) gives sensible results.
-        model.volume = pow(model.box_size, 3) * (model.num_tree_files_used / model.total_num_tree_files)
 
 
     def determine_num_gals(self, model):
@@ -212,8 +199,6 @@ class SageBinaryData():
         if not os.path.isfile(fname):
             print("File\t{0} \tdoes not exist!".format(fname))
             return None
-        else:
-            model.num_files += 1
 
         with open(fname, "rb") as f:
             # First read the header information.

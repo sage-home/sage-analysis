@@ -1004,7 +1004,7 @@ def plot_spatial(models, plot_output_path, plot_output_format=".png"):
     ax3.set_ylabel(r"$\mathrm{z}\ [\mathrm{Mpc}/h]$")
 
     # Find the model with the largest box.
-    max_box = np.min([model.box_size for model in models]) - 0.5
+    max_box = np.max([model.box_size for model in models])
     buffer = max_box*0.05
     for ax in [ax1, ax2, ax3, ax4]:
         ax.set_xlim([0.0-buffer, max_box+buffer])

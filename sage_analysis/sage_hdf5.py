@@ -58,38 +58,16 @@ class SageHdf5Data():
         # groups.
         model.first_file = 0
         model.last_file = model.hdf5_file["Header"]["Misc"].attrs["num_cores"] - 1
-        model.num_files = model.hdf5_file["Header"]["Misc"].attrs["num_cores"]
+        model.num_output_files = model.hdf5_file["Header"]["Misc"].attrs["num_cores"]
 
-
-    def set_cosmology(self, model):
-        """
-        Sets the relevant cosmological values, size of the simulation box and
-        number of galaxy files for a given :py:class:`~Model`.
-
-        Parameters
-        ----------
-
-        model: :py:class:`~Model` class
-            The :py:class:`~Model` we're setting the cosmology for.
-
-        Notes
-        -----
-
-        The :py:attr:`~Model.box_size` attribute is in Mpc/h.
-        """
-
-        f = model.hdf5_file
-
-        model.hubble_h = f["Header"]["Simulation"].attrs["hubble_h"]
-        model.box_size = f["Header"]["Simulation"].attrs["box_size"]
-
-        # Each core may have processed a different fraction of the volume. Hence find out
-        # total volume processed.
+        # Need to calculate the fraction of the total simulation volume that the
+        # simulation processed. Careful as each core may have processed a different
+        # fraction of the volume. Hence find out
         volume_processed = 0.0
         for core_num in range(model.first_file, model.last_file + 1):
             core_key = "Core_{0}".format(core_num)
 
-            processed_this_core = f[core_key]["Header"]["Runtime"].attrs["frac_volume_processed"]
+            processed_this_core = model.hdf5_file[core_key]["Header"]["Runtime"].attrs["frac_volume_processed"]
             volume_processed += processed_this_core
 
         # Scale the volume by the number of files that we will read. Used to ensure

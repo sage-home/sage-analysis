@@ -347,12 +347,14 @@ def calc_bulge_fraction(model, gals):
     fraction_bulge_var, _, _ = stats.binned_statistic(stellar_mass, fraction_bulge,
                                                       statistic=np.var,
                                                       bins=model.bins["stellar_mass_bins"])
-    model.properties["fraction_bulge_var"] += fraction_bulge_var / model.num_files
+    model.properties["fraction_bulge_var"] += fraction_bulge_var / \
+                                                (model.last_file - model.first_file + 1)
 
     fraction_disk_var, _, _ = stats.binned_statistic(stellar_mass, fraction_disk,
                                                      statistic=np.var,
                                                      bins=model.bins["stellar_mass_bins"])
-    model.properties["fraction_disk_var"] += fraction_disk_var / model.num_files
+    model.properties["fraction_disk_var"] += fraction_disk_var / \
+                                                (model.last_file - model.first_file + 1)
 
 
 def calc_baryon_fraction(model, gals):
