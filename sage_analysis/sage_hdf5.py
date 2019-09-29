@@ -26,7 +26,7 @@ class SageHdf5Data():
     :py:attr:`~Model.sage_output_format` is ``sage_hdf5``.
     """
 
-    def __init__(self, model, *args, **kwargs):
+    def __init__(self, model, sage_file_to_read=None, model_path=None):
         """
         Instantiates the Data Class for reading in **SAGE** HDF5 data. In particular,
         opens up the file and ensures the data version matches the expected value.
@@ -34,11 +34,41 @@ class SageHdf5Data():
         Parameters
         ----------
 
-        model: :py:class:`~Model` class
-            The corresponding :py:class:`~Model` we're reading the **SAGE** data for.
+        model: :py:class:`~Model.model` instance
+            The model that this data class is associated with; this class will read the
+            data for this model.
+
+        sage_file_to_read: string, optional
+            Specifies the **SAGE** file to be read and used to update the
+            ``sage_model_dict`` attribute with the parameters specified inside.  If set
+            to ``None``, does not update this attribute.  Instead, the user must provide
+            all the parameters to analyze the data to the
+            :py:meth:`~model.Model.update_attributes`.
+
+        model_path: string, optional
+            Path to the master **SAGE** output file.  This must be specified
+            only if the **SAGE** ``.ini`` file is not read (``sage_file_to_read`` is
+            ``None``).
         """
 
-        model.hdf5_file = h5py.File(model.model_path, "r")
+        # Use the SAGE parameter file to generate a bunch of attributes.
+        if sage_file_to_read:
+            sage_dict = self.read_sage_params(sage_file_to_read)
+            self.sage_model_dict = sage_dict
+
+        # The user may not have read the SAGE parameter file.  If so, they needed to have
+        # specifed the path to the model file.
+        if sage_file_to_read:
+            my_model_path = sage_dict["_model_path"]
+        elif model_path:
+            my_model_path = model_path
+        else:
+            print("A Model data class was instantiated without either specifying the "
+                  "SAGE parameter file or a specific output file to read.  One of these "
+                  "MUST be specified.")
+            print(model)
+
+        model.hdf5_file = h5py.File(my_model_path, "r")
 
         # Due to how attributes are created in C, they will need to be decoded to get cast
         # to a string.
@@ -54,25 +84,101 @@ class SageHdf5Data():
                   model.sage_data_version)
             raise ValueError(msg)
 
-        # For the HDF5 file, "first_file" and "last_file" correspond to the "Core_%d"
-        # groups.
-        model.first_file = 0
-        model.last_file = model.hdf5_file["Header"]["Misc"].attrs["num_cores"] - 1
         model.num_output_files = model.hdf5_file["Header"]["Misc"].attrs["num_cores"]
 
-        # Need to calculate the fraction of the total simulation volume that the
-        # simulation processed. Careful as each core may have processed a different
-        # fraction of the volume. Hence find out
-        volume_processed = 0.0
-        for core_num in range(model.first_file, model.last_file + 1):
-            core_key = "Core_{0}".format(core_num)
 
-            processed_this_core = model.hdf5_file[core_key]["Header"]["Runtime"].attrs["frac_volume_processed"]
-            volume_processed += processed_this_core
+    def read_sage_params(self, sage_file_path):
+        """
+        Reads the **SAGE** parameter file values.
 
-        # Scale the volume by the number of files that we will read. Used to ensure
-        # properties scaled by volume (e.g., SMF) gives sensible results.
-        model.volume = pow(model.box_size, 3) * volume_processed
+        Parameters
+        ----------
+
+        sage_file_path: string
+            Path to the **SAGE** parameter file.
+
+        Returns
+        -------
+
+        model_dict: dict [string, variable], optional
+            Dictionary containing the parameter values for this class instance. Attributes
+            of the class are set with name defined by the key with corresponding values.
+
+        Errors
+        ------
+
+        FileNotFoundError
+            Raised if the specified **SAGE** parameter file is not found.
+        """
+
+        # Fields that we will be reading from the ini file.
+        SAGE_fields = [ "FileNameGalaxies",
+                        "OutputDir",
+                        "FirstFile",
+                        "LastFile",
+                        "OutputFormat",
+                        "NumSimulationTreeFiles",
+                        "FileWithSnapList",
+                        "Hubble_h",
+                        "BoxSize",
+                        "PartMass"]
+        SAGE_dict = {}
+
+        # Ignore lines starting with one of these.
+        comment_characters = [";", "%", "-"]
+
+        try:
+            with open(sage_file_path, "r") as SAGE_file:
+                data = SAGE_file.readlines()
+
+                # Each line in the parameter file is of the form...
+                # parameter_name       parameter_value.
+                for line in range(len(data)):
+
+                    # Remove surrounding whitespace from the line.
+                    stripped = data[line].strip()
+
+                    # May have been an empty line.
+                    try:
+                        first_char = stripped[0]
+                    except IndexError:
+                        continue
+
+                    # Check for comment.
+                    if first_char in comment_characters:
+                        continue
+
+                    # Split into [name, value] list.
+                    split = stripped.split()
+
+                    # Then check if the field is one we care about.
+                    if split[0] in SAGE_fields:
+
+                        SAGE_dict[split[0]] = split[1]
+
+        except FileNotFoundError:
+            raise FileNotFoundError("Could not file SAGE ini file {0}".format(fname))
+
+        # Now we have all the fields, rebuild the dictionary to be exactly what we need for
+        # initialising the model.
+        model_dict = {}
+
+        alist = np.loadtxt(SAGE_dict["FileWithSnapList"])
+        redshifts = 1.0 / alist - 1.0
+        model_dict["redshifts"] = redshifts
+
+        model_path = f"{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}" \
+                     f".hdf5"
+
+        model_dict["_model_path"] = model_path
+
+        model_dict["_output_path"] = f"{SAGE_dict['OutputDir']}/plots/"
+
+        model_dict["_hubble_h"] = float(SAGE_dict["Hubble_h"])
+        model_dict["_box_size"] = float(SAGE_dict["BoxSize"])
+        model_dict["_num_sim_tree_files"] = int(SAGE_dict["NumSimulationTreeFiles"])
+
+        return model_dict
 
 
     def determine_num_gals(self, model):

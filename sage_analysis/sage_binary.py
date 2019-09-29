@@ -24,10 +24,31 @@ class SageBinaryData():
     :py:attr:`~Model.sage_output_format` is ``sage_binary``.
     """
 
-    def __init__(self, model):
+    def __init__(self, model, num_output_files, sage_file_to_read=None,
+                 snapshot_to_use=None):
         """
         Instantiates the Data Class for reading in **SAGE** binary data. In particular,
         generates the ``numpy`` structured array to read the output galaxies.
+
+        model: :py:class:`~Model.model` instance
+            The model that this data class is associated with; this class will read the
+            data for this model.
+
+        num_output_files: int
+            The number of files that **SAGE** wrote out when simulating ``model``. This is
+            generally equal to the number of processors used to run **SAGE**.
+
+        sage_file_to_read: string, optional
+            Specifies the **SAGE** file to be read and used to update the
+            ``sage_model_dict`` attribute with the parameters specified inside.  If set
+            to ``None``, does not update this attribute.  Instead, the user must provide
+            all the parameters to analyze the data to the
+            :py:meth:`~model.Model.update_attributes`.
+
+        snapshot_to_use: int, optional
+            The snapshot number being analysed for this ``model``. If reading a **SAGE**
+            file (``sage_file_to_read`` is not ``None``), this must be specified, or
+            :py:meth:`~update_snapshot` must be called before any reading of data is done.
         """
 
         self.get_galaxy_struct()
@@ -45,22 +66,122 @@ class SageBinaryData():
         # Importantly: There is no way for the binary output of SAGE to know this factor!
         # Hence, if the user is running in binary mode, they MUST specify the total number
         # of files that SAGE output (i.e., the number of processors they ran SAGE with).
+        model._num_output_files = num_output_files
 
-        if model._num_output_files == 0:
-            print(model)
-            print("This model is running using binary SAGE output.  To ensure that "
-                  "properties are properly scaled, you must specify the number of files "
-                  "that SAGE wrote (for a single redshift); that is, the number of "
-                  "processors used to run SAGE.")
-            print("This must be specified in the input dictionary for this model as "
-                  "``num_output_files``")
+        # Need the snapshot to specify the name of the SAGE output file (if we're reading
+        # the SAGE ini file).
+        if sage_file_to_read:
+            self._snapshot = snapshot_to_use
 
-            raise ValueError
+        # Use the SAGE parameter file to generate a bunch of attributes.
+        if sage_file_to_read:
+            sage_dict = self.read_sage_params(sage_file_to_read, snapshot_to_use)
+            self.sage_model_dict = sage_dict
 
-        # If the user has specified a number of output files, then measure what proprotion
-        # of these this model is using.
-        volume_processed = (model._last_file - model._first_file + 1) / model._num_output_files
-        model._volume = pow(model._box_size, 3) * volume_processed
+
+    def read_sage_params(self, sage_file_path, snapshot_to_use=None):
+        """
+        Reads the **SAGE** parameter file values.
+
+        Parameters
+        ----------
+
+        sage_file_path: string
+            Path to the **SAGE** parameter file.
+
+        snapshot_to_use: int, optional
+            The snapshot that this model is reading.  If this is not specified,
+            :py:meth:`~update_snapshot` must be called before any reading of data is done.
+
+        Returns
+        -------
+
+        model_dict: dict [string, variable], optional
+            Dictionary containing the parameter values for this class instance. Attributes
+            of the class are set with name defined by the key with corresponding values.
+
+        Errors
+        ------
+
+        FileNotFoundError
+            Raised if the specified **SAGE** parameter file is not found.
+        """
+
+        # Fields that we will be reading from the ini file.
+        SAGE_fields = [ "FileNameGalaxies",
+                        "OutputDir",
+                        "FirstFile",
+                        "LastFile",
+                        "OutputFormat",
+                        "NumSimulationTreeFiles",
+                        "FileWithSnapList",
+                        "Hubble_h",
+                        "BoxSize",
+                        "PartMass"]
+        SAGE_dict = {}
+
+        # Ignore lines starting with one of these.
+        comment_characters = [";", "%", "-"]
+
+        try:
+            with open(sage_file_path, "r") as SAGE_file:
+                data = SAGE_file.readlines()
+
+                # Each line in the parameter file is of the form...
+                # parameter_name       parameter_value.
+                for line in range(len(data)):
+
+                    # Remove surrounding whitespace from the line.
+                    stripped = data[line].strip()
+
+                    # May have been an empty line.
+                    try:
+                        first_char = stripped[0]
+                    except IndexError:
+                        continue
+
+                    # Check for comment.
+                    if first_char in comment_characters:
+                        continue
+
+                    # Split into [name, value] list.
+                    split = stripped.split()
+
+                    # Then check if the field is one we care about.
+                    if split[0] in SAGE_fields:
+
+                        SAGE_dict[split[0]] = split[1]
+
+        except FileNotFoundError:
+            raise FileNotFoundError("Could not file SAGE ini file {0}".format(fname))
+
+        # Now we have all the fields, rebuild the dictionary to be exactly what we need for
+        # initialising the model.
+        model_dict = {}
+
+        alist = np.loadtxt(SAGE_dict["FileWithSnapList"])
+        redshifts = 1.0 / alist - 1.0
+        model_dict["redshifts"] = redshifts
+
+        if snapshot_to_use:
+            output_tag = f"_z{redshifts[snapshot_to_use]:.3f}"
+        else:
+            print("A data class was instantiated without specifying an initial "
+                  "snapshot to read. This is allowed, but `Data_Class.update_snapshot` "
+                  "must be called before any reading is done.")
+            output_tag == "NOT_SET"
+
+        model_path = f"{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}" \
+                     f"{output_tag}"
+        model_dict["_model_path"] = model_path
+
+        model_dict["_output_path"] = f"{SAGE_dict['OutputDir']}/plots/"
+
+        model_dict["_hubble_h"] = float(SAGE_dict["Hubble_h"])
+        model_dict["_box_size"] = float(SAGE_dict["BoxSize"])
+        model_dict["_num_sim_tree_files"] = int(SAGE_dict["NumSimulationTreeFiles"])
+
+        return model_dict
 
 
     def get_galaxy_struct(self):
