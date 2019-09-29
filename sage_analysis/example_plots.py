@@ -116,16 +116,17 @@ def plot_SMF(models, plot_output_path, plot_output_format=".png", plot_sub_popul
             ls = "-"
 
         # Set the x-axis values to be the centre of the bins.
-        bin_middles = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
+        bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
+        bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # The SMF is normalized by the simulation volume which is in Mpc/h.
-        norm_SMF = model.properties["SMF"]/model.volume*pow(model.hubble_h, 3)/bin_width
-        ax.plot(bin_middles[:-1], norm_SMF, color=color, ls=ls, label=label + " - All")
+        norm_SMF = model.properties["SMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths
+        ax.plot(bin_middles, norm_SMF, color=color, ls=ls, label=label + " - All")
 
         # Be careful to not overcrowd the plot.
         if len(models) == 1 or plot_sub_populations:
-            norm_red = model.properties["red_SMF"]/model.volume*pow(model.hubble_h, 3)/bin_width
-            norm_blue = model.properties["blue_SMF"]/model.volume*pow(model.hubble_h, 3)/bin_width
+            norm_red = model.properties["red_SMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths
+            norm_blue = model.properties["blue_SMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths
 
             ax.plot(bin_middles, norm_red, "r:", lw=2, label=label + " - Red")
             ax.plot(bin_middles, norm_blue, "b:", lw=2, label=label + " - Blue")
@@ -192,15 +193,15 @@ def plot_temporal_SMF(models, plot_output_path, plot_output_format=".png"):
         ls = linestyles[model_num]
 
         # Set the x-axis values to be the centre of the bins.
-        bin_width = model.bins["stellar_mass_bins"][1] - model.bins["stellar_mass_bins"][0]
-        bin_middles = model.bins["stellar_mass_bins"] + bin_width
+        bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
+        bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # Iterate over the snapshots.
         for snap in model.SMF_snaps:
             label = "{0} z = {1:.3f}".format(model.label, model.redshifts[snap])
 
             # The SMF is normalized by the simulation volume which is in Mpc/h.
-            ax.plot(bin_middles[:-1], model.properties["SMF_dict"][snap] / model.volume*pow(model.hubble_h, 3)/bin_width,
+            ax.plot(bin_middles, model.properties["SMF_dict"][snap] / model.volume*pow(model.hubble_h, 3)/bin_widths,
                     ls=ls, label=label)
 
     # For scaling the observational data, we use the values of the zeroth
@@ -263,11 +264,11 @@ def plot_BMF(models, plot_output_path, plot_output_format=".png"):
         ls = linestyles[model_num]
 
         # Set the x-axis values to be the centre of the bins.
-        bin_width = model.bins["stellar_mass_bins"][1] - model.bins["stellar_mass_bins"][0]
-        bin_middles = model.bins["stellar_mass_bins"] + bin_width
+        bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
+        bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # The MF is normalized by the simulation volume which is in Mpc/h.
-        ax.plot(bin_middles[:-1], model.properties["BMF"]/model.volume*pow(model.hubble_h, 3)/bin_width,
+        ax.plot(bin_middles, model.properties["BMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths,
                 color=color, ls=ls, label=label + " - All")
 
     # For scaling the observational data, we use the values of the zeroth
@@ -329,11 +330,11 @@ def plot_GMF(models, plot_output_path, plot_output_format=".png"):
         ls = linestyles[model_num]
 
         # Set the x-axis values to be the centre of the bins.
-        bin_width = model.bins["stellar_mass_bins"][1] - model.bins["stellar_mass_bins"][0]
-        bin_middles = model.bins["stellar_mass_bins"] + bin_width
+        bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
+        bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # The MMF is normalized by the simulation volume which is in Mpc/h.
-        ax.plot(bin_middles[:-1], model.properties["GMF"]/model.volume*pow(model.hubble_h, 3)/bin_width,
+        ax.plot(bin_middles, model.properties["GMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths,
                 color=color, ls=ls, label=label + " - Cold Gas")
 
     # For scaling the observational data, we use the values of the zeroth
@@ -686,18 +687,18 @@ def plot_quiescent(models, plot_output_path, plot_output_format=".png",
         linestyle = linestyles[model_num]
 
         # Set the x-axis values to be the centre of the bins.
-        bin_width = model.bins["stellar_mass_bins"][1] - model.bins["stellar_mass_bins"][0]
-        bin_middles = model.bins["stellar_mass_bins"] + bin_width
+        bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
+        bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # We will keep the colour scheme consistent, but change the line styles.
-        ax.plot(bin_middles[:-1], model.properties["quiescent_galaxy_counts"] / model.properties["SMF"],
+        ax.plot(bin_middles, model.properties["quiescent_galaxy_counts"] / model.properties["SMF"],
                 label=label + " All", color=color, linestyle="-")
 
         if len(models) == 1 or plot_sub_populations:
-            ax.plot(bin_middles[:-1], model.properties["quiescent_centrals_counts"] / model.properties["centrals_MF"],
+            ax.plot(bin_middles, model.properties["quiescent_centrals_counts"] / model.properties["centrals_MF"],
                     label=label + " Centrals", color=color, linestyle="--")
 
-            ax.plot(bin_middles[:-1], model.properties["quiescent_satellites_counts"] / model.properties["satellites_MF"],
+            ax.plot(bin_middles, model.properties["quiescent_satellites_counts"] / model.properties["satellites_MF"],
                     label=label + " Satellites", color=color, linestyle="-.")
 
     ax.set_xlabel(r"$\log_{10} M_{\mathrm{stellar}}\ (M_{\odot})$")
@@ -757,8 +758,8 @@ def plot_bulge_fraction(models, plot_output_path, plot_output_format=".png",
         linestyle = linestyles[model_num]
 
         # Set the x-axis values to be the centre of the bins.
-        bin_width = model.bins["stellar_mass_bins"][1] - model.bins["stellar_mass_bins"][0]
-        bin_middles = model.bins["stellar_mass_bins"] + bin_width
+        bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
+        bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # Remember we need to average the properties in each bin.
         bulge_mean = model.properties["fraction_bulge_sum"] / model.properties["SMF"]
@@ -769,15 +770,15 @@ def plot_bulge_fraction(models, plot_output_path, plot_output_format=".png",
         disk_var = model.properties["fraction_disk_var"]
 
         # We will keep the colour scheme consistent, but change the line styles.
-        ax.plot(bin_middles[:-1], bulge_mean, label=label + " bulge",
+        ax.plot(bin_middles, bulge_mean, label=label + " bulge",
                 color=color, linestyle="-")
-        ax.plot(bin_middles[:-1], disk_mean, label=label + " disk",
+        ax.plot(bin_middles, disk_mean, label=label + " disk",
                 color=color, linestyle="--")
 
         if plot_var:
-            ax.fill_between(bin_middles[:-1], bulge_mean+bulge_var, bulge_mean-bulge_var,
+            ax.fill_between(bin_middles, bulge_mean+bulge_var, bulge_mean-bulge_var,
                             facecolor=color, alpha=0.25)
-            ax.fill_between(bin_middles[:-1], disk_mean+disk_var, disk_mean-disk_var,
+            ax.fill_between(bin_middles, disk_mean+disk_var, disk_mean-disk_var,
                             facecolor=color, alpha=0.25)
 
     ax.set_xlabel(r"$\log_{10} M_{\mathrm{stars}}\ (M_{\odot})$")
@@ -837,14 +838,14 @@ def plot_baryon_fraction(models, plot_output_path, plot_output_format=".png",
         linestyle = linestyles[model_num]
 
         # Set the x-axis values to be the centre of the bins.
-        bin_width = model.bins["halo_mass_bins"][1] - model.bins["halo_mass_bins"][0]
-        bin_middles = model.bins["halo_mass_bins"] + bin_width
+        bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
+        bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # Remember we need to average the properties in each bin.
         baryon_mean = model.properties["halo_baryon_fraction_sum"] / model.properties["fof_HMF"]
 
         # We will keep the linestyle constant but change the color.
-        ax.plot(bin_middles[:-1], baryon_mean, label=label + " Total",
+        ax.plot(bin_middles, baryon_mean, label=label + " Total",
                 color=color, linestyle=linestyle)
 
         # If we have multiple models, we want to be careful of overcrowding the plot.
@@ -857,7 +858,7 @@ def plot_baryon_fraction(models, plot_output_path, plot_output_format=".png",
                 dict_key = "halo_{0}_fraction_sum".format(attr)
                 mean = model.properties[dict_key] / model.properties["fof_HMF"]
 
-                ax.plot(bin_middles[:-1], mean, label=label + " " + label,
+                ax.plot(bin_middles, mean, label=label + " " + label,
                         color=color, linestyle=linestyle)
 
     ax.set_xlabel(r"$\mathrm{Central}\ \log_{10} M_{\mathrm{vir}}\ (M_{\odot})$")
@@ -913,7 +914,7 @@ def plot_reservoirs(models, plot_output_path, plot_output_format=".png"):
         marker = markers[model_num]
 
         attribute_names = ["stars", "cold", "hot", "ejected", "ICS"]
-        labels = ["Stars", "Cold Gas", "Hot Gas", "Ejected Gas", "Intracluster Stars"]
+        labels = ["Stars", "ColdGas", "HotGas", "EjectedGas", "IntraclusterStars"]
 
         for (attribute_name, label) in zip(attribute_names, labels):
 
@@ -934,10 +935,9 @@ def plot_reservoirs(models, plot_output_path, plot_output_format=".png"):
 
         fig.tight_layout()
 
-        output_file = "{0}/12.MassReservoirs_{1}.{2}".format(plot_output_path, label,
-                                                             plot_output_format)
+        output_file = f"{plot_output_path}/12.MassReservoirs.{plot_output_format}"
         fig.savefig(output_file)
-        print("Saved file to {0}".format(output_file))
+        print(f"Saved file to {output_file}")
         plt.close()
 
 
