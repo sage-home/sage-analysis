@@ -1,5 +1,5 @@
-example\_plots module
-===================
+sage_analysis.example_plots
+===========================
 
 .. automodule:: sage_analysis.example_plots
     :members:

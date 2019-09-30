@@ -1,9 +1,12 @@
 Plotting **SAGE** Output
 ========================
 
-On this page, we show how to analyse and plot the **SAGE** output from the
-default paramter file in the **SAGE** `repository`_. This example is shown in
-full in the ``galaxy_properties`` `module`_.
+On this page, we show how to analyse the **SAGE** output for a single snapshot.
+This full example is shown in the ``galaxy_properties`` `module`_ using the
+default parameter file.
+
+We explain how to analyse **SAGE** output across multiple snapshots
+`here <./history>`.
 
 Setting Things Up
 -----------------
@@ -42,18 +45,19 @@ the **SAGE** parameter file, etc.
 
 **NOTE:** If the ``sage_output_format`` is ``sage_binary`` (i.e., **SAGE**
 wrote as binary output), then you must also specify the number of output files,
-:py:attr:`~sage_analysis.Model.num_output_files`.
+:attr:`~sage_analysis.model.Model.num_output_files`.
 
 Initializing a Model
 --------------------
 
 The analysis of **SAGE** models is done through a specialized
-:doc:`Model class <../api/model>`. **Importantly,** the Model class only
+:class:`~sage_analysis.model.Model` class. **Importantly,** the Model class only
 handles the calculating properties.  To actually read the **SAGE** output, each
 Model requires a data class.  These are specific to
 the **SAGE** output format.  For example, we include a data class for
-:doc:`binary <../api/sage_binary>` and :doc:`HDF5 <../api/sage_hdf5>` **SAGE**
-output.  Through this data class, the package can be easily extended to ingest
+:class:`~sage_analysis.sage_hdf5.SageHdf5Data` and
+:class:`~sage_analysis.sage_binary.SageBinaryData`.
+Through this data class, the package can be easily extended to ingest
 any arbitrary **SAGE** output format.  We show such an example
 :doc:`here <./custom_data_classes>`.
 
@@ -75,7 +79,7 @@ Storing Galaxy Properties
 -------------------------
 
 When performing calculations, **sage-analysis** stores all the calculating
-properties in the :py:attr:`~sage_analysis.Model.properties` attribute of the Model instance.
+properties in the :py:attr:`~sage_analysis.model.Model.properties` attribute of the Model instance.
 This attribute is a dictionary and can be used to access any of the properties
 pertaining to the Model; for example, ``model.properties["SMF"]`` stores the
 array representing the stellar mass function.
@@ -91,7 +95,7 @@ mass function is binned depending upon the galaxy stellar mass; the fraction of
 quiescent galaxies is binned upon the galaxy stellar mass; the mass of gas in
 each **SAGE** reservoir (cold gas/hot gas/stars/etc) is binned upon the
 friends-of-friends halo mass.  The bins themselves are
-accessed through the :py:attr:`~sage_analysis.Model.bins` attribute of the model instance.
+accessed through the :py:attr:`~sage_analysis.model.Model.bins` attribute of the model instance.
 This attribute is a dictionary and can be used to access any of the bins for
 the Model; for example, ``model.bins["stellar_mass_bins"]`` would return the
 stellar mass bins used for the stellar mass function.
@@ -126,7 +130,7 @@ rather just get a sense of the typical data point values.  For these, we want
 to compute lists of ``(x, y)`` coordinates that we will plot later.  For
 example, the black hole bulge relationship will show a number of black hole
 masses and the corresponding bulge mass.  The (maximum) number of data points
-shown on each plot can be set through the :py:attr:`~sage_analysis.Model.sample_size`
+shown on each plot can be set through the :py:attr:`~sage_analysis.model.Model.sample_size`
 attribute.
 
 .. code-block:: python
@@ -145,8 +149,9 @@ properties over a range of snapshots through the `history module`_. These
 properties are initialized with a value of ``0.0``.
 
 .. code-block:: python
+
     single_properties = ["SMFD", "SFRD"]
-    my_model.init_single_properties(single_properties)
+    model.init_single_properties(single_properties)
 
 Calculating and Plotting Properties
 -----------------------------------
@@ -161,7 +166,7 @@ included in **sage-analysis**.
 
 To do so, we search for all functions in a module that are named
 ``calc_<plot_toggle>``.  We build these functions into a dictionary that are
-passed into :py:meth:`~sage_analysis.Model.calc_properties_all_files`.
+passed into :py:meth:`~sage_analysis.model.Model.calc_properties_all_files`.
 
 .. code-block:: python
 
@@ -175,6 +180,10 @@ passed into :py:meth:`~sage_analysis.Model.calc_properties_all_files`.
                                 function_prefix="calc"
                                 )
     model.calc_properties_all_files(calculations_functions)
+
+**NOTE:** All functions must have the signature
+``calc_<plot_toggle>(model, galaxies, **optional keyword arguments)``.  We
+expand on this more in :ref:`optional-kwargs`.
 
 In a similar manner, we search for all the functions in a module that are named
 ``plot_<plot_toggle>``.  From this dictionary, we can then iterate over and
@@ -195,6 +204,60 @@ make all the plots!
         func = plot_functions[func_name][0]
         func(models, plot_output_path, plot_output_format)
 
+**NOTE:** All functions must have the signature
+``calc_<plot_toggle>(list of models, plot_output_path, **optional keyword arguments)``.
+We expand on this more in :ref:`optional-kwargs`.
+
+The above code snippets produce the glorious stellar mass function!
+
+|SMF|
+.. |SMF| image:: ../figs/SMF.png
+
+.. _optional-kwargs:
+
+Using Keyword Arguments
+~~~~~~~~~~~~~~~~~~~~~~~
+
+:py:func:`~sage_analysis.utils.generate_func_dict` accepts an optional
+argument to allow the calculation or plotting functions to handle keyword
+arugments. This argument is a dictionary with keys equal to the plot toggles.
+The value of each entry is another dictionary containing all of the keyword
+arguments and their corresponding value.
+
+.. code-block:: python
+
+    from sage_analysis.utils import generate_func_dict
+
+    # By default, the stellar mass function is not computed for the red and blue
+    # galaxy populations. Let's turn it on.
+    keyword_args = {"SMF": {"calc_sub_populations": True}}
+
+    calculation_functions = generate_func_dict(
+                                plot_toggles,
+                                module_name="sage_analysis.example_calcs",
+                                function_prefix="calc",
+                                keyword_args=keyword_args
+                                )
+    model.calc_properties_all_files(calculations_functions)
+
+    # Then we can adjust "plot_SMF" to also plot these extra populations.
+    keyword_args = {"SMF": {"plot_sub_populations": True}}
+
+    plot_functions = generate_func_dict(
+                        plot_toggles,
+                        module_name="sage_analysis.example_plots",
+                        function_prefix="plot_",
+                        keyword_args=keyword_args
+                        )
+
+    # Now do the plotting with the extra kwargs.
+    for func_name in plot_functions.keys():
+        func = plot_functions[func_name][0]
+        keyword_args = plot_functions[func_name][1]
+        func(models, plot_output_path, plot_output_format, **keyword_args)
+
+|SMF_pop|
+.. |SMF_pop| image:: ../figs/SMF_pop.png
 
 .. _repository: https://github.com/sage-home/sage-model
 .. _module: https://github.com/sage-home/sage-model/plotting/galaxy_properties.py

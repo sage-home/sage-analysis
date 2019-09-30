@@ -1,5 +1,5 @@
-example\_calcs module
-===================
+sage_analysis.example_calcs
+===========================
 
 .. automodule:: sage_analysis.example_calcs
     :members:

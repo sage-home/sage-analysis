@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """
 This module defines the ``SageBinaryData`` class. This class interfaces with the
-:py:class:`~Model` class to read in binary data written by **SAGE**.  The value of
-:py:attr:`~Model.sage_output_format` is generally ``sage_binary`` if it is to be read
-with this class.
+:py:class:`~sage_analysis.model.Model` class to read in binary data written by **SAGE**.
+The value of :py:attr:`~sage_analysis.model.Model.sage_output_format` is generally
+``sage_binary`` if it is to be read with this class.
 
-We refer to :doc:`../user/data_class` for more information about adding your own Data
-Class to ingest data.
+We refer to :doc:`../user/custom_data_classes` for more information about adding your
+own Data Class to ingest data.
 
 Author: Jacob Seiler.
 """
@@ -18,10 +18,10 @@ import os
 
 class SageBinaryData():
     """
-    Class intended to inteface with the :py:class:`~Model` class to ingest the data
-    written by **SAGE**. It includes methods for reading the output galaxies, setting
-    cosmology etc. It is specifically written for when
-    :py:attr:`~Model.sage_output_format` is ``sage_binary``.
+    Class intended to inteface with the :py:class:`~sage_analysis.model.Model` class to
+    ingest the data written by **SAGE**. It includes methods for reading the output
+    galaxies, setting cosmology etc. It is specifically written for when
+    :py:attr:`~sage_analysis.model.Model.sage_output_format` is ``sage_binary``.
     """
 
     def __init__(self, model, num_output_files, sage_file_to_read=None,
@@ -30,7 +30,7 @@ class SageBinaryData():
         Instantiates the Data Class for reading in **SAGE** binary data. In particular,
         generates the ``numpy`` structured array to read the output galaxies.
 
-        model: :py:class:`~Model.model` instance
+        model: :py:class:`~sage_analysis.model.Model` instance
             The model that this data class is associated with; this class will read the
             data for this model.
 
@@ -43,12 +43,13 @@ class SageBinaryData():
             ``sage_model_dict`` attribute with the parameters specified inside.  If set
             to ``None``, does not update this attribute.  Instead, the user must provide
             all the parameters to analyze the data to the
-            :py:meth:`~model.Model.update_attributes`.
+            :py:meth:`~sage_analysis.model.Model.update_attributes`.
 
         snapshot_to_use: int, optional
             The snapshot number being analysed for this ``model``. If reading a **SAGE**
             file (``sage_file_to_read`` is not ``None``), this must be specified, or
-            :py:meth:`~update_snapshot` must be called before any reading of data is done.
+            :py:meth:`~sage_analysis.sage_binary.SageBinaryData.update_snapshot` must
+            be called before any reading of data is done.
         """
 
         self.get_galaxy_struct()
@@ -91,7 +92,8 @@ class SageBinaryData():
 
         snapshot_to_use: int, optional
             The snapshot that this model is reading.  If this is not specified,
-            :py:meth:`~update_snapshot` must be called before any reading of data is done.
+            :py:meth:`~sage_analysis.sage_binary.SageBinaryData.update_snapshot` must be
+            called before any reading of data is done.
 
         Returns
         -------
@@ -99,9 +101,6 @@ class SageBinaryData():
         model_dict: dict [string, variable], optional
             Dictionary containing the parameter values for this class instance. Attributes
             of the class are set with name defined by the key with corresponding values.
-
-        Errors
-        ------
 
         FileNotFoundError
             Raised if the specified **SAGE** parameter file is not found.
@@ -248,13 +247,14 @@ class SageBinaryData():
 
     def determine_num_gals(self, model):
         """
-        Determines the number of galaxies in all files for this :py:class:`~Model`.
+        Determines the number of galaxies in all files for this
+        :py:class:`~sage_analysis.model.Model`.
 
         Parameters
         ----------
 
-        model: :py:class:`~Model` class
-            The :py:class:`~Model` we're reading data for.
+        model: :py:class:`~sage_analysis.model.Model` class
+            The :py:class:`~sage_analysis.model.Model` we're reading data for.
         """
 
         num_gals = 0
@@ -279,17 +279,16 @@ class SageBinaryData():
     def read_gals(self, model, file_num, pbar=None, plot_galaxies=False, debug=False):
         """
         Reads the galaxies of a model file at snapshot specified by
-        :py:attr:`~Model.snapshot`.
+        :py:attr:`~sage_analysis.model.Model.snapshot`.
 
         Parameters
         ----------
 
-        model: :py:class:`~Model` class
-            The :py:class:`~Model` we're reading data for.
+        model: :py:class:`~sage_analysis.model.Model` class
+            The :py:class:`~sage_analysis.model.Model` we're reading data for.
 
         file_num: int
-            Suffix of the file we're reading.  The file name will be
-            ``model``.:py:attr:`~Model.model_path`_<file_num>.
+            Suffix number of the file we're reading.
 
         pbar: ``tqdm`` class instance, optional
             Bar showing the progress of galaxy reading.  If ``None``, progress bar will
@@ -374,14 +373,16 @@ class SageBinaryData():
 
     def update_snapshot(self, model, snapshot):
         """
-        Updates the :py:attr:`~Model.model_path` to point to a new redshift file. Uses the
-        redshift array :py:attr:`~Model.redshifts`.
+        Updates the :py:attr:`~sage_analysis.model.Model.model_path` to point to a new
+        redshift file. Uses the redshift array
+        :py:attr:`~sage_analysis.model.Model.redshifts`.
 
         Parameters
         ----------
 
         snapshot: int
-            Snapshot we're updating :py:attr:`~Model.model_path` to point to.
+            Snapshot we're updating :py:attr:`~sage_analysis.model.Model.model_path` to
+            point to.
         """
 
         model._snapshot = snapshot

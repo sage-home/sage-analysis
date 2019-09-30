@@ -30,13 +30,6 @@ class Model(object):
     """
     Handles all the galaxy data (including calculated properties) for a ``SAGE`` model.
 
-    Description
-    -----------
-
-    The ``sage_analysis`` package is driven through the use of this ``Model`` class. It is
-    used to define the paths and parameters for each model that is being plotted.  In this
-    way, we can handle multiple different simulations trivially.
-
     The ingestion of data is handled by inidivudal Data Classes (e.g., :py:class:`~sage_analysis.sage_binary.SageBinaryData`
     and :py:class:`~sage_analysis.sage_hdf5.SageHdf5Data`).  We refer to
     :doc:`../user/data_class` for more information about adding your own Data Class to ingest
@@ -62,6 +55,7 @@ class Model(object):
         self.sSFRcut = -11.0  # The specific star formation rate above which a galaxy is
                               # 'star forming'.  Units are log10.
         self._plot_output_format = "png"  # By default, save as a PNG.
+        self._sage_file = None  # Will be updated later (if at all).
 
         self._bins = {}
         self._properties = {}
@@ -374,6 +368,19 @@ class Model(object):
         self._num_gals_all_files = num_gals
 
 
+    def __repr__(self):
+
+        string = "========================\n" \
+                f"Model {self._model_label}\n" \
+                f"SAGE File: {self._sage_file}\n" \
+                f"SAGE Output Format: {self._sage_output_format}\n" \
+                f"First file to read: {self._first_file}\n" \
+                f"Last file to read: {self._last_file}\n" \
+                 "========================"
+
+        return my_string
+
+
     def update_attributes(self, model_dict, plot_toggles, update_using_data_class_dict=True):
         """
         Updates attributes required to analyse the data in this model.
@@ -508,9 +515,8 @@ class Model(object):
         for my_property in property_names:
             self.properties[my_property] = 0.0
 
-    def calc_properties_all_files(
-        self, calculation_functions, close_file=True, use_pbar=True, debug=False
-    ):
+    def calc_properties_all_files(self, calculation_functions, close_file=True,
+                                  use_pbar=True, debug=False):
         """
         Calculates galaxy properties for all files of a single :py:class:`~Model`.
 
@@ -548,7 +554,8 @@ class Model(object):
         # First determine how many galaxies are in all files.
         self.data_class.determine_num_gals(self)
         if self.num_gals_all_files == 0:
-            print("There were no galaxies associated with this model.")
+            print(f"There were no galaxies associated with this model at Snapshot "
+                  f"{self._snapshot}.")
             return
 
         # If the user requested the number of galaxies plotted/calculated

@@ -37,6 +37,7 @@ Maintainers
    introduction
    user/setting_up_sage
    user/analysing_sage
+   user/history
    user/multiple_models
    user/custom_calculations
    user/custom_data_classes
@@ -52,3 +53,4 @@ Maintainers
    api/sage_binary
    api/example_calcs
    api/example_plots
+   api/utils

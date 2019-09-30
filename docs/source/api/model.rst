@@ -1,5 +1,5 @@
-model module
-============
+sage_analysis.Model
+===================
 
 .. automodule:: sage_analysis.model
-    :inherited-members:
+    :members:

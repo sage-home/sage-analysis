@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """
 This module defines the ``SageHdf5Data`` class. This class interfaces with the
-:py:class:`~Model` class to read in binary data written by **SAGE**.  The value of
-:py:attr:`~Model.sage_output_format` is generally ``sage_hdf5`` if it is to be read
-with this class.
+:py:class:`~sage_analysis.model.Model` class to read in binary data written by **SAGE**.
+The value of :py:attr:`~sage_analysis.model.Model.sage_output_format` is generally
+``sage_hdf5`` if it is to be read with this class.
 
-We refer to :doc:`../user/data_class` for more information about adding your own Data
-Class to ingest data.
+We refer to :doc:`../user/custom_data_classes` for more information about adding your
+own Data Class to ingest data.
 
 Author: Jacob Seiler.
 """
@@ -20,10 +20,10 @@ sage_data_version = "1.00"
 
 class SageHdf5Data():
     """
-    Class intended to inteface with the :py:class:`~Model` class to ingest the data
-    written by **SAGE**. It includes methods for reading the output galaxies, setting
-    cosmology etc. It is specifically written for when
-    :py:attr:`~Model.sage_output_format` is ``sage_hdf5``.
+    Class intended to inteface with the :py:class:`~sage_analysis.model.Model` class to
+    ingest the data written by **SAGE**. It includes methods for reading the output
+    galaxies, setting cosmology etc. It is specifically written for when
+    :py:attr:`~sage_analysis.model.Model.sage_output_format` is ``sage_hdf5``.
     """
 
     def __init__(self, model, sage_file_to_read=None, model_path=None):
@@ -34,7 +34,7 @@ class SageHdf5Data():
         Parameters
         ----------
 
-        model: :py:class:`~Model.model` instance
+        model: :py:class:`~sage_analysis.model.Model` instance
             The model that this data class is associated with; this class will read the
             data for this model.
 
@@ -43,7 +43,7 @@ class SageHdf5Data():
             ``sage_model_dict`` attribute with the parameters specified inside.  If set
             to ``None``, does not update this attribute.  Instead, the user must provide
             all the parameters to analyze the data to the
-            :py:meth:`~model.Model.update_attributes`.
+            :py:meth:`~sage_analysis.model.Model.update_attributes`.
 
         model_path: string, optional
             Path to the master **SAGE** output file.  This must be specified
@@ -103,9 +103,6 @@ class SageHdf5Data():
         model_dict: dict [string, variable], optional
             Dictionary containing the parameter values for this class instance. Attributes
             of the class are set with name defined by the key with corresponding values.
-
-        Errors
-        ------
 
         FileNotFoundError
             Raised if the specified **SAGE** parameter file is not found.
@@ -184,13 +181,13 @@ class SageHdf5Data():
     def determine_num_gals(self, model):
         """
         Determines the number of galaxies in all cores for this model at the specified
-        :py:attr:`~Model.snapshot`.
+        :py:attr:`~sage_analysis.model.Model.snapshot`.
 
         Parameters
         ----------
 
-        model: :py:class:`~Model` class
-            The :py:class:`~Model` we're reading data for.
+        model: :py:class:`~sage_analysis.model.Model` class
+            The :py:class:`~sage_analysis.model.Model` we're reading data for.
         """
 
         ngals = 0
@@ -206,13 +203,14 @@ class SageHdf5Data():
 
     def read_gals(self, model, core_num, pbar=None, plot_galaxies=False, debug=False):
         """
-        Reads the galaxies of a single core at the specified :py:attr:`~Model.snapshot`.
+        Reads the galaxies of a single core at the specified
+        :py:attr:`~sage_analysis.model.Model.snapshot`.
 
         Parameters
         ----------
 
-        model: :py:class:`~Model` class
-            The :py:class:`~Model` we're reading data for.
+        model: :py:class:`~sage_analysis.model.Model` class
+            The :py:class:`~sage_analysis.model.Model` we're reading data for.
 
         core_num: Integer
             The core group we're reading.
@@ -284,7 +282,7 @@ class SageHdf5Data():
 
     def update_snapshot(self, model, snapshot):
         """
-        Updates the :py:attr:`~Model.snapshot` attribute to ``snapshot``.
+        Updates the :py:attr:`~sage_analysis.Model.snapshot` attribute to ``snapshot``.
         """
         model._snapshot = snapshot
 

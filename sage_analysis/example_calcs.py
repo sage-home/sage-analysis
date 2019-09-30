@@ -1,12 +1,16 @@
 """
 Here we show a myriad of functions that can be used to calculate properties from the
-**SAGE** output.  By setting the correct plot toggle and calling
-:py:func:`~generate_func_dict`, a dictionary containing these functions can be generated
-and passed to a :py:class:`~Model` instance to calculate the property.
+**SAGE** output.  By setting the correct plot toggles and calling
+:py:func:`~sage_analysis.utils.generate_func_dict`, a dictionary containing these
+functions can be generated and passed to
+:py:meth:`~sage_analysis.model.Model.calc_properties_all_files` to calculate the
+properties.
 
-The properties are stored (and updated) in the :py:attr:`~Model.properties` attribute.
+The properties are stored (and updated) in the
+:py:attr:`~sage_analysis.model.Model.properties` attribute.
 
-We refer to :doc:`../user/calc` for more information on how the calculations are handled.
+We refer to :doc:`../user/analysing_sage` for more information on how the calculations are
+handled.
 
 Author: Jacob Seiler
 """
@@ -17,15 +21,21 @@ from scipy import stats
 from sage_analysis.utils import select_random_indices
 
 
-def calc_SMF(model, gals):
+def calc_SMF(model, gals, calc_sub_populations=False):
     """
     Calculates the stellar mass function of the given galaxies.  That is, the number of
     galaxies at a given stellar mass.
 
     The ``Model.properties["SMF"]`` array will be updated. We also split the galaxy
-    population into "red" and "blue" based on the value of :py:attr:`~Model.sSFRcut` and
-    update the ``Model.properties["red_SMF"]`` and ``Model.properties["blue_SMF"]``
-    arrays.
+    population into "red" and "blue" based on the value of
+    :py:attr:`~sage_analysis.model.Model.sSFRcut` and update the
+    ``Model.properties["red_SMF"]`` and ``Model.properties["blue_SMF"]`` arrays.
+
+    Parameters
+    ----------
+
+    plot_sub_populations : boolean, optional
+        If ``True``, calculates the stellar mass function for red and blue sub-populations.
     """
 
     non_zero_stellar = np.where(gals["StellarMass"][:] > 0.0)[0]
@@ -37,16 +47,17 @@ def calc_SMF(model, gals):
     gals_per_bin, _ = np.histogram(stellar_mass, bins=model.bins["stellar_mass_bins"])
     model.properties["SMF"] += gals_per_bin
 
-    # We often want to plot the red and blue subpopulations. So bin them as well.
-    red_gals = np.where(sSFR < 10.0**model.sSFRcut)[0]
-    red_mass = stellar_mass[red_gals]
-    counts, _ = np.histogram(red_mass, bins=model.bins["stellar_mass_bins"])
-    model.properties["red_SMF"] += counts
+    # We often want to plot the red and blue subpopulations. So bin them if requested.
+    if calc_sub_populations:
+        red_gals = np.where(sSFR < 10.0**model.sSFRcut)[0]
+        red_mass = stellar_mass[red_gals]
+        counts, _ = np.histogram(red_mass, bins=model.bins["stellar_mass_bins"])
+        model.properties["red_SMF"] += counts
 
-    blue_gals = np.where(sSFR > 10.0**model.sSFRcut)[0]
-    blue_mass = stellar_mass[blue_gals]
-    counts, _ = np.histogram(blue_mass, bins=model.bins["stellar_mass_bins"])
-    model.properties["blue_SMF"] += counts
+        blue_gals = np.where(sSFR > 10.0**model.sSFRcut)[0]
+        blue_mass = stellar_mass[blue_gals]
+        counts, _ = np.histogram(blue_mass, bins=model.bins["stellar_mass_bins"])
+        model.properties["blue_SMF"] += counts
 
 
 def calc_BMF(model, gals):
@@ -86,10 +97,11 @@ def calc_BTF(model, gals):
     galaxies.
 
     The number of galaxies added to ``Model.properties["BTF_mass"]`` and
-    ``Model.properties["BTF_vel"]`` arrays is given by :py:attr:`~Model.sample_size`
-    weighted by ``number_spirals_passed /`` :py:attr:`~Model.num_gals_all_files`. If
-    this value is greater than ``number_spirals_passed``, then all spiral galaxies will
-    be used.
+    ``Model.properties["BTF_vel"]`` arrays is given by
+    :py:attr:`~sage_analysis.model.Model.sample_size`
+    weighted by ``number_spirals_passed /``
+    :py:attr:`~sage_analysis.model.Model.num_gals_all_files`. If this value is greater
+    than ``number_spirals_passed``, then all spiral galaxies will be used.
     """
 
     # Make sure we're getting spiral galaxies. That is, don't include galaxies
@@ -115,8 +127,9 @@ def calc_sSFR(model, gals):
     mass of the galaxy) as a function of stellar mass.
 
     The number of galaxies added to ``Model.properties["sSFR_mass"]`` and
-    ``Model.properties["sSFR_sSFR"]`` arrays is given by :py:attr:`~Model.sample_size`
-    weighted by ``number_gals_passed /`` :py:attr:`~Model.num_gals_all_files`. If
+    ``Model.properties["sSFR_sSFR"]`` arrays is given by
+    :py:attr:`~sage_analysis.model.Model.sample_size` weighted by ``number_gals_passed /``
+    :py:attr:`~sage_analysis.model.Model.num_gals_all_files`. If
     this value is greater than ``number_gals_passed``, then all galaxies with non-zero
     stellar mass will be used.
     """
@@ -142,10 +155,11 @@ def calc_gas_frac(model, gals):
     stellar mass.
 
     The number of galaxies added to ``Model.properties["gas_frac_mass"]`` and
-    ``Model.properties["gas_frac"]`` arrays is given by :py:attr:`~Model.sample_size`
-    weighted by ``number_spirals_passed /`` :py:attr:`~Model.num_gals_all_files`. If
-    this value is greater than ``number_spirals_passed``, then all spiral galaxies will
-    be used.
+    ``Model.properties["gas_frac"]`` arrays is given by
+    :py:attr:`~sage_analysis.model.Model.sample_size`
+    weighted by ``number_spirals_passed /``
+    :py:attr:`~sage_analysis.model.Model.num_gals_all_files`. If this value is greater
+    than ``number_spirals_passed``, then all spiral galaxies will be used.
     """
 
     # Make sure we're getting spiral galaxies. That is, don't include galaxies
@@ -169,10 +183,11 @@ def calc_metallicity(model, gals):
     Calculates the metallicity as a function of stellar mass.
 
     The number of galaxies added to ``Model.properties["metallicity_mass"]`` and
-    ``Model.properties["metallicity"]`` arrays is given by :py:attr:`~Model.sample_size`
-    weighted by ``number_centrals_passed /`` :py:attr:`~Model.num_gals_all_files`. If
-    this value is greater than ``number_centrals_passed``, then all central galaxies will
-    be used.
+    ``Model.properties["metallicity"]`` arrays is given by
+    :py:attr:`~sage_analysis.model.Model.sample_size` weighted by
+    ``number_centrals_passed /`` :py:attr:`~sage_analysis.model.Model.num_gals_all_files`.
+    If this value is greater than ``number_centrals_passed``, then all central galaxies
+    will be used.
     """
 
     # Only care about central galaxies (Type 0) that have appreciable mass.
@@ -195,10 +210,11 @@ def calc_bh_bulge(model, gals):
     Calculates the black hole mass as a function of bulge mass.
 
     The number of galaxies added to ``Model.properties["BlackHoleMass"]`` and
-    ``Model.properties["BulgeMass"]`` arrays is given by :py:attr:`~Model.sample_size`
-    weighted by ``number_galaxies_passed /`` :py:attr:`~Model.num_gals_all_files`. If
-    this value is greater than ``number_galaxies_passed``, then all galaxies will
-    be used.
+    ``Model.properties["BulgeMass"]`` arrays is given by
+    :py:attr:`~sage_analysis.model.Model.sample_size` weighted by
+    ``number_galaxies_passed /`` :py:attr:`~sage_analysis.model.Model.num_gals_all_files`.
+    If this value is greater than ``number_galaxies_passed``, then all galaxies
+    will be used.
 
     Notes
     -----
@@ -226,10 +242,10 @@ def calc_quiescent(model, gals):
     population is also split into central and satellites and the quiescent fraction of
     these are calculated.
 
-    The ``Model.properties["centrals_MF"]``, ``Model.properties["satellites_MF"],
+    The ``Model.properties["centrals_MF"]``, ``Model.properties["satellites_MF"]``,
     ``Model.properties["quiescent_galaxy_counts"]``,
     ``Model.properties["quiescent_centrals_counts"]``, and
-    ``Model.properties["quiescent_satellites_counts"]`` arrayss will be updated.
+    ``Model.properties["quiescent_satellites_counts"]`` arrays will be updated.
 
     Notes
     -----
@@ -237,7 +253,7 @@ def calc_quiescent(model, gals):
     We only **count** the number of quiescent galaxies in each stellar mass bin.  When
     converting this to the quiescent fraction, one must divide by the number of galaxies
     in each stellar mass bin, the stellar mass function ``Model.properties["SMF"]``. See
-    :func:`~plot_quiescent` for an example implementation.
+    :func:`~sage_analysis.example_plots.plot_quiescent` for an example implementation.
 
     If the stellar mass function has not been calculated (``Model.SMF`` is
     ``False``), a ``ValueError`` is thrown.  Ensure that ``SMF`` has been switched on for
@@ -290,20 +306,22 @@ def calc_quiescent(model, gals):
 
 
 def calc_bulge_fraction(model, gals):
-    """ Calculates the ``bulge_mass / stellar_mass`` and ``disk_mass / stellar_mass`` ratios
+    """
+    Calculates the ``bulge_mass / stellar_mass`` and ``disk_mass / stellar_mass`` ratios
     as a function of stellar mass.
 
-    The ``Model.properties["fraction_bulge_sum"]``, ``Model.properties["fraction_disk_sum"],
+    The ``Model.properties["fraction_bulge_sum"]``,
+    ``Model.properties["fraction_disk_sum"]``,
     ``Model.properties["fraction_bulge_var"]``,
-    ``Model.properties["fraction_disk_var"]`` arrayss will be updated.
+    ``Model.properties["fraction_disk_var"]`` arrays will be updated.
 
     Notes
     -----
 
     We only **sum** the bulge/disk mass in each stellar mass bin.  When converting this to
     the mass fraction, one must divide by the number of galaxies in each stellar mass bin,
-    the stellar mass function ``Model.properties["SMF"]``. See :func:`~plot_bulge_fraction`
-    for full implementation.
+    the stellar mass function ``Model.properties["SMF"]``. See
+    :func:`~sage_analysis.example_plots.plot_bulge_fraction` for full implementation.
 
     If the stellar mass function has not been calculated (``Model.SMF`` is
     ``False``), a ``ValueError`` is thrown.  Ensure that ``SMF`` has been switched on for
@@ -375,8 +393,8 @@ def calc_baryon_fraction(model, gals):
 
     We only **sum** the baryon mass in each stellar mass bin.  When converting this to
     the mass fraction, one must divide by the number of halos in each halo mass bin,
-    ``Model.properties["fof_HMF"]``. See :func:`~plot_baryon_fraction`
-    for full implementation.
+    ``Model.properties["fof_HMF"]``. See
+    :func:`~sage_analysis.example_plots.plot_baryon_fraction` for full implementation.
 
     If the ``Model.properties["fof_HMF"]`` property, with associated bins
     ``Model.bins["halo_mass"bin"]`` have not been initialized, a ``ValueError`` is thrown.
@@ -435,10 +453,10 @@ def calc_reservoirs(model, gals):
 
     The number of galaxies added to ``Model.properties["reservoir_mvir"]`` and
     ``Model.properties["reservoir_<reservoir_name>"]`` arrays is given by
-    :py:attr:`~Model.sample_size` weighted by
-    ``number_centrals_passed /`` :py:attr:`~Model.num_gals_all_files`. If
-    this value is greater than ``number_centrals_passed``, then all central galaxies will
-    be used.
+    :py:attr:`~sage_analysis.model.Model.sample_size` weighted by
+    ``number_centrals_passed /`` :py:attr:`~sage_analysis.model.Model.num_gals_all_files`.
+    If this value is greater than ``number_centrals_passed``, then all central galaxies
+    will be used.
     """
 
     # To reduce scatter, only use galaxies in halos with mass > 1.0e10 Msun/h.
@@ -466,9 +484,9 @@ def calc_spatial(model, gals):
     Calculates the spatial position of the galaxies.
 
     The number of galaxies added to ``Model.properties["<x/y/z>_pos"]`` arrays is given by
-    :py:attr:`~Model.sample_size` weighted by
-    ``number_galaxies_passed /`` :py:attr:`~Model.num_gals_all_files`. If
-    this value is greater than ``number_galaxies_passed``, then all galaxies will be used.
+    :py:attr:`~sage_analysis.model.Model.sample_size` weighted by
+    ``number_galaxies_passed /`` :py:attr:`~sage_analysis.model.Model.num_gals_all_files`.
+    If this value is greater than ``number_galaxies_passed``, then all galaxies will be used.
     """
 
     non_zero = np.where((gals["Mvir"][:] > 0.0) & (gals["StellarMass"][:] > 0.1))[0]
@@ -490,8 +508,8 @@ def calc_spatial(model, gals):
 def calc_SFRD(model, gals):
     """
     Calculates the sum of the star formation across all galaxies. This will be normalized
-    by the simulation volume to determine the density. See :funct:`~plot_SFRD` for full
-    implementation.
+    by the simulation volume to determine the density. See
+    :func:`~sage_analysis.example_plots.plot_SFRD` for full implementation.
 
     The ``Model.properties["SFRD"]`` value is updated.
     """
@@ -506,8 +524,8 @@ def calc_SFRD(model, gals):
 def calc_SMD(model, gals):
     """
     Calculates the sum of the stellar mass across all galaxies. This will be normalized
-    by the simulation volume to determine the density. See :funct:`~plot_SMD` for full
-    implementation.
+    by the simulation volume to determine the density. See
+    :func:`~sage_analysis.example_plots.plot_SMD` for full implementation.
 
     The ``Model.properties["SMD"]`` value is updated.
     """
