@@ -42,7 +42,7 @@ the **SAGE** parameter file, etc.
 
 **NOTE:** If the ``sage_output_format`` is ``sage_binary`` (i.e., **SAGE**
 wrote as binary output), then you must also specify the number of output files,
-:py:attr:`~Model.num_output_files`.
+:py:attr:`~sage_analysis.Model.num_output_files`.
 
 Initializing a Model
 --------------------
@@ -52,10 +52,10 @@ The analysis of **SAGE** models is done through a specialized
 handles the calculating properties.  To actually read the **SAGE** output, each
 Model requires a data class.  These are specific to
 the **SAGE** output format.  For example, we include a data class for
-`binary <../api/sage_binary>` and `HDF5 <../api/sage_hdf5>` **SAGE**
+:doc:`binary <../api/sage_binary>` and :doc:`HDF5 <../api/sage_hdf5>` **SAGE**
 output.  Through this data class, the package can be easily extended to ingest
 any arbitrary **SAGE** output format.  We show such an example
-`here <custom_data_classes>`.
+:doc:`here <./custom_data_classes>`.
 
 .. code-block:: python
 
@@ -75,7 +75,7 @@ Storing Galaxy Properties
 -------------------------
 
 When performing calculations, **sage-analysis** stores all the calculating
-properties in the :py:attr:`~Model.properties` attribute of the Model instance.
+properties in the :py:attr:`~sage_analysis.Model.properties` attribute of the Model instance.
 This attribute is a dictionary and can be used to access any of the properties
 pertaining to the Model; for example, ``model.properties["SMF"]`` stores the
 array representing the stellar mass function.
@@ -91,7 +91,7 @@ mass function is binned depending upon the galaxy stellar mass; the fraction of
 quiescent galaxies is binned upon the galaxy stellar mass; the mass of gas in
 each **SAGE** reservoir (cold gas/hot gas/stars/etc) is binned upon the
 friends-of-friends halo mass.  The bins themselves are
-accessed through the :py:attr:`~Model.bins` attribute of the model instance.
+accessed through the :py:attr:`~sage_analysis.Model.bins` attribute of the model instance.
 This attribute is a dictionary and can be used to access any of the bins for
 the Model; for example, ``model.bins["stellar_mass_bins"]`` would return the
 stellar mass bins used for the stellar mass function.
@@ -126,7 +126,8 @@ rather just get a sense of the typical data point values.  For these, we want
 to compute lists of ``(x, y)`` coordinates that we will plot later.  For
 example, the black hole bulge relationship will show a number of black hole
 masses and the corresponding bulge mass.  The (maximum) number of data points
-shown on each plot can be set through the :py:attr:`~Model.sample_size` attribute.
+shown on each plot can be set through the :py:attr:`~sage_analysis.Model.sample_size`
+attribute.
 
 .. code-block:: python
 
@@ -160,7 +161,7 @@ included in **sage-analysis**.
 
 To do so, we search for all functions in a module that are named
 ``calc_<plot_toggle>``.  We build these functions into a dictionary that are
-passed into :py:meth:`~Model.calc_properties_all_files`.
+passed into :py:meth:`~sage_analysis.Model.calc_properties_all_files`.
 
 .. code-block:: python
 
@@ -181,7 +182,7 @@ make all the plots!
 
 .. code-block:: python
 
-    # Search for functions named "calc_<plot_toggles>" in the "example_plots"
+    # Search for functions named "plot_<plot_toggles>" in the "example_plots"
     # module.
     plot_functions = generate_func_dict(
                         plot_toggles,
