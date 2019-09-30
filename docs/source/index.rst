@@ -9,6 +9,15 @@ of the **SAGE** model, located `here`_.  Please refer to the to the **SAGE**
 .. _here: https://github.com/sage-home/sage-model
 .. _repo: https://github.com/sage-home/sage-model
 
+Installation
+------------
+
+The recommended installing method is through pip:
+
+.. code::
+
+    $ pip install sage-analysis
+
 Maintainers
 -----------
 
@@ -38,4 +47,8 @@ Maintainers
    :maxdepth: 2
    :caption: API Reference
 
-   api/modules
+   api/model
+   api/sage_hdf5
+   api/sage_binary
+   api/example_calcs
+   api/example_plots

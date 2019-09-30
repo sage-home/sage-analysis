@@ -374,7 +374,7 @@ class Model(object):
         self._num_gals_all_files = num_gals
 
 
-    def update_attributes(self, model_dict, update_using_data_class_dict=True):
+    def update_attributes(self, model_dict, plot_toggles, update_using_data_class_dict=True):
         """
         Updates attributes required to analyse the data in this model.
 
@@ -392,6 +392,25 @@ class Model(object):
             :py:attr:`~sage_output_format` is ``sage_binary``,
             :py:attr:`~num_output_files` must also be present in the dictionary.
 
+            Example
+            -------
+
+            model_dict = {"snapshot": 63,
+                          "IMF": "Chabrier",
+                          "sage_output_format": "sage_hdf5"}
+
+        plot_toggles: dict [string, integer]
+            Dictionary specifying which properties will be analysed/plotted for this
+            model. Model attributes, named using the key, will be updated from this
+            dictionary.
+
+            Example
+            -------
+
+            plot_toggles = {"SMF": True,
+                            "BTF": False,
+                            "GMF": True}
+
         update_using_data_class_dict: boolean, optional
             If specified, then the :py:attr:`~model_dict` attribute from the data class
             will be used to update the values of ``model_dict``.  This attribute is
@@ -404,6 +423,9 @@ class Model(object):
 
         for key in model_dict:
             setattr(self, key, model_dict[key])
+
+        for key in plot_toggles:
+            setattr(self, key, plot_toggles[key])
 
         # Measure what proprotion of the files the model is using.
         volume_processed = (self._last_file - self._first_file + 1) / self._num_output_files

@@ -239,7 +239,7 @@ def calc_quiescent(model, gals):
     in each stellar mass bin, the stellar mass function ``Model.properties["SMF"]``. See
     :func:`~plot_quiescent` for an example implementation.
 
-    If the stellar mass function has not been calculated (``Model.calc_SMF`` is
+    If the stellar mass function has not been calculated (``Model.SMF`` is
     ``False``), a ``ValueError`` is thrown.  Ensure that ``SMF`` has been switched on for
      the ``plot_toggles`` variable when the ``Model`` is instantiated. Also ensure that
     the ``SMF`` binned property is initialized.
@@ -259,7 +259,7 @@ def calc_quiescent(model, gals):
     # When plotting, we scale the number of quiescent galaxies by the total number of
     # galaxies in that bin.  This is the Stellar Mass Function.
     # So check if the SMF has been initialized.  If not, then it should be specified.
-    if model.calc_SMF:
+    if model.SMF:
         pass
     else:
         raise ValueError("When calculating the quiescent galaxy population, we "
@@ -305,7 +305,7 @@ def calc_bulge_fraction(model, gals):
     the stellar mass function ``Model.properties["SMF"]``. See :func:`~plot_bulge_fraction`
     for full implementation.
 
-    If the stellar mass function has not been calculated (``Model.calc_SMF`` is
+    If the stellar mass function has not been calculated (``Model.SMF`` is
     ``False``), a ``ValueError`` is thrown.  Ensure that ``SMF`` has been switched on for
      the ``plot_toggles`` variable when the ``Model`` is instantiated. Also ensure that
     the ``SMF`` binned property is initialized.
@@ -320,7 +320,7 @@ def calc_bulge_fraction(model, gals):
     # When plotting, we scale the fraction of each galaxy type the total number of
     # galaxies in that bin. This is the Stellar Mass Function.
     # So check if we're calculating the SMF already, and if not, calculate it here.
-    if model.calc_SMF:
+    if model.SMF:
         pass
     else:
         raise ValueError("When calculating the bulge fraction, we "
