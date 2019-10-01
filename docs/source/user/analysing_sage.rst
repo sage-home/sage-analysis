@@ -1,12 +1,12 @@
-Plotting **SAGE** Output
-========================
+Analysing **SAGE** Output
+=========================
 
 On this page, we show how to analyse the **SAGE** output for a single snapshot.
-This full example is shown in the ``galaxy_properties`` `module`_ using the
+This full example is shown in the `galaxy_properties module`_ using the
 default parameter file.
 
 We explain how to analyse **SAGE** output across multiple snapshots
-`here <./history>`.
+:doc:`here <./history>`.
 
 Setting Things Up
 -----------------
@@ -161,7 +161,7 @@ To ensure that **sage-analysis** does not perform extraneous computations, the
 properties for each Model are calculated depending upon the ``plot_toggles``
 specified.  For example, the black hole mass of each galaxy will only be read
 if the black hole-bulge relationship plot toggle is set. We refer to the
-``galaxy_properties`` `module`_ for a full list of ``plot_toggles`` that are
+`galaxy_properties module`_ for a full list of ``plot_toggles`` that are
 included in **sage-analysis**.
 
 To do so, we search for all functions in a module that are named
@@ -202,11 +202,12 @@ make all the plots!
     # Now do the plotting.
     for func_name in plot_functions.keys():
         func = plot_functions[func_name][0]
-        func(models, plot_output_path, plot_output_format)
+        func([model], plot_output_path, plot_output_format)
 
 **NOTE:** All functions must have the signature
 ``calc_<plot_toggle>(list of models, plot_output_path, **optional keyword arguments)``.
-We expand on this more in :ref:`optional-kwargs`.
+We expand on this more in :ref:`optional-kwargs`.  Due to this, we have cast
+our single ``model`` into a list.
 
 The above code snippets produce the glorious stellar mass function!
 
@@ -260,5 +261,5 @@ arguments and their corresponding value.
 .. |SMF_pop| image:: ../figs/SMF_pop.png
 
 .. _repository: https://github.com/sage-home/sage-model
-.. _module: https://github.com/sage-home/sage-model/plotting/galaxy_properties.py
+.. _galaxy_properties module: https://github.com/sage-home/sage-model/plotting/galaxy_properties.py
 .. _history module: https://github.com/sage-home/sage-model/plotting/history.py
