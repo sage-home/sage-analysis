@@ -112,7 +112,7 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
                 msg = "Tried to get the func named '{0}' corresponding to " \
                       "'plot_toggle' value '{1}'.  However, no func named '{0}' " \
                       "could be found in '{2}' module.".format(func_name,
-                      toggle, module_prefix)
+                      toggle, module_name)
                 raise AttributeError(msg)
 
             # We may have specified some keyword arguments for this plot toggle. Check.

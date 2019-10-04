@@ -149,7 +149,7 @@ def calc_sSFR(model, gals):
     model.properties["sSFR_sSFR"] = np.append(model.properties["sSFR_sSFR"], np.log10(sSFR))
 
 
-def calc_gas_frac(model, gals):
+def calc_gas_fraction(model, gals):
     """
     Calculates the fraction of baryons that are in the cold gas reservoir as a function of
     stellar mass.
@@ -449,7 +449,7 @@ def calc_baryon_fraction(model, gals):
 
 def calc_reservoirs(model, gals):
     """
-    Calculates the mass of each reservoir as a function of halo virial mass.
+    Calculates the mass in each reservoir as a function of halo virial mass.
 
     The number of galaxies added to ``Model.properties["reservoir_mvir"]`` and
     ``Model.properties["reservoir_<reservoir_name>"]`` arrays is given by
@@ -505,7 +505,33 @@ def calc_spatial(model, gals):
         model.properties[attribute_name] = np.append(model.properties[attribute_name], pos)
 
 
-def calc_SFRD(model, gals):
+def calc_SMF_z(model, gals, calc_sub_populations=False):
+    """
+    Calculates the stellar mass function of the given galaxies.  That is, the number of
+    galaxies at a given stellar mass.
+
+    The ``Model.properties["SMF"]`` array will be updated. We also split the galaxy
+    population into "red" and "blue" based on the value of
+    :py:attr:`~sage_analysis.model.Model.sSFRcut` and update the
+    ``Model.properties["red_SMF"]`` and ``Model.properties["blue_SMF"]`` arrays.
+
+    Parameters
+    ----------
+
+    plot_sub_populations : boolean, optional
+        If ``True``, calculates the stellar mass function for red and blue sub-populations.
+
+    Notes
+    -----
+
+    This is just an alias function.  Under the hood, this function calls
+    :py:meth:`~sage_analysis.example_calcs.calc_SMF`.
+    """
+
+    calc_SMF(model, gals, calc_sub_populations)
+
+
+def calc_SFRD_z(model, gals):
     """
     Calculates the sum of the star formation across all galaxies. This will be normalized
     by the simulation volume to determine the density. See
@@ -521,7 +547,7 @@ def calc_SFRD(model, gals):
         model.properties["SFRD"] += np.sum(SFR)
 
 
-def calc_SMD(model, gals):
+def calc_SMD_z(model, gals):
     """
     Calculates the sum of the stellar mass across all galaxies. This will be normalized
     by the simulation volume to determine the density. See

@@ -21,9 +21,9 @@ first specify which properties we wish to analyse and plot.
     plot_output_format = "png"
     plot_output_path = "./plots"  # Will be created if path doesn't exist.
 
-    plot_toggles = {"SMF" : 1,  # Stellar mass function across redshift.
-                    "SFRD" : 1,  # Star formation rate density across redshift.
-                    "SMD" : 1}  # Stellar mass density across redshift.
+    plot_toggles = {"SMF_z" : 1,  # Stellar mass function across redshift.
+                    "SFRD_z" : 1,  # Star formation rate density across redshift.
+                    "SMD_z" : 1}  # Stellar mass density across redshift.
 
 
 Then, we specify the **SAGE** output we wish to analyse and the redshifts at
@@ -51,6 +51,33 @@ wrote as binary output), then you must also specify the number of output files,
 
 Initializing the Model
 --------------------
+
+Calculation and Plotting Dictionaries
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Again, as outlined :doc:`previously <./analysing_sage.rst>`, we first generate
+the dictionaries necessary to analyse and plot properties.
+
+.. code-block:: python
+
+    from sage_analysis.utils import generate_func_dict
+
+    # Search for functions named "calc_<plot_toggle>" in the "example_calcs"
+    # module.
+    calculation_functions = generate_func_dict(
+                                plot_toggles,
+                                module_name="sage_analysis.example_calcs",
+                                function_prefix="calc"
+                                )
+
+    # Search for functions named "plot_<plot_toggles>" in the "example_plots"
+    # module.
+    plot_functions = generate_func_dict(
+                        plot_toggles,
+                        module_name="sage_analysis.example_plots",
+                        function_prefix="plot_"
+                        )
+
 
 Setting up the Class
 ~~~~~~~~~~~~~~~~~~~~
@@ -89,47 +116,21 @@ We also initialize the Model properties as outlined :doc:`previously
 .. code-block:: python
 
     stellar_properties = ["SMF", "red_SMF", "blue_SMF"]
-    my_model.init_binned_properties(8.0, 12.0, 0.1, "stellar_mass_bins",
-                                    stellar_properties)
+    model.init_binned_properties(8.0, 12.0, 0.1, "stellar_mass_bins",
+                                 stellar_properties)
 
     # Properties that are extended as lists.
     scatter_properties = []
-    my_model.init_scatter_properties(scatter_properties)
+    model.init_scatter_properties(scatter_properties)
 
     # Properties that are stored as a single number.
     single_properties = ["SMFD", "SFRD"]
-    my_model.init_single_properties(single_properties)
+    model.init_single_properties(single_properties)
 
     # We will store the values of each snapshot in a dictionary.
     model.properties["SMF_dict"] = {}
     model.properties["SFRD_dict"] = {}
     model.properties["SMD_dict"] = {}
-
-Calculation and Plotting Dictionaries
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Again, as outlined :doc:`previously <./analysing_sage.rst>`, we also generate
-the dictionaries necessary to analyse and plot properties.
-
-.. code-block:: python
-
-    from sage_analysis.utils import generate_func_dict
-
-    # Search for functions named "calc_<plot_toggle>" in the "example_calcs"
-    # module.
-    calculation_functions = generate_func_dict(
-                                plot_toggles,
-                                module_name="sage_analysis.example_calcs",
-                                function_prefix="calc"
-                                )
-
-    # Search for functions named "plot_<plot_toggles>" in the "example_plots"
-    # module.
-    plot_functions = generate_func_dict(
-                        plot_toggles,
-                        module_name="sage_analysis.example_plots",
-                        function_prefix="plot_"
-                        )
 
 Setting Up The Snapshot Loop
 ----------------------------
@@ -205,9 +206,9 @@ Finally, plot the properties!
 .. code-block:: python
 
     # Similar to the calculation functions, all of the plotting functions are in the
-    # `example_plots_history.py` module and are labelled `plot_<toggle>`.
+    # `example_plots.py` module and are labelled `plot_<toggle>`.
     plot_functions = generate_func_dict(plot_toggles,
-                                        module_name="sage_analysis.example_plots_history",
+                                        module_name="sage_analysis.example_plots",
                                         function_prefix="plot_")
 
     # Now do the plotting.

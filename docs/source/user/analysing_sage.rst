@@ -47,10 +47,60 @@ the **SAGE** parameter file, etc.
 wrote as binary output), then you must also specify the number of output files,
 :attr:`~sage_analysis.model.Model.num_output_files`.
 
+.. _func-dict:
+
+Setting up the Calculation and Plotting Dictionaries
+----------------------------------------------------
+
+To ensure that **sage-analysis** does not perform extraneous computations, the
+properties for each Model are calculated depending upon the ``plot_toggles``
+specified.  For example, the black hole mass of each galaxy will only be read
+if the black hole-bulge relationship plot toggle is set. We refer to :doc:`this
+page <./custom_calculations` for a full list of the default plot toggles.
+
+To achieve this, we search for all functions in a module that are named
+``calc_<plot_toggle>``.  We build these functions into a dictionary that are
+passed into :py:meth:`~sage_analysis.model.Model.calc_properties_all_files`.
+
+.. code-block:: python
+
+    from sage_analysis.utils import generate_func_dict
+
+    # Search for functions named "calc_<plot_toggle>" in the "example_calcs"
+    # module.
+    calculation_functions = generate_func_dict(
+                                plot_toggles,
+                                module_name="sage_analysis.example_calcs",
+                                function_prefix="calc"
+                                )
+
+**NOTE:** All functions must have the signature
+``calc_<plot_toggle>(model, galaxies, **optional keyword arguments)``.  We
+expand on this more in :ref:`optional-kwargs`.
+
+In a similar manner, we search for all the functions in a module that are named
+``plot_<plot_toggle>``.  From this dictionary, we can then iterate over and
+make all the plots!
+
+.. code-block:: python
+
+    # Search for functions named "plot_<plot_toggles>" in the "example_plots"
+    # module.
+    plot_functions = generate_func_dict(
+                        plot_toggles,
+                        module_name="sage_analysis.example_plots",
+                        function_prefix="plot_"
+                        )
+
+**NOTE:** All functions must have the signature
+``calc_<plot_toggle>(list of models, plot_output_path, **optional keyword arguments)``.
+We expand on this more in :ref:`optional-kwargs`.
+
 Initializing a Model
 --------------------
 
-The analysis of **SAGE** models is done through a specialized
+With the calculation functions prepped, we are now poised to perform the actual
+analysis. The analysis of **SAGE** models is done through a specialized
 :class:`~sage_analysis.model.Model` class. **Importantly,** the Model class only
 handles the calculating properties.  To actually read the **SAGE** output, each
 Model requires a data class.  These are specific to
@@ -153,61 +203,25 @@ properties are initialized with a value of ``0.0``.
     single_properties = ["SMFD", "SFRD"]
     model.init_single_properties(single_properties)
 
-Calculating and Plotting Properties
------------------------------------
+Doing the Analysis and Plotting
+-------------------------------
 
-We are finally poised to calculate and plot galaxy properties for each Model.
-To ensure that **sage-analysis** does not perform extraneous computations, the
-properties for each Model are calculated depending upon the ``plot_toggles``
-specified.  For example, the black hole mass of each galaxy will only be read
-if the black hole-bulge relationship plot toggle is set. We refer to the
-`galaxy_properties module`_ for a full list of ``plot_toggles`` that are
-included in **sage-analysis**.
-
-To do so, we search for all functions in a module that are named
-``calc_<plot_toggle>``.  We build these functions into a dictionary that are
-passed into :py:meth:`~sage_analysis.model.Model.calc_properties_all_files`.
+We have set up the dictionary for the plotting functions in :ref:`func-dict`.
+Once all the properties have been calculated, we can finally do the plotting!
 
 .. code-block:: python
 
-    from sage_analysis.utils import generate_func_dict
-
-    # Search for functions named "calc_<plot_toggle>" in the "example_calcs"
-    # module.
-    calculation_functions = generate_func_dict(
-                                plot_toggles,
-                                module_name="sage_analysis.example_calcs",
-                                function_prefix="calc"
-                                )
+    # Calculate all the properties.
     model.calc_properties_all_files(calculations_functions)
-
-**NOTE:** All functions must have the signature
-``calc_<plot_toggle>(model, galaxies, **optional keyword arguments)``.  We
-expand on this more in :ref:`optional-kwargs`.
-
-In a similar manner, we search for all the functions in a module that are named
-``plot_<plot_toggle>``.  From this dictionary, we can then iterate over and
-make all the plots!
-
-.. code-block:: python
-
-    # Search for functions named "plot_<plot_toggles>" in the "example_plots"
-    # module.
-    plot_functions = generate_func_dict(
-                        plot_toggles,
-                        module_name="sage_analysis.example_plots",
-                        function_prefix="plot_"
-                        )
 
     # Now do the plotting.
     for func_name in plot_functions.keys():
         func = plot_functions[func_name][0]
         func([model], plot_output_path, plot_output_format)
 
-**NOTE:** All functions must have the signature
-``calc_<plot_toggle>(list of models, plot_output_path, **optional keyword arguments)``.
-We expand on this more in :ref:`optional-kwargs`.  Due to this, we have cast
-our single ``model`` into a list.
+**NOTE:** The plotting scripts accept a list of Model classes as the first
+argument.  For this scenario, we only have one model and so we cast it to a
+list first.
 
 The above code snippets produce the glorious stellar mass function!
 
@@ -217,7 +231,7 @@ The above code snippets produce the glorious stellar mass function!
 .. _optional-kwargs:
 
 Using Keyword Arguments
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 :py:func:`~sage_analysis.utils.generate_func_dict` accepts an optional
 argument to allow the calculation or plotting functions to handle keyword
