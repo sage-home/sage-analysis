@@ -250,7 +250,7 @@ class SageHdf5Data():
         gals = model.hdf5_file[core_key][snap_key]
 
         # If we're using the `tqdm` package, update the progress bar.
-        if pbar:
+        if pbar is not None:
             pbar.set_postfix(file=core_key, refresh=False)
             pbar.update(num_gals_read)
 
