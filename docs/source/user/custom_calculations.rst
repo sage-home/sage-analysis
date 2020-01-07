@@ -2,7 +2,13 @@ Defining Custom Properties
 ==========================
 
 We have previously given examples how to analyse **SAGE** properties at a :doc:`single
-snapshot <./analysing_sage>` or :doc:`over multiple redshifts <./history>`.
+snapshot <./analysing_sage>` or :doc:`over multiple redshifts <./history>`.  However, it
+is quite common that you may wish to calculate properties different to those included in
+the base version of **sage-analysis**.  For example, you may wish to investigate the
+time since a last major merger as a function of galaxy stellar mass.
+
+This page outlines how **sage-analysis** can be used to calculate any arbirtary
+properties.
 
 Default Properties
 ------------------
@@ -56,9 +62,17 @@ number of redshifts.
 Adding Your Own Properties
 --------------------------
 
+There are
+
+1. Set up Model.properties["fff"] field.
+2. Write the function to compute the property.
+3. Add the function to the calculations dict.
+4. Add the plotting function to the plot dict.
+
+
 **SAGE** operates by allowing each processor to write to its own file as
-galaxies are evolved through cosmic time.  **sage-analysis** processes galaxies
-properties on each of these files individually.  After calculating each
+galaxies are evolved through cosmic time.  **sage-analysis** processes galaxy
+properties of each of these files individually.  After calculating each
 property, they are stored in the
 :py:attr:`~sage_analysis.model.Model.properties` attribute and carried across
 files.  The pseudo-code looks like this:
@@ -75,4 +89,6 @@ files.  The pseudo-code looks like this:
 
         ...complete for other properties...
 
-
+To calculate each of these properties, a function named ``calc_<property_name>`` is
+called; for example, :py:func:`~sage_analysis.example_calcs.calc_SMF` is called to
+compute the stellar mass function of each **SAGE** file.
