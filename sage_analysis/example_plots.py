@@ -5,10 +5,13 @@ Here we show a myriad of functions that can be used to plot properties calculate
 
 We refer to :doc:`../user/plot` for more information on how plotting is handled.
 
-Author: Jacob Seiler
+Authors: (Jacob Seiler, Manodeep Sinha)
 """
 
 import matplotlib
+# Make the plotting scripts function without a 
+# valid DISPLAY variable -- MS 17/03/2020
+matplotlib.use('Agg') 
 from matplotlib import pyplot as plt
 import numpy as np
 
