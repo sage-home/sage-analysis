@@ -1,4 +1,4 @@
-|TRAVIS| |PyPI| |RTD| |MIT licensed|
+|PyPI| |TRAVIS| |RTD| |MIT licensed|
 
 sage-analysis
 =============
