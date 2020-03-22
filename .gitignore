@@ -2,7 +2,11 @@ __pycache__
 *egg-info*
 build/
 dist/
+.DS_store
 
 # Documentation with Sphinx #
 docs/build
 docs/make.bat
+
+# Test data
+sage_analysis/tests/data/
