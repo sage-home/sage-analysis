@@ -1,6 +1,6 @@
 #!/bin/bash
 cwd=$(pwd)
-datadir=data/
+datadir=test_data/
 
 # The bash way of figuring out the absolute path to this file
 # (irrespective of cwd). parent_path should be $ROOT/tests
@@ -24,7 +24,7 @@ if [[ $? != 0 ]]; then
 fi
 
 # If there isn't a Mini-Millennium data, download it.
-if [ ! -f correct-mini-millennium-output_z0.000_0 ]; then
+if [ ! -f test_data_z0.000_0 ]; then
 
     # To download the trees, we use either `wget` or `curl`. By default, we want to use `wget`.
     # However, if it isn't present, we will use `curl` with a few parameter flags.
@@ -55,7 +55,7 @@ if [ ! -f correct-mini-millennium-output_z0.000_0 ]; then
     fi
 
     # Get the data files.
-    wget "https://www.dropbox.com/s/n7wkkydqlyrhy59/mini-millennium-sage-correct-output.tar?dl=0" -O "mini-millennium-sage-correct-output.tar"
+    wget "https://www.dropbox.com/s/lud6k0m2zvcqmwj/mini-millennium-sage-correct-output.tar.gz?dl=0" -O "mini-millennium-sage-correct-output.tar"
     if [[ $? != 0 ]]; then
         echo "Could not download correct model output from the Manodeep Sinha's Dropbox...aborting."
         echo "Failed."
@@ -69,7 +69,7 @@ if [ ! -f correct-mini-millennium-output_z0.000_0 ]; then
         unalias wget
     fi
 
-    tar -xvf mini-millennium-sage-correct-output.tar
+    tar -xvzf mini-millennium-sage-correct-output.tar
     if [[ $? != 0 ]]; then
         echo "Could not untar the correct model output...aborting."
         echo "Failed."
@@ -78,6 +78,22 @@ if [ ! -f correct-mini-millennium-output_z0.000_0 ]; then
         exit 1
     fi
 
+    # The parameter file refers to SAGE output files as "test_sage" files. Rename the files to match this.
+    for file in *correct-mini-millennium-output*; do
+        mv $file ${file/correct-mini-millennium-output/test_sage}
+    done
+
 fi
+
+# The parameter file refers to "./tests/test_data/" for the output and input files.  Instead, we change these to just be "./".
+tmpfile="$(mktemp)"
+sed '/^OutputDir /s/.*$/OutputDir        .\//' mini-millennium.par > ${tmpfile}
+mv ${tmpfile} mini-millennium.par
+
+sed '/^SimulationDir /s/.*$/SimulationDir        .\//' mini-millennium.par > ${tmpfile}
+mv ${tmpfile} mini-millennium.par
+
+sed '/^FileWithSnapList /s/.*$/FileWithSnapList        .\/millennium.a_list/' mini-millennium.par > ${tmpfile}
+mv ${tmpfile} mini-millennium.par
 
 exit 0

@@ -36,7 +36,18 @@ class Model(object):
     data.
     """
 
-    def __init__(self, sample_size=1000):
+    def __init__(
+        self,
+        sage_file: str,
+        snapshot_to_plot: int,
+        IMF: str,
+        label: str,
+        sage_output_format: str,
+        first_file: int,
+        last_file: int,
+        num_output_files: int,
+        sample_size: int = 1000
+    ):
         """
         Sets the galaxy path and number of files to be read for a model. Also initialises
         the plot toggles that dictates which properties will be calculated.
@@ -50,19 +61,32 @@ class Model(object):
             :py:meth:`~init_scatter_properties`.
         """
 
+        # TODO: Add all of these as @setter and @getter params.
+        self._sage_file = sage_file
+        self._snapshot = int(snapshot_to_plot)
+        self._IMF = IMF
+        self._label = label
+        self._sage_output_format = sage_output_format
+        self._first_file = int(first_file)
+        self._last_file = int(last_file)
+        self._num_output_files = int(num_output_files)
+
         # Set default values. This needs to be done BEFORE the user specified params!
         self._sample_size = sample_size
         self.sSFRcut = -11.0  # The specific star formation rate above which a galaxy is
                               # 'star forming'.  Units are log10.
         self._plot_output_format = "png"  # By default, save as a PNG.
-        self._sage_file = None  # Will be updated later (if at all).
 
         self._bins = {}
         self._properties = {}
 
-        # Initialize this to 0.  If the output format is binary, then the user must
-        # specify the number of output files for us to calculate the volume processed.
-        self._num_output_files = 0
+    @property
+    def sage_file(self):
+        return self._sage_file
+
+    @sage_file.setter
+    def sage_file(self, sage_file: str):
+        self._sage_file = sage_file
 
     @property
     def num_output_files(self):

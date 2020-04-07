@@ -71,12 +71,12 @@ class SageBinaryData():
 
         # Need the snapshot to specify the name of the SAGE output file (if we're reading
         # the SAGE ini file).
-        if sage_file_to_read:
-            self._snapshot = snapshot_to_use
+        # if sage_file_to_read:
+        #    self._snapshot = snapshot_to_use
 
         # Use the SAGE parameter file to generate a bunch of attributes.
         if sage_file_to_read:
-            sage_dict = self.read_sage_params(sage_file_to_read, snapshot_to_use)
+            sage_dict = self.read_sage_params(sage_file_to_read, model._snapshot)
             self.sage_model_dict = sage_dict
 
 
@@ -152,13 +152,15 @@ class SageBinaryData():
                         SAGE_dict[split[0]] = split[1]
 
         except FileNotFoundError:
-            raise FileNotFoundError("Could not file SAGE ini file {0}".format(fname))
+            raise FileNotFoundError(f"Could not find SAGE ini file {sage_file_path}")
 
         # Now we have all the fields, rebuild the dictionary to be exactly what we need for
         # initialising the model.
         model_dict = {}
 
-        alist = np.loadtxt(SAGE_dict["FileWithSnapList"])
+        model_dict["parameter_dirpath"] = os.path.dirname(sage_file_path)
+
+        alist = np.loadtxt(f"{model_dict['parameter_dirpath']}/{SAGE_dict['FileWithSnapList']}")
         redshifts = 1.0 / alist - 1.0
         model_dict["redshifts"] = redshifts
 
@@ -261,11 +263,10 @@ class SageBinaryData():
 
         for file_num in range(model.first_file, model.last_file+1):
 
-            fname = "{0}_{1}".format(model.model_path, file_num)
+            fname = f"{model.parameter_dirpath}/{model.model_path}_{file_num}"
 
             if not os.path.isfile(fname):
-                print("File\t{0} \tdoes not exist!".format(fname))
-                raise FileNotFoundError
+                raise FileNotFoundError(f"Could not file {fname}")
 
             with open(fname, "rb") as f:
                 Ntrees = np.fromfile(f, np.dtype(np.int32),1)[0]
@@ -313,11 +314,12 @@ class SageBinaryData():
         the ``tqdm`` progress bar if ``debug=True``.
         """
 
-        fname = "{0}_{1}".format(model.model_path, file_num)
+        fname = f"{model.parameter_dirpath}/{model.model_path}_{file_num}"
 
         # We allow the skipping of files.  If we skip, don't increment a counter.
+
         if not os.path.isfile(fname):
-            print("File\t{0} \tdoes not exist!".format(fname))
+            print(f"File\t{fname} \tdoes not exist!")
             return None
 
         with open(fname, "rb") as f:
@@ -334,16 +336,16 @@ class SageBinaryData():
             gals = np.fromfile(f, self.galaxy_struct, num_gals)
 
             # If we're using the `tqdm` package, update the progress bar.
-            if pbar:
+            if pbar is not None:
                 pbar.set_postfix(file=fname, refresh=False)
                 pbar.update(num_gals)
 
         if debug:
             print("")
-            print("File {0} contained {1} trees with {2} galaxies".format(fname, Ntrees, num_gals))
+            print(f"File {fname} contained {Ntrees} trees with {num_gals} galaxies")
 
             w = np.where(gals["StellarMass"] > 1.0)[0]
-            print("{0} of these galaxies have mass greater than 10^10Msun/h".format(len(w)))
+            print(f"{len(w)} of these galaxies have mass greater than 10^10Msun/h")
 
         if plot_galaxies:
 
@@ -351,7 +353,7 @@ class SageBinaryData():
 
             # Show the distribution of galaxies in 3D.
             pos = gals["Pos"][:]
-            output_file = "./galaxies_{0}.{1}".format(file_num, model.plot_output_format)
+            output_file = f"./galaxies_{file_num}.{model.plot_output_format}"
             plot_spatial_3d(pos, output_file, self.box_size)
 
         # For the HDF5 file, some data sets have dimensions Nx1 rather than Nx3
@@ -364,7 +366,7 @@ class SageBinaryData():
 
         for field in multidim_fields:
             for dim_num, dim_name in enumerate(dim_names):
-                dim_field = "{0}{1}".format(field, dim_name)
+                dim_field = f"{field}{dim_name}"
                 gals = rfn.rec_append_fields(gals, dim_field,
                                              gals[field][:, dim_num])
 
