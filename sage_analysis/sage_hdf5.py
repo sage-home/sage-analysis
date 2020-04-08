@@ -11,6 +11,8 @@ own Data Class to ingest data.
 Author: Jacob Seiler.
 """
 
+import os
+
 import numpy as np
 import h5py
 
@@ -59,14 +61,14 @@ class SageHdf5Data():
         # The user may not have read the SAGE parameter file.  If so, they needed to have
         # specifed the path to the model file.
         if sage_file_to_read:
-            my_model_path = sage_dict["_model_path"]
+            my_model_path = sage_dict["model_path"]
         elif model_path:
             my_model_path = model_path
         else:
-            print("A Model data class was instantiated without either specifying the "
-                  "SAGE parameter file or a specific output file to read.  One of these "
-                  "MUST be specified.")
-            print(model)
+            msg = "A Model data class was instantiated without either specifying the " \
+                  "SAGE parameter file or a specific output file to read.  One of these " \
+                  "MUST be specified."
+            raise ValueError(msg)
 
         model.hdf5_file = h5py.File(my_model_path, "r")
 
@@ -159,21 +161,21 @@ class SageHdf5Data():
         # Now we have all the fields, rebuild the dictionary to be exactly what we need for
         # initialising the model.
         model_dict = {}
+        model_dict["parameter_dirpath"] = os.path.dirname(sage_file_path)
 
-        alist = np.loadtxt(SAGE_dict["FileWithSnapList"])
+        alist = np.loadtxt(f"{model_dict['parameter_dirpath']}/{SAGE_dict['FileWithSnapList']}")
         redshifts = 1.0 / alist - 1.0
         model_dict["redshifts"] = redshifts
 
-        model_path = f"{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}" \
-                     f".hdf5"
+        model_path = f"{model_dict['parameter_dirpath']}/{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}.hdf5"
 
-        model_dict["_model_path"] = model_path
+        model_dict["model_path"] = model_path
 
-        model_dict["_output_path"] = f"{SAGE_dict['OutputDir']}/plots/"
+        model_dict["output_path"] = f"{SAGE_dict['OutputDir']}/plots/"
 
-        model_dict["_hubble_h"] = float(SAGE_dict["Hubble_h"])
-        model_dict["_box_size"] = float(SAGE_dict["BoxSize"])
-        model_dict["_num_sim_tree_files"] = int(SAGE_dict["NumSimulationTreeFiles"])
+        model_dict["hubble_h"] = float(SAGE_dict["Hubble_h"])
+        model_dict["box_size"] = float(SAGE_dict["BoxSize"])
+        model_dict["num_sim_tree_files"] = int(SAGE_dict["NumSimulationTreeFiles"])
 
         return model_dict
 

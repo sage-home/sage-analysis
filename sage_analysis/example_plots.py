@@ -8,10 +8,12 @@ We refer to :doc:`../user/plot` for more information on how plotting is handled.
 Authors: (Jacob Seiler, Manodeep Sinha)
 """
 
+from typing import List
+
 import matplotlib
-# Make the plotting scripts function without a 
+# Make the plotting scripts function without a
 # valid DISPLAY variable -- MS 17/03/2020
-matplotlib.use('Agg') 
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import numpy as np
 
@@ -75,7 +77,7 @@ def adjust_legend(ax, location="upper right", scatter_plot=0):
                 handle.set_sizes([10.0])
 
 
-def plot_SMF(models, plot_output_path, plot_output_format=".png", plot_sub_populations=False):
+def plot_SMF(models, plot_output_path, plot_output_format=".png", plot_sub_populations=False) -> matplotlib.figure.Figure:
     """
     Plots the stellar mass function for the specified models.
 
@@ -160,8 +162,10 @@ def plot_SMF(models, plot_output_path, plot_output_format=".png", plot_sub_popul
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
 
-def plot_temporal_SMF(models, plot_output_path, plot_output_format=".png"):
+
+def plot_temporal_SMF(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
     """
     Plots the evolution of the stellar mass function for the specified models. Unlike
     ``plot_SMF()`` which only plots a SMF at a single snapshot, this function loops over
@@ -232,8 +236,10 @@ def plot_temporal_SMF(models, plot_output_path, plot_output_format=".png"):
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
 
-def plot_BMF(models, plot_output_path, plot_output_format=".png"):
+
+def plot_BMF(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
     """
     Plots the baryonic mass function for the specified models. This is the mass
     function for the stellar mass + cold gas.
@@ -299,8 +305,10 @@ def plot_BMF(models, plot_output_path, plot_output_format=".png"):
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
 
-def plot_GMF(models, plot_output_path, plot_output_format=".png"):
+
+def plot_GMF(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
     """
     Plots the gas mass function for the specified models. This is the mass function for the cold gas.
 
@@ -365,8 +373,10 @@ def plot_GMF(models, plot_output_path, plot_output_format=".png"):
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
 
-def plot_BTF(models, plot_output_path, plot_output_format=".png"):
+
+def plot_BTF(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
     """
     Plots the baryonic Tully-Fisher relationship for the specified models.
 
@@ -421,8 +431,10 @@ def plot_BTF(models, plot_output_path, plot_output_format=".png"):
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
 
-def plot_sSFR(models, plot_output_path, plot_output_format=".png"):
+
+def plot_sSFR(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
     """
     Plots the specific star formation rate as a function of stellar mass for the specified
     models.
@@ -481,8 +493,10 @@ def plot_sSFR(models, plot_output_path, plot_output_format=".png"):
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
 
-def plot_gas_fraction(models, plot_output_path, plot_output_format=".png"):
+
+def plot_gas_fraction(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
     """
     Plots the fraction of baryons that are in the cold gas reservoir as a function of
     stellar mass for the specified models.
@@ -536,8 +550,10 @@ def plot_gas_fraction(models, plot_output_path, plot_output_format=".png"):
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
 
-def plot_metallicity(models, plot_output_path, plot_output_format=".png"):
+
+def plot_metallicity(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
     """
     Plots the metallicity as a function of stellar mass for the speicifed models.
 
@@ -595,8 +611,10 @@ def plot_metallicity(models, plot_output_path, plot_output_format=".png"):
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
 
-def plot_bh_bulge(models, plot_output_path, plot_output_format=".png"):
+
+def plot_bh_bulge(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
     """
     Plots the black-hole bulge relationship for the specified models.
 
@@ -651,9 +669,11 @@ def plot_bh_bulge(models, plot_output_path, plot_output_format=".png"):
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
+
 
 def plot_quiescent(models, plot_output_path, plot_output_format=".png",
-                   plot_sub_populations=False):
+                   plot_sub_populations=False) -> matplotlib.figure.Figure:
     """
     Plots the fraction of galaxies that are quiescent as a function of stellar mass for the
     specified models.  The quiescent cut is defined by ``Model.sSFRcut``.
@@ -722,9 +742,11 @@ def plot_quiescent(models, plot_output_path, plot_output_format=".png",
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
+
 
 def plot_bulge_fraction(models, plot_output_path, plot_output_format=".png",
-                        plot_var=False):
+                        plot_var=False) -> matplotlib.figure.Figure:
     """
     Plots the fraction of the stellar mass that is located in the bulge/disk as a function
     of stellar mass for the specified models.
@@ -802,9 +824,11 @@ def plot_bulge_fraction(models, plot_output_path, plot_output_format=".png",
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
+
 
 def plot_baryon_fraction(models, plot_output_path, plot_output_format=".png",
-                         plot_sub_populations=False):
+                         plot_sub_populations=False) -> matplotlib.figure.Figure:
     """
     Plots the total baryon fraction as afunction of halo mass for the specified models.
 
@@ -880,8 +904,10 @@ def plot_baryon_fraction(models, plot_output_path, plot_output_format=".png",
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
 
-def plot_reservoirs(models, plot_output_path, plot_output_format=".png"):
+
+def plot_reservoirs(models, plot_output_path, plot_output_format=".png") -> List[matplotlib.figure.Figure]:
     """
     Plots the mass in each reservoir as a function of halo mass for the
     specified models.
@@ -908,6 +934,7 @@ def plot_reservoirs(models, plot_output_path, plot_output_format=".png"):
     """
 
     # This scatter plot will be messy so we're going to make one for each model.
+    figs = []
     for (model_num, model) in enumerate(models):
 
         fig = plt.figure()
@@ -943,8 +970,12 @@ def plot_reservoirs(models, plot_output_path, plot_output_format=".png"):
         print(f"Saved file to {output_file}")
         plt.close()
 
+        figs.append(fig)
 
-def plot_spatial(models, plot_output_path, plot_output_format=".png"):
+    return figs
+
+
+def plot_spatial(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
     """
     Plots the spatial distribution of the galaxies for specified models.
 
@@ -1025,8 +1056,10 @@ def plot_spatial(models, plot_output_path, plot_output_format=".png"):
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
 
-def plot_spatial_3d(pos, output_file, box_size):
+
+def plot_spatial_3d(pos, output_file, box_size) -> matplotlib.figure.Figure:
     """
     Plots the 3D spatial distribution of galaxies.
 
@@ -1075,8 +1108,10 @@ def plot_spatial_3d(pos, output_file, box_size):
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
 
-def plot_SMF_z(models, plot_output_path, plot_output_format=".png"):
+
+def plot_SMF_z(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
     """
     Plots the evolution of the stellar mass function for the specified models.
     This function loops over the value of ``model.SMF_snaps`` and plots and the SMFs at
@@ -1147,8 +1182,10 @@ def plot_SMF_z(models, plot_output_path, plot_output_format=".png"):
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
 
-def plot_SFRD_z(models, plot_output_path, plot_output_format=".png"):
+
+def plot_SFRD_z(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
     """
     Plots the evolution of star formation rate density for the specified models.
 
@@ -1206,8 +1243,10 @@ def plot_SFRD_z(models, plot_output_path, plot_output_format=".png"):
     print("Saved file to {0}".format(output_file))
     plt.close()
 
+    return fig
 
-def plot_SMD_z(models, plot_output_path, plot_output_format=".png"):
+
+def plot_SMD_z(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
     """
     Plots the evolution of stellar mass density for the specified models.
 
@@ -1267,3 +1306,5 @@ def plot_SMD_z(models, plot_output_path, plot_output_format=".png"):
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
+
+    return fig

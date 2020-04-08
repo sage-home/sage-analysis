@@ -9,4 +9,9 @@ docs/build
 docs/make.bat
 
 # Test data
-sage_analysis/tests/data/
+sage_analysis/tests/test_data/generated_plots/
+sage_analysis/tests/test_data/*_0
+sage_analysis/tests/test_data/*.hdf5
+sage_analysis/tests/test_data/*.tar
+sage_analysis/tests/test_data/*.par
+sage_analysis/tests/test_data/*.a_list

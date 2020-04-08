@@ -24,7 +24,7 @@ if [[ $? != 0 ]]; then
 fi
 
 # If there isn't a Mini-Millennium data, download it.
-if [ ! -f test_data_z0.000_0 ]; then
+if [ ! -f correct-mini-millennium-output_z0.000_0 ]; then
 
     # To download the trees, we use either `wget` or `curl`. By default, we want to use `wget`.
     # However, if it isn't present, we will use `curl` with a few parameter flags.
@@ -78,15 +78,14 @@ if [ ! -f test_data_z0.000_0 ]; then
         exit 1
     fi
 
-    # The parameter file refers to SAGE output files as "test_sage" files. Rename the files to match this.
-    for file in *correct-mini-millennium-output*; do
-        mv $file ${file/correct-mini-millennium-output/test_sage}
-    done
-
 fi
 
-# The parameter file refers to "./tests/test_data/" for the output and input files.  Instead, we change these to just be "./".
+# The parameter file refers to SAGE output files as "test_sage" files. However, the data has been saved using 'correct-mini-millennium-output'.
 tmpfile="$(mktemp)"
+sed '/^FileNameGalaxies /s/.*$/FileNameGalaxies        correct-mini-millennium-output/' mini-millennium.par > ${tmpfile}
+mv ${tmpfile} mini-millennium.par
+
+# The parameter file refers to "./tests/test_data/" for the output and input files.  Instead, we change these to just be "./".
 sed '/^OutputDir /s/.*$/OutputDir        .\//' mini-millennium.par > ${tmpfile}
 mv ${tmpfile} mini-millennium.par
 
