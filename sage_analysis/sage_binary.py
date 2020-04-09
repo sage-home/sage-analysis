@@ -10,11 +10,14 @@ own Data Class to ingest data.
 
 Author: Jacob Seiler.
 """
-
+import logging
 from sage_analysis.model import Model
 
 import numpy as np
 import os
+
+logger = logging.getLogger(__name__)
+
 
 class SageBinaryData():
     """
@@ -24,7 +27,7 @@ class SageBinaryData():
     :py:attr:`~sage_analysis.model.Model.sage_output_format` is ``sage_binary``.
     """
 
-    def __init__(self, model, num_output_files, sage_file_to_read=None,
+    def __init__(self, model, sage_file_to_read=None,
                  snapshot_to_use=None):
         """
         Instantiates the Data Class for reading in **SAGE** binary data. In particular,
@@ -33,10 +36,6 @@ class SageBinaryData():
         model: :py:class:`~sage_analysis.model.Model` instance
             The model that this data class is associated with; this class will read the
             data for this model.
-
-        num_output_files: int
-            The number of files that **SAGE** wrote out when simulating ``model``. This is
-            generally equal to the number of processors used to run **SAGE**.
 
         sage_file_to_read: string, optional
             Specifies the **SAGE** file to be read and used to update the
@@ -52,7 +51,37 @@ class SageBinaryData():
             be called before any reading of data is done.
         """
 
+        logger.info("Reading using SAGE binary output format.")
+
         self.get_galaxy_struct()
+
+        # Need the snapshot to specify the name of the SAGE output file (if we're reading
+        # the SAGE ini file).
+        # if sage_file_to_read:
+        #    self._snapshot = snapshot_to_use
+
+        # Use the SAGE parameter file to generate a bunch of attributes.
+        if sage_file_to_read:
+            sage_dict = self.read_sage_params(sage_file_to_read, model._snapshot)
+            self.sage_model_dict = sage_dict
+            logger.info(f"The read SAGE parameters are {sage_dict}")
+
+
+
+    def determine_volume_analysed(self, model: Model) -> float:
+        """
+        Determines the volume analysed. This can be smaller than the total simulation box.
+
+        Parameters
+        ----------
+        model : :py:class:`~sage_analysis.model.Model` instance
+            The model that this data class is associated with.
+
+        Returns
+        -------
+        volume : float
+            The numeric volume being processed during this run of the code in (Mpc/h)^3.
+        """
 
         # To properly scale properties that use the simulation volume (e.g., SMF), we need
         # to know how much of the volume this model is analysing.  SAGE is formulated such
@@ -67,17 +96,16 @@ class SageBinaryData():
         # Importantly: There is no way for the binary output of SAGE to know this factor!
         # Hence, if the user is running in binary mode, they MUST specify the total number
         # of files that SAGE output (i.e., the number of processors they ran SAGE with).
-        model._num_output_files = num_output_files
+        frac_volume_analysed = (model._last_file - model._first_file + 1) / model._num_sage_output_files
+        volume = pow(model._box_size, 3) * frac_volume_analysed
 
-        # Need the snapshot to specify the name of the SAGE output file (if we're reading
-        # the SAGE ini file).
-        # if sage_file_to_read:
-        #    self._snapshot = snapshot_to_use
+        logger.info(
+            f"The files read is [{model._first_file}, {model._last_file}] with a total number of "
+            f"{model._num_sage_output_files}; resulting a volume fraction analysed of {frac_volume_analysed}.\nThe "
+            f"box size is {model._box_size} (Mpc/h) yielding a analysed volume of {volume} (Mpc/h)^3."
+        )
 
-        # Use the SAGE parameter file to generate a bunch of attributes.
-        if sage_file_to_read:
-            sage_dict = self.read_sage_params(sage_file_to_read, model._snapshot)
-            self.sage_model_dict = sage_dict
+        return volume
 
 
     def read_sage_params(self, sage_file_path, snapshot_to_use=None):
@@ -158,11 +186,11 @@ class SageBinaryData():
         # initialising the model.
         model_dict = {}
 
-        model_dict["parameter_dirpath"] = os.path.dirname(sage_file_path)
+        model_dict["_parameter_dirpath"] = os.path.dirname(sage_file_path)
 
-        alist = np.loadtxt(f"{model_dict['parameter_dirpath']}/{SAGE_dict['FileWithSnapList']}")
+        alist = np.loadtxt(f"{model_dict['_parameter_dirpath']}/{SAGE_dict['FileWithSnapList']}")
         redshifts = 1.0 / alist - 1.0
-        model_dict["redshifts"] = redshifts
+        model_dict["_redshifts"] = redshifts
 
         if snapshot_to_use:
             output_tag = f"_z{redshifts[snapshot_to_use]:.3f}"

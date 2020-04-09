@@ -11,10 +11,18 @@ own Data Class to ingest data.
 Author: Jacob Seiler.
 """
 
+import warnings
+
+from sage_analysis.model import Model
+from typing import Dict, Any, Optional
+import logging
 import os
 
 import numpy as np
 import h5py
+
+
+logger = logging.getLogger(__name__)
 
 ## DO NOT TOUCH ##
 sage_data_version = "1.00"
@@ -53,15 +61,21 @@ class SageHdf5Data():
             ``None``).
         """
 
+        logger.info("Reading using SAGE HDF5 output format.")
+
         # Use the SAGE parameter file to generate a bunch of attributes.
         if sage_file_to_read:
             sage_dict = self.read_sage_params(sage_file_to_read)
-            self.sage_model_dict = sage_dict
+        else:
+            sage_dict = None
+
+        self.sage_model_dict = sage_dict
+        logger.info(f"The read SAGE parameters are {sage_dict}")
 
         # The user may not have read the SAGE parameter file.  If so, they needed to have
         # specifed the path to the model file.
         if sage_file_to_read:
-            my_model_path = sage_dict["model_path"]
+            my_model_path = sage_dict["_model_path"]
         elif model_path:
             my_model_path = model_path
         else:
@@ -72,8 +86,7 @@ class SageHdf5Data():
 
         model.hdf5_file = h5py.File(my_model_path, "r")
 
-        # Due to how attributes are created in C, they will need to be decoded to get cast
-        # to a string.
+        # Due to how attributes are created in C, they will need to be decoded to get cast to a string.
         model.sage_version = model.hdf5_file["Header"]["Misc"].attrs["sage_version"].decode("ascii")
         model.sage_data_version = model.hdf5_file["Header"]["Misc"].attrs["sage_data_version"].decode("ascii")
 
@@ -86,8 +99,80 @@ class SageHdf5Data():
                   model.sage_data_version)
             raise ValueError(msg)
 
-        model.num_output_files = model.hdf5_file["Header"]["Misc"].attrs["num_cores"]
+        # Finally, perform some checks to ensure that the data in ``model`` is compatible with our assumptions
+        # regarding the HDF5 file.
+        self._check_model_compatibility(model, sage_dict)
 
+        model._num_output_files = model.hdf5_file["Header"]["Misc"].attrs["num_cores"]
+
+    def _check_model_compatibility(self, model: Model, sage_dict: Optional[Dict[str, Any]]) -> None:
+        """
+        Ensures that the attributes in the :py:class:`~sage_analysis.model.Model` instance are compatible with the
+        variables read from the **SAGE** parameter file (if read at all).
+
+        Parameters
+        ----------
+        model : :py:class:`~sage_analysis.model.Model` instance
+            The model that this data class is associated with.
+
+        sage_dict : optional, dict[str, Any]
+            A dictionary containing all of the fields read from the **SAGE** parameter file.
+
+        Warnings
+        --------
+        UserWarning
+            Raised if the user initialized ``Model`` with a value of
+            :py:attr:`~sage_analysis.model.Model.num_sage_output_files` that is different to the value specified in the
+            HDF5 file.
+        """
+
+        if model._num_sage_output_files is not None:
+            logger.debug("It is not required to specify the number of SAGE output files when analysing HDF5 output.")
+
+            # Check to ensure that there isn't a mismatch in the number specified and the number in the file.
+            hdf5_num_files = model.hdf5_file["Header"]["Misc"].attrs["num_cores"]
+            if model._num_sage_output_files != hdf5_num_files:
+                warnings.warn(
+                    f"The number of SAGE output files according to the master HDF5 file is {hdf5_num_files}."
+                    f" However, ``analyse_sage_output`` was called with {model._num_sage_output_files}. "
+                    f"Using the number of files from the HDF5 file as the correct value."
+                )
+
+    def determine_volume_analysed(self, model: Model) -> float:
+        """
+        Determines the volume analysed. This can be smaller than the total simulation box.
+
+        Parameters
+        ----------
+        model : :py:class:`~sage_analysis.model.Model` instance
+            The model that this data class is associated with.
+
+        Returns
+        -------
+        volume : float
+            The numeric volume being processed during this run of the code in (Mpc/h)^3.
+        """
+
+        # Each output file may have processed a different fraction of the total volume. Hence to determine the total
+        # volume processed, loop through all of the files that we're analysing and use their volume fractions.
+        total_volume_frac_processed = 0.0
+
+        for core_idx in range(model._first_file, model._last_file + 1):
+
+            core_key = "Core_{0}".format(core_idx)
+            frac_processed = model.hdf5_file[core_key]["Header"]["Runtime"].attrs["frac_volume_processed"]
+            total_volume_frac_processed += frac_processed
+            logger.info(
+                f"{core_key} processed {frac_processed} fraction of the volume. Total is {total_volume_frac_processed}"
+            )
+
+        volume = pow(model._box_size, 3) * total_volume_frac_processed
+        logger.info(
+            f"Total fraction of volume processed is {total_volume_frac_processed}.  Box size is "
+            f"{model._box_size}. The size of the volume processed is hence {volume} (Mpc/h)^3."
+        )
+
+        return volume
 
     def read_sage_params(self, sage_file_path):
         """
@@ -161,21 +246,22 @@ class SageHdf5Data():
         # Now we have all the fields, rebuild the dictionary to be exactly what we need for
         # initialising the model.
         model_dict = {}
-        model_dict["parameter_dirpath"] = os.path.dirname(sage_file_path)
+        model_dict["_parameter_dirpath"] = os.path.dirname(sage_file_path)
 
-        alist = np.loadtxt(f"{model_dict['parameter_dirpath']}/{SAGE_dict['FileWithSnapList']}")
+        alist = np.loadtxt(f"{model_dict['_parameter_dirpath']}/{SAGE_dict['FileWithSnapList']}")
         redshifts = 1.0 / alist - 1.0
-        model_dict["redshifts"] = redshifts
+        model_dict["_redshifts"] = redshifts
 
-        model_path = f"{model_dict['parameter_dirpath']}/{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}.hdf5"
+        model_path = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}.hdf5"
 
-        model_dict["model_path"] = model_path
+        model_dict["_model_path"] = model_path
 
-        model_dict["output_path"] = f"{SAGE_dict['OutputDir']}/plots/"
+        model_dict["_output_path"] = f"{SAGE_dict['OutputDir']}/plots/"
 
-        model_dict["hubble_h"] = float(SAGE_dict["Hubble_h"])
-        model_dict["box_size"] = float(SAGE_dict["BoxSize"])
-        model_dict["num_sim_tree_files"] = int(SAGE_dict["NumSimulationTreeFiles"])
+        model_dict["_hubble_h"] = float(SAGE_dict["Hubble_h"])
+        model_dict["_box_size"] = float(SAGE_dict["BoxSize"])
+        model_dict["_num_sim_tree_files"] = int(SAGE_dict["NumSimulationTreeFiles"])
+
 
         return model_dict
 

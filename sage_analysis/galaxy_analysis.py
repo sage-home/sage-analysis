@@ -30,8 +30,8 @@ def analyse_sage_output(
     sage_output_formats: Optional[List[str]] = None,
     first_files_to_plot: Optional[List[int]] = None,
     last_files_to_plot: Optional[List[int]] = None,
-    num_output_files_to_plot: Optional[List[int]] = None,
-    plot_toggles: Optional[Dict[str, int]] = None,
+    num_sage_output_files: Optional[List[int]] = None,
+    plot_toggles: Optional[Dict[str, bool]] = None,
     plot_output_format: str = "png",
     plot_output_path: str = "./plots_new",
 ) -> List[matplotlib.figure.Figure]:
@@ -54,8 +54,8 @@ def analyse_sage_output(
     if last_files_to_plot is None:
         last_files_to_plot = [0]
 
-    if num_output_files_to_plot is None:
-        num_output_files_to_plot = [1]
+    if num_sage_output_files is None:
+        num_sage_output_files = [None]
 
     parameters = [
         par_fnames,
@@ -65,33 +65,33 @@ def analyse_sage_output(
         sage_output_formats,
         first_files_to_plot,
         last_files_to_plot,
-        num_output_files_to_plot
-    ]
-
-    # ``parameters`` is a matrix of parameters with each "column" specifying the parameters for a single model. Hence
-    # we want to iteratre through column-wise and use these to build the ``Model`` class instance.
-    parameters = np.array(parameters)
-    models_to_plot = [
-        Model(*model_parameters) for model_parameters in parameters.T
+        num_sage_output_files,
     ]
 
     if plot_toggles is None:
         plot_toggles = {
-            "SMF" : 1,  # Stellar mass function.
-            "BMF" : 1,  # Baryonic mass function.
-            "GMF" : 1,  # Gas mass function (cold gas).
-            "BTF" : 1,  # Baryonic Tully-Fisher.
-            "sSFR" : 1,  # Specific star formation rate.
-            "gas_fraction" : 1,  # Fraction of galaxy that is cold gas.
-            "metallicity" : 1,  # Metallicity scatter plot.
-            "bh_bulge" : 1,  # Black hole-bulge relationship.
-            "quiescent" : 1,  # Fraction of galaxies that are quiescent.
-            "bulge_fraction" : 1,  # Fraction of galaxies that are bulge/disc dominated.
-            "baryon_fraction" : 1,  # Fraction of baryons in galaxy/reservoir.
-            "reservoirs" : 1,  # Mass in each reservoir.
-            "spatial" : 1   # Spatial distribution of galaxies.
+            "SMF" : True,  # Stellar mass function.
+            "BMF" : True,  # Baryonic mass function.
+            "GMF" : True,  # Gas mass function (cold gas).
+            "BTF" : True,  # Baryonic Tully-Fisher.
+            "sSFR" : True,  # Specific star formation rate.
+            "gas_fraction" : True,  # Fraction of galaxy that is cold gas.
+            "metallicity" : True,  # Metallicity scatter plot.
+            "bh_bulge" : True,  # Black hole-bulge relationship.
+            "quiescent" : True,  # Fraction of galaxies that are quiescent.
+            "bulge_fraction" : True,  # Fraction of galaxies that are bulge/disc dominated.
+            "baryon_fraction" : True,  # Fraction of baryons in galaxy/reservoir.
+            "reservoirs" : True,  # Mass in each reservoir.
+            "spatial" : True   # Spatial distribution of galaxies.
         }
 
+
+    # ``parameters`` is a matrix of parameters with each "column" specifying the parameters for a single model. Hence
+    # we want to iteratre through column-wise and use these to build the ``Model`` class instance. Here, the ``map``
+    # function does this tranpose into a column-wise iterable.
+    models_to_plot = [
+        Model(*model_parameters, plot_toggles) for model_parameters in map(list, zip(*parameters))
+    ]
 
     # Generate directory for output plots.
     if not os.path.exists(plot_output_path):
@@ -105,16 +105,17 @@ def analyse_sage_output(
         # Each SAGE output has a specific class written to read in the data.
         if model.sage_output_format == "sage_binary":
             model.data_class = SageBinaryData(
-                model, model.num_output_files, model.sage_file, model.snapshot
+                model, model.sage_file, model.snapshot
             )
         elif model.sage_output_format == "sage_hdf5":
             model.data_class = SageHdf5Data(model, model.sage_file)
 
         # The data class has read the SAGE ini file.  Update the model with the parameters
         # read and those specified by the user.
-        model.update_attributes({}, plot_toggles)
+        for key, value in model.data_class.sage_model_dict.items():
+            setattr(model, key, value)
 
-        #my_model.data_class.set_cosmology(my_model)
+        model.volume = model.data_class.determine_volume_analysed(model)
 
         # Some properties require the stellar mass function to normalize their values. For
         # these, the SMF plot toggle is explicitly required.
