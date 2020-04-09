@@ -25,8 +25,8 @@ def analyse_sage_output(
     IMFs: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
     sage_output_formats: Optional[List[str]] = None,
-    first_files_to_plot: Optional[List[int]] = None,
-    last_files_to_plot: Optional[List[int]] = None,
+    first_files_to_analyse: Optional[List[int]] = None,
+    last_files_to_analyse: Optional[List[int]] = None,
     num_sage_output_files: Optional[List[int]] = None,
     output_format_data_classes: Optional[Dict[str, Any]] = None,
     random_seeds: Optional[List[int]] = None,
@@ -35,26 +35,38 @@ def analyse_sage_output(
     plot_output_path: str = "./plots_new",
     generate_plots: bool = True,
 ) -> List[Model]:
+    """
+    snapshots_to_plot : list of ints, optional
+        If not specified, uses the lowest redshift snapshot as specified by the redshift file read from ``sage_file``.
+
+    first_files_to_analyse, last_files_to_analyse : list of ints, optional
+        The output **SAGE** files to be analysed.  This is an inclusive range, with the output files analyzed ranging
+        from ``[first_file_to_analyse, last_file_to_analyse]`` for each model.
+
+        If the corresponding entry in ``sage_output_format`` is ``sage_binary`` (whether passed explicitly or read from
+        ``sage_file``), these two variables **MUST** be specified.  Otherwise, if not specified, will analyse **ALL**
+        output HDF5 files.
+    """
 
     num_models = len(sage_parameter_fnames)
 
     if snapshots_to_plot is None:
-        snapshots_to_plot = [63] * num_models
+        snapshots_to_plot = [None] * num_models
 
     if IMFs is None:
         IMFs = ["Chabrier"] * num_models
 
     if labels is None:
-        labels = ["Mini-Millennium"] * num_models
+        labels = [None] * num_models
 
     if sage_output_formats is None:
         sage_output_formats = [None] * num_models
 
-    if first_files_to_plot is None:
-        first_files_to_plot = [0] * num_models
+    if first_files_to_analyse is None:
+        first_files_to_analyse = [None] * num_models
 
-    if last_files_to_plot is None:
-        last_files_to_plot = [0] * num_models
+    if last_files_to_analyse is None:
+        last_files_to_analyse = [None] * num_models
 
     if num_sage_output_files is None:
         num_sage_output_files = [None] * num_models
@@ -71,8 +83,8 @@ def analyse_sage_output(
         IMFs,
         labels,
         sage_output_formats,
-        first_files_to_plot,
-        last_files_to_plot,
+        first_files_to_analyse,
+        last_files_to_analyse,
         num_sage_output_files,
         random_seeds,
     ]
@@ -133,9 +145,30 @@ def analyse_sage_output(
         model.data_class = output_format_data_classes[model.sage_output_format](model, model.sage_file)
 
         # The data class has read the SAGE ini file.  Update the model with the parameters
-        # read and those specified by the user.
+        # read and those specified by the user. We will also log some of these.
         for key, value in model.data_class.sage_model_dict.items():
+
+            # Check if the attribute has already been set to a non-default value.
+            try:
+                attr_value = getattr(model, key)
+            except AttributeError:
+                pass
+            else:
+                if attr_value is not None:
+                    continue
             setattr(model, key, value)
+
+            default_messages = {
+                "_snapshot": f"Snapshot to analyse not specified; using the final snapshot of the simulation ({value})",
+                "_label": f"Label not specified; using the FileNameGalaxies from parameter file ({value})",
+                "_first_file_to_analyse": f"First file to analyse not specified; using {value}",
+                "_last_file_to_analyse": f"Last file to analyse not specified; using num cores SAGE ran with minus 1 ({value})",
+            }
+
+            try:
+                logger.info(default_messages[key])
+            except KeyError:
+                pass
 
         model.volume = model.data_class.determine_volume_analysed(model)
 

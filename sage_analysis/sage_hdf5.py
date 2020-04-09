@@ -80,6 +80,11 @@ class SageHdf5Data():
 
         model._num_output_files = model.hdf5_file["Header"]["Misc"].attrs["num_cores"]
 
+        # The cores to analyze may have a default value.  To allow for this, explicitly set these as if they were read
+        # from the parameter file.
+        self.sage_model_dict["_first_file_to_analyse"] = 0
+        self.sage_model_dict["_last_file_to_analyse"] = model._num_output_files - 1
+
     def _check_model_compatibility(self, model: Model, sage_dict: Optional[Dict[str, Any]]) -> None:
         """
         Ensures that the attributes in the :py:class:`~sage_analysis.model.Model` instance are compatible with the
@@ -132,7 +137,7 @@ class SageHdf5Data():
         # volume processed, loop through all of the files that we're analysing and use their volume fractions.
         total_volume_frac_processed = 0.0
 
-        for core_idx in range(model._first_file, model._last_file + 1):
+        for core_idx in range(model._first_file_to_analyse, model._last_file_to_analyse + 1):
 
             core_key = "Core_{0}".format(core_idx)
             frac_processed = model.hdf5_file[core_key]["Header"]["Runtime"].attrs["frac_volume_processed"]
@@ -183,7 +188,7 @@ class SageHdf5Data():
         ngals = 0
         snap_key = "Snap_{0}".format(model.snapshot)
 
-        for core_idx in range(model.first_file, model.last_file + 1):
+        for core_idx in range(model.first_file_to_analyse, model.last_file_to_analyse + 1):
 
             core_key = "Core_{0}".format(core_idx)
             ngals += model.hdf5_file[core_key][snap_key].attrs["num_gals"]

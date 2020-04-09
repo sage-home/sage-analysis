@@ -78,11 +78,11 @@ class SageBinaryData():
         # Importantly: There is no way for the binary output of SAGE to know this factor!
         # Hence, if the user is running in binary mode, they MUST specify the total number
         # of files that SAGE output (i.e., the number of processors they ran SAGE with).
-        frac_volume_analysed = (model._last_file - model._first_file + 1) / model._num_sage_output_files
+        frac_volume_analysed = (model._last_file_to_analyse - model._first_file_to_analyse + 1) / model._num_sage_output_files
         volume = pow(model._box_size, 3) * frac_volume_analysed
 
         logger.info(
-            f"The files read is [{model._first_file}, {model._last_file}] with a total number of "
+            f"The files read is [{model._first_file_to_analyse}, {model._last_file_to_analyse}] with a total number of "
             f"{model._num_sage_output_files}; resulting a volume fraction analysed of {frac_volume_analysed}.\nThe "
             f"box size is {model._box_size} (Mpc/h) yielding a analysed volume of {volume} (Mpc/h)^3."
         )
@@ -186,7 +186,7 @@ class SageBinaryData():
 
         num_gals = 0
 
-        for file_num in range(model.first_file, model.last_file+1):
+        for file_num in range(model.first_file_to_analyse, model.last_file_to_analyse+1):
 
             fname = f"{model.sage_data_path}_{file_num}"
 

@@ -284,12 +284,14 @@ def read_generic_sage_params(sage_file_path: str) -> Dict[str, Any]:
     # initialising the model.
     model_dict = {}
 
+    model_dict["_label"] = SAGE_dict["FileNameGalaxies"]
     model_dict["_output_format"] = SAGE_dict["OutputFormat"]
     model_dict["_parameter_dirpath"] = os.path.dirname(sage_file_path)
 
     alist = np.loadtxt(f"{model_dict['_parameter_dirpath']}/{SAGE_dict['FileWithSnapList']}")
     redshifts = 1.0 / alist - 1.0
     model_dict["_redshifts"] = redshifts
+    model_dict["_snapshot"] = len(alist) - 1  # By default, plot the final snapshot.
 
     base_sage_output_path = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}"
     model_dict["_base_sage_output_path"] = base_sage_output_path
