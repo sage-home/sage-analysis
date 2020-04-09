@@ -1,3 +1,6 @@
+from typing import Dict, Any, Optional
+import os
+
 import numpy as np
 
 def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args={}):
@@ -127,7 +130,12 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
     return func_dict
 
 
-def select_random_indices(inds, global_num_inds_available, global_num_inds_requested):
+def select_random_indices(
+    inds: np.ndarray,
+    global_num_inds_available: int,
+    global_num_inds_requested: int,
+    seed: Optional[int] = None,
+) -> np.ndarray:
     """
     Flag this with Manodeep to exactly use a descriptive docstring.
 
@@ -143,6 +151,9 @@ def select_random_indices(inds, global_num_inds_available, global_num_inds_reque
     global_num_inds_requested: int
         The total number of indices requested across all files.
 
+    seed : int, optional
+        If specified, seeds the random number generator with the specified seed.
+
     Returns
     -------
 
@@ -152,22 +163,22 @@ def select_random_indices(inds, global_num_inds_available, global_num_inds_reque
     Examples
     --------
     >>> import numpy as np
-    >>> np.random.seed(666)
+    >>> seed = 666
     >>> inds = np.arange(10)
     >>> global_num_inds_available = 100
     >>> global_num_inds_requested = 50 # Request less than the number of inds available
     ...                                # across all files, but more than is in this file.
-    >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested) # Returns a random subset.
+    >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested, seed) # Returns a random subset.
     array([2, 6, 9, 4, 3])
 
     >>> import numpy as np
-    >>> np.random.seed(666)
+    >>> seed = 666
     >>> inds = np.arange(30)
     >>> global_num_inds_available = 100
     >>> global_num_inds_requested = 10 # Request less than the number of inds available
     ...                                # across all files, and also less than what is
     ...                                # available in this file.
-    >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested) # Returns a random subset.
+    >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested, seed) # Returns a random subset.
     array([12,  2, 13])
 
     >>> import numpy as np
@@ -178,6 +189,9 @@ def select_random_indices(inds, global_num_inds_available, global_num_inds_reque
     >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested) # All input indices are returned.
     array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     """
+
+    if seed is not None:
+        np.random.seed(seed)
 
     # First find out the fraction of value that we need to select.
     num_inds_to_choose = int(len(inds) / global_num_inds_available * global_num_inds_requested)
@@ -191,6 +205,103 @@ def select_random_indices(inds, global_num_inds_available, global_num_inds_reque
         random_inds = inds
 
     return random_inds
+
+
+
+def read_generic_sage_params(sage_file_path: str) -> Dict[str, Any]:
+    """
+    Reads the **SAGE** parameter file values. This function is used for the default ``sage_binary`` and ``sage_hdf5``
+    formats. If you have a custom format, you will need to write a ``read_sage_params`` function in your own data
+    class.
+
+    Parameters
+    ----------
+    sage_file_path: string
+        Path to the **SAGE** parameter file.
+
+    Returns
+    -------
+    model_dict: dict [str, var]
+        Dictionary containing the parameter names and their values.
+
+    Errors
+    ------
+    FileNotFoundError
+        Raised if the specified **SAGE** parameter file is not found.
+    """
+
+    # Fields that we will be reading from the ini file.
+    SAGE_fields = [
+        "FileNameGalaxies",
+        "OutputDir",
+        "FirstFile",
+        "LastFile",
+        "OutputFormat",
+        "NumSimulationTreeFiles",
+        "FileWithSnapList",
+        "Hubble_h",
+        "BoxSize",
+        "PartMass"
+    ]
+    SAGE_dict = {}
+
+    # Ignore lines starting with one of these.
+    comment_characters = [";", "%", "-"]
+
+    try:
+        with open(sage_file_path, "r") as SAGE_file:
+            data = SAGE_file.readlines()
+
+            # Each line in the parameter file is of the form...
+            # parameter_name       parameter_value.
+            for line in range(len(data)):
+
+                # Remove surrounding whitespace from the line.
+                stripped = data[line].strip()
+
+                # May have been an empty line.
+                try:
+                    first_char = stripped[0]
+                except IndexError:
+                    continue
+
+                # Check for comment.
+                if first_char in comment_characters:
+                    continue
+
+                # Split into [name, value] list.
+                split = stripped.split()
+
+                # Then check if the field is one we care about.
+                if split[0] in SAGE_fields:
+
+                    SAGE_dict[split[0]] = split[1]
+
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Could not find SAGE ini file {sage_file_path}")
+
+    # Now we have all the fields, rebuild the dictionary to be exactly what we need for
+    # initialising the model.
+    model_dict = {}
+
+    model_dict["_output_format"] = SAGE_dict["OutputFormat"]
+    model_dict["_parameter_dirpath"] = os.path.dirname(sage_file_path)
+
+    alist = np.loadtxt(f"{model_dict['_parameter_dirpath']}/{SAGE_dict['FileWithSnapList']}")
+    redshifts = 1.0 / alist - 1.0
+    model_dict["_redshifts"] = redshifts
+
+    base_sage_output_path = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}"
+    model_dict["_base_sage_output_path"] = base_sage_output_path
+
+    model_dict["_output_dir"] = SAGE_dict['OutputDir']
+
+    model_dict["_hubble_h"] = float(SAGE_dict["Hubble_h"])
+    model_dict["_box_size"] = float(SAGE_dict["BoxSize"])
+    model_dict["_num_sim_tree_files"] = int(SAGE_dict["NumSimulationTreeFiles"])
+
+    return model_dict
+
 
 if __name__ == "__main__":
     import doctest

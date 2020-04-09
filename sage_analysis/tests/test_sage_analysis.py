@@ -15,6 +15,7 @@ def test_sage_output_format(sage_output_formats):
     # First ensure that we actually have baseline plots to compare against.
     baseline_image_path = "test_data/baseline_plots/"
     baseline_image_names = [os.path.join(baseline_image_path, name) for name in os.listdir(baseline_image_path)]
+    baseline_image_names = [image for image in baseline_image_names if ".DS_Store" not in image]
 
     if len(baseline_image_names) == 0:
         raise ValueError(f"No baseline images found.")
@@ -23,22 +24,26 @@ def test_sage_output_format(sage_output_formats):
     fname = ["test_data/mini-millennium.par"]
     num_sage_output_files = [1]
     generated_image_path = "test_data/generated_plots/"
+    random_seeds = [666]
 
     analyse_sage_output(
         fname,
         sage_output_formats=sage_output_formats,
         num_sage_output_files=num_sage_output_files,
-        plot_output_path=generated_image_path
+        plot_output_path=generated_image_path,
+        random_seeds=random_seeds,
     )
 
     # Finally, compare and ensure that the images are as expected.
     generated_image_names = [os.path.join(generated_image_path, name) for name in os.listdir(generated_image_path)]
+    generated_image_names = [image for image in generated_image_names if ".DS_Store" not in image]
+
     for baseline, generated in zip(baseline_image_names, generated_image_names):
-        compare_images(baseline, generated, tol=10)
+        comparison = compare_images(baseline, generated, tol=1)
+        assert comparison is None, f"{comparison}\nsage_output_format={sage_output_formats}"
 
         # Cleanup.
         os.remove(generated)
-
 
 
 def test_binary_sage_num_output_file_error():
@@ -69,14 +74,13 @@ def test_hdf5_sage_num_output_file_message(caplog):
     fname = ["test_data/mini-millennium.par"]
     sage_output_formats = ["sage_hdf5"]
     num_sage_output_files = [100]
-    generated_image_path = "test_data/generated_plots/"
 
     with pytest.warns(UserWarning) as record:
         analyse_sage_output(
             fname,
             sage_output_formats=sage_output_formats,
             num_sage_output_files=num_sage_output_files,
-            plot_output_path=generated_image_path
+            generate_plots=False,
         )
 
     # Check that the messages appeared in the log.
@@ -85,4 +89,38 @@ def test_hdf5_sage_num_output_file_message(caplog):
         f"However, ``analyse_sage_output`` was called with {num_sage_output_files[0]}. Using the number of files " \
         "from the HDF5 file as the correct value."
 
-# Write a test where if the output format is NOT specified, then it uses the output format specified in the sage file.
+
+def test_use_parameter_file_format(caplog) -> None:
+    """
+    If no SAGE output format is specified, then it should use the output format specified in the SAGE parameter file.
+    In this instance, it should log some info.
+    """
+
+    caplog.set_level(logging.INFO)
+
+    fname = ["test_data/mini-millennium.par"]
+    num_sage_output_files = [1]
+
+    models = analyse_sage_output(
+        fname,
+        num_sage_output_files=num_sage_output_files,
+        generate_plots=False,
+    )
+
+    assert models[0].sage_output_format == "sage_binary"
+    assert "No SAGE output format specified. Attempting to read ``test_data/mini-millennium.par`` and using the " \
+        "format specified inside." in caplog.text
+    assert "Using ``sage_binary`` output format."
+
+
+# Test to ensure can plot multiple models.
+
+def test_multiple_models() -> None:
+    """
+    If the user specifies multiple models, they should be analysed and plotted no problemo.
+    """
+
+    fname = ["test_data/mini-millennium.par", ]
+    num_sage_output_files = [1]
+    generated_image_path = "test_data/generated_plots/"
+    random_seeds = [666]

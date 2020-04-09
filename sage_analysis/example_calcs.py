@@ -112,7 +112,7 @@ def calc_BTF(model, gals):
                        (gals["BulgeMass"][:] / gals["StellarMass"][:] < 0.5))[0]
 
     # Select a random subset of galaxies (if necessary).
-    spirals = select_random_indices(spirals, model.num_gals_all_files, model.sample_size)
+    spirals = select_random_indices(spirals, model.num_gals_all_files, model.sample_size, model.random_seed)
 
     baryon_mass = np.log10((gals["StellarMass"][:][spirals] + gals["ColdGas"][:][spirals]) * 1.0e10 / model.hubble_h)
     velocity = np.log10(gals["Vmax"][:][spirals])
@@ -275,7 +275,7 @@ def calc_quiescent(model, gals):
     # When plotting, we scale the number of quiescent galaxies by the total number of
     # galaxies in that bin.  This is the Stellar Mass Function.
     # So check if the SMF has been initialized.  If not, then it should be specified.
-    if model.SMF:
+    if model._plot_toggles["SMF"]:
         pass
     else:
         raise ValueError("When calculating the quiescent galaxy population, we "
@@ -338,7 +338,7 @@ def calc_bulge_fraction(model, gals):
     # When plotting, we scale the fraction of each galaxy type the total number of
     # galaxies in that bin. This is the Stellar Mass Function.
     # So check if we're calculating the SMF already, and if not, calculate it here.
-    if model.SMF:
+    if model._plot_toggles["SMF"]:
         pass
     else:
         raise ValueError("When calculating the bulge fraction, we "

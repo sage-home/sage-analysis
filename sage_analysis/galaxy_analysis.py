@@ -1,10 +1,11 @@
+import logging
 import os
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Union, Optional, Any
 
 import sage_analysis.example_calcs
 import sage_analysis.example_plots
 
-from sage_analysis.utils import generate_func_dict
+from sage_analysis.utils import generate_func_dict, read_generic_sage_params
 from sage_analysis.model import Model
 from sage_analysis.sage_binary import SageBinaryData
 try:
@@ -12,15 +13,11 @@ try:
 except ImportError:
     print("h5py not found.  If you're reading in HDF5 output from SAGE, please install this package.")
 
+import matplotlib
 import numpy as np
 
-import matplotlib
 
-# Sometimes we divide a galaxy that has zero mass (e.g., no cold gas). Ignore these
-# warnings as they spam stdout. Also remember the old settings.
-old_error_settings = np.seterr()
-np.seterr(all="ignore")
-
+logger = logging.getLogger(__name__)
 
 def analyse_sage_output(
     par_fnames: List[str],
@@ -31,10 +28,13 @@ def analyse_sage_output(
     first_files_to_plot: Optional[List[int]] = None,
     last_files_to_plot: Optional[List[int]] = None,
     num_sage_output_files: Optional[List[int]] = None,
+    output_format_data_classes: Optional[Dict[str, Any]] = None,
+    random_seeds: Optional[List[int]] = None,
     plot_toggles: Optional[Dict[str, bool]] = None,
     plot_output_format: str = "png",
     plot_output_path: str = "./plots_new",
-) -> List[matplotlib.figure.Figure]:
+    generate_plots: bool = True,
+) -> List[Model]:
 
     if snapshots_to_plot is None:
         snapshots_to_plot = [63]
@@ -46,7 +46,7 @@ def analyse_sage_output(
         labels = ["Mini-Millennium"]
 
     if sage_output_formats is None:
-        sage_output_formats = ["sage_binary"]
+        sage_output_formats = [None]
 
     if first_files_to_plot is None:
         first_files_to_plot = [0]
@@ -57,6 +57,12 @@ def analyse_sage_output(
     if num_sage_output_files is None:
         num_sage_output_files = [None]
 
+    if output_format_data_classes is None:
+        output_format_data_classes = {"sage_binary": SageBinaryData, "sage_hdf5": SageHdf5Data}
+
+    if random_seeds is None:
+        random_seeds = [None]
+
     parameters = [
         par_fnames,
         snapshots_to_plot,
@@ -66,6 +72,7 @@ def analyse_sage_output(
         first_files_to_plot,
         last_files_to_plot,
         num_sage_output_files,
+        random_seeds,
     ]
 
     if plot_toggles is None:
@@ -85,11 +92,10 @@ def analyse_sage_output(
             "spatial" : True   # Spatial distribution of galaxies.
         }
 
-
     # ``parameters`` is a matrix of parameters with each "column" specifying the parameters for a single model. Hence
     # we want to iteratre through column-wise and use these to build the ``Model`` class instance. Here, the ``map``
     # function does this tranpose into a column-wise iterable.
-    models_to_plot = [
+    models = [
         Model(*model_parameters, plot_toggles) for model_parameters in map(list, zip(*parameters))
     ]
 
@@ -98,17 +104,23 @@ def analyse_sage_output(
         os.makedirs(plot_output_path)
 
     # Go through each model and calculate all the required properties.
-    for model in models_to_plot:
+    for model in models:
 
         model.plot_output_format = plot_output_format
 
-        # Each SAGE output has a specific class written to read in the data.
-        if model.sage_output_format == "sage_binary":
-            model.data_class = SageBinaryData(
-                model, model.sage_file, model.snapshot
+        # If the format wasn't defined, then attempt to read a default parameter file to determine format.
+        if model.sage_output_format is None:
+            logger.info(
+                f"No SAGE output format specified. Attempting to read ``{model.sage_file}`` and using the format "
+                f"specified inside."
             )
-        elif model.sage_output_format == "sage_hdf5":
-            model.data_class = SageHdf5Data(model, model.sage_file)
+            sage_dict = read_generic_sage_params(model.sage_file)
+
+            model.sage_output_format = sage_dict["_output_format"]
+            logger.info(f"Using ``{model.sage_output_format}`` output format.")
+
+        # Each SAGE output has a specific class written to read in the data.
+        model.data_class = output_format_data_classes[model.sage_output_format](model, model.sage_file)
 
         # The data class has read the SAGE ini file.  Update the model with the parameters
         # read and those specified by the user.
@@ -176,11 +188,22 @@ def analyse_sage_output(
 
         # To be more memory concious, we calculate the required properties on a
         # file-by-file basis. This ensures we do not keep ALL the galaxy data in memory.
-        model.calc_properties_all_files(calculation_functions, debug=False)
+        model.calc_properties_all_files(calculation_functions, model._snapshot, debug=False)
+
+    if generate_plots:
+        figs = _generate_plots(models, plot_output_path, plot_output_format)
+
+    return models
+
+
+def _generate_plots(models: List[Model], plot_output_path: str, plot_output_format: str) -> List[matplotlib.figure.Figure]:
+    """
+    Handles generating and savings plots.
+    """
 
     # Similar to the calculation functions, all of the plotting functions are in the
     # `plots.py` module and are labelled `plot_<toggle>`.
-    plot_functions = generate_func_dict(plot_toggles, module_name="sage_analysis.example_plots",
+    plot_functions = generate_func_dict(models[0].plot_toggles, module_name="sage_analysis.example_plots",
                                         function_prefix="plot_")
 
     # Now do the plotting.
@@ -189,15 +212,11 @@ def analyse_sage_output(
         func = plot_functions[func_name][0]
         keyword_args = plot_functions[func_name][1]
 
-        fig = func(models_to_plot, plot_output_path, plot_output_format, **keyword_args)
+        fig = func(models, plot_output_path, plot_output_format, **keyword_args)
 
         if type(fig) == list:
             figs.append(*fig)
         else:
             figs.append(fig)
-
-    # Set the error settings to the previous ones so we don't annoy the user.
-    np.seterr(divide=old_error_settings["divide"], over=old_error_settings["over"],
-              under=old_error_settings["under"], invalid=old_error_settings["invalid"])
 
     return figs

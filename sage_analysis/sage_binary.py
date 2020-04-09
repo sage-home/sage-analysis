@@ -10,8 +10,10 @@ own Data Class to ingest data.
 
 Author: Jacob Seiler.
 """
+from typing import Dict, Any
 import logging
 from sage_analysis.model import Model
+from sage_analysis.utils import read_generic_sage_params
 
 import numpy as np
 import os
@@ -27,8 +29,7 @@ class SageBinaryData():
     :py:attr:`~sage_analysis.model.Model.sage_output_format` is ``sage_binary``.
     """
 
-    def __init__(self, model, sage_file_to_read=None,
-                 snapshot_to_use=None):
+    def __init__(self, model: Model, sage_file_to_read: str) -> None:
         """
         Instantiates the Data Class for reading in **SAGE** binary data. In particular,
         generates the ``numpy`` structured array to read the output galaxies.
@@ -36,35 +37,16 @@ class SageBinaryData():
         model: :py:class:`~sage_analysis.model.Model` instance
             The model that this data class is associated with; this class will read the
             data for this model.
-
-        sage_file_to_read: string, optional
-            Specifies the **SAGE** file to be read and used to update the
-            ``sage_model_dict`` attribute with the parameters specified inside.  If set
-            to ``None``, does not update this attribute.  Instead, the user must provide
-            all the parameters to analyze the data to the
-            :py:meth:`~sage_analysis.model.Model.update_attributes`.
-
-        snapshot_to_use: int, optional
-            The snapshot number being analysed for this ``model``. If reading a **SAGE**
-            file (``sage_file_to_read`` is not ``None``), this must be specified, or
-            :py:meth:`~sage_analysis.sage_binary.SageBinaryData.update_snapshot` must
-            be called before any reading of data is done.
         """
 
         logger.info("Reading using SAGE binary output format.")
 
         self.get_galaxy_struct()
 
-        # Need the snapshot to specify the name of the SAGE output file (if we're reading
-        # the SAGE ini file).
-        # if sage_file_to_read:
-        #    self._snapshot = snapshot_to_use
-
         # Use the SAGE parameter file to generate a bunch of attributes.
-        if sage_file_to_read:
-            sage_dict = self.read_sage_params(sage_file_to_read, model._snapshot)
-            self.sage_model_dict = sage_dict
-            logger.info(f"The read SAGE parameters are {sage_dict}")
+        sage_dict = self._read_sage_params(sage_file_to_read)
+        self.sage_model_dict = sage_dict
+        logger.info(f"The read SAGE parameters are {sage_dict}")
 
 
 
@@ -108,107 +90,22 @@ class SageBinaryData():
         return volume
 
 
-    def read_sage_params(self, sage_file_path, snapshot_to_use=None):
+    def _read_sage_params(self, sage_file_path: str) -> Dict[str, Any]:
         """
-        Reads the **SAGE** parameter file values.
+        Read the **SAGE** parameter file.
 
         Parameters
         ----------
-
         sage_file_path: string
             Path to the **SAGE** parameter file.
 
-        snapshot_to_use: int, optional
-            The snapshot that this model is reading.  If this is not specified,
-            :py:meth:`~sage_analysis.sage_binary.SageBinaryData.update_snapshot` must be
-            called before any reading of data is done.
-
         Returns
         -------
-
-        model_dict: dict [string, variable], optional
-            Dictionary containing the parameter values for this class instance. Attributes
-            of the class are set with name defined by the key with corresponding values.
-
-        FileNotFoundError
-            Raised if the specified **SAGE** parameter file is not found.
+        model_dict: dict [str, var]
+            Dictionary containing the parameter names and their values.
         """
 
-        # Fields that we will be reading from the ini file.
-        SAGE_fields = [ "FileNameGalaxies",
-                        "OutputDir",
-                        "FirstFile",
-                        "LastFile",
-                        "OutputFormat",
-                        "NumSimulationTreeFiles",
-                        "FileWithSnapList",
-                        "Hubble_h",
-                        "BoxSize",
-                        "PartMass"]
-        SAGE_dict = {}
-
-        # Ignore lines starting with one of these.
-        comment_characters = [";", "%", "-"]
-
-        try:
-            with open(sage_file_path, "r") as SAGE_file:
-                data = SAGE_file.readlines()
-
-                # Each line in the parameter file is of the form...
-                # parameter_name       parameter_value.
-                for line in range(len(data)):
-
-                    # Remove surrounding whitespace from the line.
-                    stripped = data[line].strip()
-
-                    # May have been an empty line.
-                    try:
-                        first_char = stripped[0]
-                    except IndexError:
-                        continue
-
-                    # Check for comment.
-                    if first_char in comment_characters:
-                        continue
-
-                    # Split into [name, value] list.
-                    split = stripped.split()
-
-                    # Then check if the field is one we care about.
-                    if split[0] in SAGE_fields:
-
-                        SAGE_dict[split[0]] = split[1]
-
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Could not find SAGE ini file {sage_file_path}")
-
-        # Now we have all the fields, rebuild the dictionary to be exactly what we need for
-        # initialising the model.
-        model_dict = {}
-
-        model_dict["_parameter_dirpath"] = os.path.dirname(sage_file_path)
-
-        alist = np.loadtxt(f"{model_dict['_parameter_dirpath']}/{SAGE_dict['FileWithSnapList']}")
-        redshifts = 1.0 / alist - 1.0
-        model_dict["_redshifts"] = redshifts
-
-        if snapshot_to_use:
-            output_tag = f"_z{redshifts[snapshot_to_use]:.3f}"
-        else:
-            print("A data class was instantiated without specifying an initial "
-                  "snapshot to read. This is allowed, but `Data_Class.update_snapshot` "
-                  "must be called before any reading is done.")
-            output_tag == "NOT_SET"
-
-        model_path = f"{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}" \
-                     f"{output_tag}"
-        model_dict["_model_path"] = model_path
-
-        model_dict["_output_path"] = f"{SAGE_dict['OutputDir']}/plots/"
-
-        model_dict["_hubble_h"] = float(SAGE_dict["Hubble_h"])
-        model_dict["_box_size"] = float(SAGE_dict["BoxSize"])
-        model_dict["_num_sim_tree_files"] = int(SAGE_dict["NumSimulationTreeFiles"])
+        model_dict = read_generic_sage_params(sage_file_path)
 
         return model_dict
 
@@ -291,7 +188,7 @@ class SageBinaryData():
 
         for file_num in range(model.first_file, model.last_file+1):
 
-            fname = f"{model.parameter_dirpath}/{model.model_path}_{file_num}"
+            fname = f"{model.sage_data_path}_{file_num}"
 
             if not os.path.isfile(fname):
                 raise FileNotFoundError(f"Could not file {fname}")
@@ -342,7 +239,7 @@ class SageBinaryData():
         the ``tqdm`` progress bar if ``debug=True``.
         """
 
-        fname = f"{model.parameter_dirpath}/{model.model_path}_{file_num}"
+        fname = f"{model.sage_data_path}_{file_num}"
 
         # We allow the skipping of files.  If we skip, don't increment a counter.
 
@@ -401,42 +298,20 @@ class SageBinaryData():
         return gals
 
 
-    def update_snapshot(self, model, snapshot):
+    def update_snapshot_and_data_path(self, model: Model, snapshot: int):
         """
-        Updates the :py:attr:`~sage_analysis.model.Model.model_path` to point to a new
-        redshift file. Uses the redshift array
-        :py:attr:`~sage_analysis.model.Model.redshifts`.
+        Updates the :py:attr:`~sage_analysis.model.Model.sage_data_path` to point to a new redshift file. Uses the
+        redshift array :py:attr:`~sage_analysis.model.Model.redshifts`.
 
         Parameters
         ----------
 
         snapshot: int
-            Snapshot we're updating :py:attr:`~sage_analysis.model.Model.model_path` to
+            Snapshot we're updating :py:attr:`~sage_analysis.model.Model.sage_data_path` to
             point to.
         """
 
         model._snapshot = snapshot
 
-        # First get the new redshift.
         new_redshift = model.redshifts[snapshot]
-
-        # We can't be guaranteed the `model_path` has been set just yet.
-        try:
-            _ = self.set_redshift
-        except AttributeError:
-            # model_path hasn't been set so use the full form.
-            model.model_path = "{0}_z{1:.3f}".format(self.model_path, new_redshift)
-        else:
-            # model_path is of the form "<Initial/Path/To/File_zXXX.XXX>"
-            # The number of decimal places is always 3.
-            # The number of characters before "z" is arbitrary, we could be at z8.539 or z127.031.
-            # Hence walk backwards through the model path until we reach a "z".
-            letters_from_end = 0
-            letter = self.model_path[-(letters_from_end+1)]
-            while letter != "z":
-                letters_from_end += 1
-                letter = self.model_path[-(letters_from_end+1)]
-
-            # Then truncate there and append the new redshift.
-            model_path_prefix = self.model_path[:-(letters_from_end+1)]
-            model.model_path = "{0}z{1:.3f}".format(model_path_prefix, new_redshift)
+        model.sage_data_path = f"{model._base_sage_output_path}_z{new_redshift:.3f}"
