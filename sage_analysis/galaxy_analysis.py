@@ -20,7 +20,7 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 def analyse_sage_output(
-    par_fnames: List[str],
+    sage_parameter_fnames: List[str],
     snapshots_to_plot: Optional[List[int]] = None,
     IMFs: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
@@ -36,35 +36,37 @@ def analyse_sage_output(
     generate_plots: bool = True,
 ) -> List[Model]:
 
+    num_models = len(sage_parameter_fnames)
+
     if snapshots_to_plot is None:
-        snapshots_to_plot = [63]
+        snapshots_to_plot = [63] * num_models
 
     if IMFs is None:
-        IMFs = ["Chabrier"]
+        IMFs = ["Chabrier"] * num_models
 
     if labels is None:
-        labels = ["Mini-Millennium"]
+        labels = ["Mini-Millennium"] * num_models
 
     if sage_output_formats is None:
-        sage_output_formats = [None]
+        sage_output_formats = [None] * num_models
 
     if first_files_to_plot is None:
-        first_files_to_plot = [0]
+        first_files_to_plot = [0] * num_models
 
     if last_files_to_plot is None:
-        last_files_to_plot = [0]
+        last_files_to_plot = [0] * num_models
 
     if num_sage_output_files is None:
-        num_sage_output_files = [None]
+        num_sage_output_files = [None] * num_models
 
     if output_format_data_classes is None:
         output_format_data_classes = {"sage_binary": SageBinaryData, "sage_hdf5": SageHdf5Data}
 
     if random_seeds is None:
-        random_seeds = [None]
+        random_seeds = [None] * num_models
 
     parameters = [
-        par_fnames,
+        sage_parameter_fnames,
         snapshots_to_plot,
         IMFs,
         labels,
@@ -74,6 +76,14 @@ def analyse_sage_output(
         num_sage_output_files,
         random_seeds,
     ]
+
+    # All the parameters should have the same lengths.
+    for parameter_vals in parameters:
+        if len(parameter_vals) != num_models:
+            raise ValueError(
+                f"The number of parameter files is {num_models}. Ensure that all parameters passed to "
+                f"``analyse_sage_output`` are lists of this length."
+            )
 
     if plot_toggles is None:
         plot_toggles = {
@@ -215,7 +225,7 @@ def _generate_plots(models: List[Model], plot_output_path: str, plot_output_form
         fig = func(models, plot_output_path, plot_output_format, **keyword_args)
 
         if type(fig) == list:
-            figs.append(*fig)
+            figs.extend(fig)
         else:
             figs.append(fig)
 

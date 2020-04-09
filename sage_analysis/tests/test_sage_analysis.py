@@ -6,21 +6,33 @@ import matplotlib.pyplot as plt
 import os
 
 from matplotlib.testing.compare import compare_images
-from sage_analysis.galaxy_analysis import analyse_sage_output
+from sage_analysis.galaxy_analysis import analyse_sage_output, _generate_plots
 
 
-@pytest.mark.parametrize("sage_output_formats", [(["sage_binary"]), (["sage_hdf5"])])
-def test_sage_output_format(sage_output_formats):
+def my_compare_images(baseline_image_path: str, generated_image_path: str, cleanup_plots: bool = True) -> None:
 
     # First ensure that we actually have baseline plots to compare against.
-    baseline_image_path = "test_data/baseline_plots/"
     baseline_image_names = [os.path.join(baseline_image_path, name) for name in os.listdir(baseline_image_path)]
     baseline_image_names = [image for image in baseline_image_names if ".DS_Store" not in image]
 
     if len(baseline_image_names) == 0:
         raise ValueError(f"No baseline images found.")
 
-    # Now generate the plots.
+    # Finally, compare and ensure that the images are as expected.
+    generated_image_names = [os.path.join(generated_image_path, name) for name in os.listdir(generated_image_path)]
+    generated_image_names = [image for image in generated_image_names if ".DS_Store" not in image]
+
+    for baseline, generated in zip(baseline_image_names, generated_image_names):
+        comparison = compare_images(baseline, generated, tol=1)
+        assert comparison is None, f"{comparison}\nsage_output_format={sage_output_formats}"
+
+        # Cleanup.
+        if cleanup_plots:
+            os.remove(generated)
+
+@pytest.mark.parametrize("sage_output_formats", [(["sage_binary"]), (["sage_hdf5"])])
+def test_sage_output_format(sage_output_formats):
+
     fname = ["test_data/mini-millennium.par"]
     num_sage_output_files = [1]
     generated_image_path = "test_data/generated_plots/"
@@ -34,16 +46,8 @@ def test_sage_output_format(sage_output_formats):
         random_seeds=random_seeds,
     )
 
-    # Finally, compare and ensure that the images are as expected.
-    generated_image_names = [os.path.join(generated_image_path, name) for name in os.listdir(generated_image_path)]
-    generated_image_names = [image for image in generated_image_names if ".DS_Store" not in image]
-
-    for baseline, generated in zip(baseline_image_names, generated_image_names):
-        comparison = compare_images(baseline, generated, tol=1)
-        assert comparison is None, f"{comparison}\nsage_output_format={sage_output_formats}"
-
-        # Cleanup.
-        os.remove(generated)
+    baseline_image_path = "test_data/baseline_plots/"
+    my_compare_images(baseline_image_path, generated_image_path)
 
 
 def test_binary_sage_num_output_file_error():
@@ -113,14 +117,34 @@ def test_use_parameter_file_format(caplog) -> None:
     assert "Using ``sage_binary`` output format."
 
 
-# Test to ensure can plot multiple models.
-
 def test_multiple_models() -> None:
     """
     If the user specifies multiple models, they should be analysed and plotted no problemo.
     """
 
-    fname = ["test_data/mini-millennium.par", ]
-    num_sage_output_files = [1]
+    fname = ["test_data/mini-millennium.par", "test_data/mini-millennium.par"]
+    sage_output_formats = ["sage_binary", "sage_hdf5"]
+    labels = ["Binary", "HDF5"]
+    num_sage_output_files = [1, 1]
+
+    models = analyse_sage_output(
+        fname,
+        sage_output_formats=sage_output_formats,
+        num_sage_output_files=num_sage_output_files,
+        labels=labels,
+        generate_plots=False,
+    )
+
+    assert len(models) == 2
+
+    # To ensure we have visual difference between the stellar mass function, let's add some offset to one model and
+    # then plot the output.
+    models[0].properties["SMF"] *= 1.5
+
     generated_image_path = "test_data/generated_plots/"
-    random_seeds = [666]
+    _generate_plots(models, generated_image_path, "png")
+
+    # Save these and test equality.
+
+# Need to add an option to add a tag to outputs?
+# Test to ensure that wrong number of parameters yield error.
