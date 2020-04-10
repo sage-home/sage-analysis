@@ -1,9 +1,14 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple, Callable
 import os
 
 import numpy as np
 
-def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args={}):
+def generate_func_dict(
+    plot_toggles,
+    module_name,
+    function_prefix,
+    keyword_args={}
+) -> Dict[str, Tuple[Callable, Dict[str, Any]]]:
     """
     Generates a dictionary where the keys are the function name and the value is a list
     containing the function itself (0th element) and keyword arguments as a dictionary
@@ -40,7 +45,7 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
     Returns
     -------
 
-    func_dict: dict [string, list(function, dict[string, variable])]
+    func_dict: dict [string, tuple(function, dict[string, variable])]
         The key of this dictionary is the name of the function.  The value is a list with
         the 0th element being the function and the 1st element being a dictionary of
         additional keyword arguments to be passed to the function. The inner dictionary is
@@ -55,11 +60,11 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
     >>> module_name = "sage_analysis.example_calcs"
     >>> function_prefix = "calc_"
     >>> generate_func_dict(plot_toggles, module_name, function_prefix) #doctest: +ELLIPSIS
-    {'calc_SMF': [<function calc_SMF at 0x...>, {}]}
+    {'calc_SMF': (<function calc_SMF at 0x...>, {})}
     >>> module_name = "sage_analysis.example_plots"
     >>> function_prefix = "plot_"
     >>> generate_func_dict(plot_toggles, module_name, function_prefix) #doctest: +ELLIPSIS
-    {'plot_SMF': [<function plot_SMF at 0x...>, {}]}
+    {'plot_SMF': (<function plot_SMF at 0x...>, {})}
 
     >>> import sage_analysis.example_plots
     >>> plot_toggles = {"SMF": 1}
@@ -67,7 +72,7 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
     >>> function_prefix = "plot_"
     >>> keyword_args = {"SMF": {"plot_sub_populations": True}}
     >>> generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args) #doctest: +ELLIPSIS
-    {'plot_SMF': [<function plot_SMF at 0x...>, {'plot_sub_populations': True}]}
+    {'plot_SMF': (<function plot_SMF at 0x...>, {'plot_sub_populations': True})}
 
     >>> import sage_analysis.example_plots
     >>> plot_toggles = {"SMF": 1, "quiescent": 1}
@@ -76,9 +81,9 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
     >>> keyword_args = {"SMF": {"plot_sub_populations": True},
     ...                 "quiescent": {"plot_output_format": "pdf", "plot_sub_populations": True}}
     >>> generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args) #doctest: +ELLIPSIS
-    {'plot_SMF': [<function plot_SMF at 0x...>, {'plot_sub_populations': True}], \
-'plot_quiescent': [<function plot_quiescent at 0x...>, {'plot_output_format': 'pdf', \
-'plot_sub_populations': True}]}
+    {'plot_SMF': (<function plot_SMF at 0x...>, {'plot_sub_populations': True}), \
+'plot_quiescent': (<function plot_quiescent at 0x...>, {'plot_output_format': 'pdf', \
+'plot_sub_populations': True})}
     """
 
     # If the functions are defined in this module, then `module_name` is empty. Need to
@@ -99,11 +104,10 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
                   "`__init__.py` file to ensure your package can be imported.".format(module_name)
             raise KeyError(msg)
 
-    # Only populate those methods that have been marked in the `plot_toggles`
-    # dictionary.
+    # Only populate those methods that have been marked in the `plot_toggles` dictionary.
     func_dict = {}
-    for toggle in plot_toggles.keys():
-        if plot_toggles[toggle]:
+    for toggle, value in plot_toggles.items():
+        if value:
 
             func_name = "{0}{1}".format(function_prefix, toggle)
 
@@ -125,7 +129,7 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
                 # No extra arguments for this.
                 key_args = {}
 
-            func_dict[func_name] = [func, key_args]
+            func_dict[func_name] = (func, key_args)
 
     return func_dict
 

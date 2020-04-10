@@ -1,6 +1,15 @@
+"""
+
+TODO
+----
+Split this up into smaller functions. Its ghastly as is.
+Doc showing exactly how to generate non-default calc/plot functions.
+Doc showing exactly how to generate non-default extra properties.
+"""
+
 import logging
 import os
-from typing import List, Dict, Union, Optional, Any
+from typing import List, Dict, Union, Optional, Any, Tuple, Callable
 
 import sage_analysis.example_calcs
 import sage_analysis.example_plots
@@ -19,6 +28,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+
 def analyse_sage_output(
     sage_parameter_fnames: List[str],
     snapshots_to_plot: Optional[List[int]] = None,
@@ -31,6 +41,9 @@ def analyse_sage_output(
     output_format_data_classes: Optional[Dict[str, Any]] = None,
     random_seeds: Optional[List[int]] = None,
     plot_toggles: Optional[Dict[str, bool]] = None,
+    calculation_functions: Optional[Dict[str, Tuple[Callable, Dict[str, Any]]]] = None,
+    plot_functions: Optional[Dict[str, Tuple[Callable, Dict[str, Any]]]] = None,
+    galaxy_properties_to_analyse: Optional[Dict[str, Dict[str, Union[str, List[str]]]]] = None,
     plot_output_format: str = "png",
     plot_output_path: str = "./plots_new",
     generate_plots: bool = True,
@@ -46,6 +59,34 @@ def analyse_sage_output(
         If the corresponding entry in ``sage_output_format`` is ``sage_binary`` (whether passed explicitly or read from
         ``sage_file``), these two variables **MUST** be specified.  Otherwise, if not specified, will analyse **ALL**
         output HDF5 files.
+
+    calculation_functions : dict [string, tuple(function, dict[string, variable])], optional
+        A dictionary of functions that are used to compute the properties of galaxies being analysed.  Here, the string
+        is the name of the function (e.g., ``"calc_SMF"``), the value is a tuple containing the function itself (e.g.,
+        ``calc_SMF()``), and another dictionary which specifies any optional keyword arguments to that function with
+        keys as the name of variable (e.g., ``"calc_sub_populations"``) and values as the variable value (e.g.,
+        ``True``).
+
+        The functions in this dictionary are called for all files analyzed and **MUST** have a signature ``func(Model,
+        gals, optional_keyword_arguments)``. This dict can be generated using
+        :py:func:`~sage_analysis.utils.generate_func_dict`.
+
+        If not specified, will use the functions found in :py:module:`~sage_analysis.example_calcs`, filtered to ensure
+        that only those functions necessary to plot the plots specified by ``plot_toggles`` are run.
+
+    plot_functions : dict [string, tuple(function, dict[string, variable])], optional
+        A dictionary of functions that are used to plot the properties of galaxies being analysed.  Here, the string is
+        the name of the function (e.g., ``"plot_SMF"``), the value is a tuple containing the function itself (e.g.,
+        ``plot_SMF()``), and another dictionary which specifies any optional keyword arguments to that function with
+        keys as the name of variable (e.g., ``"plot_sub_populations"``) and values as the variable value (e.g.,
+        ``True``).
+
+        The functions in this dictionary are called for all files analyzed and **MUST** have a signature ``func(Models,
+        plot_output_path, plot_output_format, optional_keyword_arguments)``. This dict can be generated using
+        :py:func:`~sage_analysis.utils.generate_func_dict`.
+
+        If not specified, will use the functions found in :py:module:`~sage_analysis.example_plots`, filtered to ensure
+        that only those functions necessary to plot the plots specified by ``plot_toggles`` are run.
     """
 
     num_models = len(sage_parameter_fnames)
@@ -121,6 +162,23 @@ def analyse_sage_output(
         Model(*model_parameters, plot_toggles) for model_parameters in map(list, zip(*parameters))
     ]
 
+    # Then populate the `calculation_methods` dictionary. This dictionary will control
+    # which properties each model will calculate.  The dictionary is populated using
+    # the plot_toggles defined above.
+    # Our functions are inside the `example_calcs.py` module and are named "calc_<toggle>". If
+    # your functions are in a different module or different function prefix, change it
+    # here.
+    # ALL FUNCTIONS MUST HAVE A FUNCTION SIGNATURE `func(Model, gals, optional_kwargs=...)`.
+    if calculation_functions is None:
+        calculation_functions = generate_func_dict(
+            plot_toggles, module_name="sage_analysis.example_calcs", function_prefix="calc_"
+        )
+
+    if plot_functions is None and generate_plots:
+        plot_functions = generate_func_dict(
+            plot_toggles, module_name="sage_analysis.example_plots", function_prefix="plot_"
+        )
+
     # Generate directory for output plots.
     if not os.path.exists(plot_output_path):
         os.makedirs(plot_output_path)
@@ -182,18 +240,63 @@ def analyse_sage_output(
         except KeyError:  # Maybe we've removed "SMF" from plot_toggles...
                 model.calc_SMF = False
 
-        # Then populate the `calculation_methods` dictionary. This dictionary will control
-        # which properties each model will calculate.  The dictionary is populated using
-        # the plot_toggles defined above.
-        # Our functions are inside the `example_calcs.py` module and are named "calc_<toggle>". If
-        # your functions are in a different module or different function prefix, change it
-        # here.
-        # ALL FUNCTIONS MUST HAVE A FUNCTION SIGNATURE `func(Model, gals, optional_kwargs=...)`.
-        calculation_functions = generate_func_dict(plot_toggles, module_name="sage_analysis.example_calcs",
-                                                   function_prefix="calc_")
+        if galaxy_properties_to_analyse is None:
+            galaxy_properties_to_analyse = {
+                "stellar_mass_bins": {
+                    "type": "binned",
+                    "bin_low": 8.0,
+                    "bin_high": 12.0,
+                    "bin_width": 0.1,
+                    "property_names": [
+                        "SMF", "red_SMF", "blue_SMF", "BMF", "GMF",
+                        "centrals_MF", "satellites_MF", "quiescent_galaxy_counts",
+                        "quiescent_centrals_counts", "quiescent_satellites_counts",
+                        "fraction_bulge_sum", "fraction_bulge_var",
+                        "fraction_disk_sum", "fraction_disk_var"
+                    ],
+                },
+                "halo_mass_bins": {
+                    "type": "binned",
+                    "bin_low": 10.0,
+                    "bin_high": 14.0,
+                    "bin_width": 0.1,
+                    "property_names": ["fof_HMF"] + [f"halo_{component}_fraction_sum"
+                        for component in ["baryon", "stars", "cold", "hot", "ejected", "ICS", "bh"]
+                    ],
+                },
+                "scatter_properties": {
+                    "type": "scatter",
+                    "property_names": [
+                        "BTF_mass", "BTF_vel", "sSFR_mass", "sSFR_sSFR",
+                        "gas_frac_mass", "gas_frac", "metallicity_mass",
+                        "metallicity", "bh_mass", "bulge_mass", "reservoir_mvir",
+                        "reservoir_stars", "reservoir_cold", "reservoir_hot",
+                        "reservoir_ejected", "reservoir_ICS", "x_pos",
+                        "y_pos", "z_pos"
+                    ],
+                },
+            }
 
-        # Finally, before we calculate the properties, we need to decide how each property
-        # is stored. Properties can be binned (e.g., how many galaxies with mass between 10^8.0
+        for name, galaxy_properties in galaxy_properties_to_analyse.items():
+            _initialise_properties(name, model, galaxy_properties)
+
+        # To be more memory concious, we calculate the required properties on a
+        # file-by-file basis. This ensures we do not keep ALL the galaxy data in memory.
+        model.calc_properties_all_files(calculation_functions, model._snapshot, debug=False)
+
+    if generate_plots:
+        figs = _generate_plots(models, plot_output_path, plot_output_format, plot_functions)
+
+    return models
+
+
+def _initialise_properties(
+    name: str,
+    model: Model,
+    galaxy_properties: Dict[str, Dict[str, Union[str, List[str]]]],
+) -> None:
+
+        # Properties can be binned (e.g., how many galaxies with mass between 10^8.0
         # and 10^8.1), scatter plotted (e.g., for 1000 galaxies plot the specific star
         # formation rate versus stellar mass) or a single number (e.g., the sum
         # of the star formation rate at a snapshot). Properties can be accessed using
@@ -201,53 +304,38 @@ def analyse_sage_output(
 
         # First let's do the properties binned on stellar mass. The bins themselves can be
         # accessed using `Model.bins["bin_name"]`; e.g., `Model.bins["stellar_mass_bins"]
-        stellar_properties = ["SMF", "red_SMF", "blue_SMF", "BMF", "GMF",
-                              "centrals_MF", "satellites_MF", "quiescent_galaxy_counts",
-                              "quiescent_centrals_counts", "quiescent_satellites_counts",
-                              "fraction_bulge_sum", "fraction_bulge_var",
-                              "fraction_disk_sum", "fraction_disk_var"]
-        model.init_binned_properties(8.0, 12.0, 0.1, "stellar_mass_bins",
-                                        stellar_properties)
 
-        # Properties binned on halo mass.
-        halo_properties = ["fof_HMF"]
-        component_properties = ["halo_{0}_fraction_sum".format(component) for component in
-                               ["baryon", "stars", "cold", "hot", "ejected", "ICS", "bh"]]
-        model.init_binned_properties(10.0, 14.0, 0.1, "halo_mass_bins",
-                                        halo_properties+component_properties)
+        allowed_property_types = ["binned", "scatter", "single"]
+        if galaxy_properties["type"] not in allowed_property_types:
+            raise ValueError(
+                f"Requested to analyse a galaxy property with unkown type.  The galaxy properties were "
+                f"{galaxy_properties} and the only accepted types are {allowed_property_types}."
+            )
 
-        # Now properties that will be extended as lists.
-        scatter_properties = ["BTF_mass", "BTF_vel", "sSFR_mass", "sSFR_sSFR",
-                              "gas_frac_mass", "gas_frac", "metallicity_mass",
-                              "metallicity", "bh_mass", "bulge_mass", "reservoir_mvir",
-                              "reservoir_stars", "reservoir_cold", "reservoir_hot",
-                              "reservoir_ejected", "reservoir_ICS", "x_pos",
-                              "y_pos", "z_pos"]
-        model.init_scatter_properties(scatter_properties)
+        if galaxy_properties["type"] == "binned":
+            model.init_binned_properties(
+                galaxy_properties["bin_low"],
+                galaxy_properties["bin_high"],
+                galaxy_properties["bin_width"],
+                name,
+                galaxy_properties["property_names"],
+            )
+        elif galaxy_properties["type"] == "scatter":
+            model.init_scatter_properties(galaxy_properties["property_names"])
+        elif galaxy_properties["type"] == "single":
+            model.init_single_properties(galaxy_properties["property_names"])
 
-        # Finally those properties that are stored as a single number.
-        single_properties = []
-        model.init_single_properties(single_properties)
+        logger.info(f"Initialized galaxy properties {galaxy_properties}")
 
-        # To be more memory concious, we calculate the required properties on a
-        # file-by-file basis. This ensures we do not keep ALL the galaxy data in memory.
-        model.calc_properties_all_files(calculation_functions, model._snapshot, debug=False)
-
-    if generate_plots:
-        figs = _generate_plots(models, plot_output_path, plot_output_format)
-
-    return models
-
-
-def _generate_plots(models: List[Model], plot_output_path: str, plot_output_format: str) -> List[matplotlib.figure.Figure]:
+def _generate_plots(
+    models: List[Model],
+    plot_output_path: str,
+    plot_output_format: str,
+    plot_functions: Dict[str, Tuple[Callable, Dict[str, Any]]],
+) -> List[matplotlib.figure.Figure]:
     """
     Handles generating and savings plots.
     """
-
-    # Similar to the calculation functions, all of the plotting functions are in the
-    # `plots.py` module and are labelled `plot_<toggle>`.
-    plot_functions = generate_func_dict(models[0].plot_toggles, module_name="sage_analysis.example_plots",
-                                        function_prefix="plot_")
 
     # Now do the plotting.
     figs = []

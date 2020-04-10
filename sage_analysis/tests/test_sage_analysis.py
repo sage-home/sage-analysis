@@ -1,13 +1,32 @@
+from typing import List
 import warnings
 import logging
 
+import numpy as np
 import pytest
 import matplotlib.pyplot as plt
 import os
 
 from matplotlib.testing.compare import compare_images
-from sage_analysis.galaxy_analysis import analyse_sage_output, _generate_plots
 
+from sage_analysis.utils import generate_func_dict
+from sage_analysis.galaxy_analysis import analyse_sage_output, _generate_plots
+from sage_analysis.model import Model
+
+logger = logging.getLogger(__name__)
+
+def calc_num_particles_in_halo(model: Model, gals):
+
+    non_zero_stellar = np.where(gals["StellarMass"][:] > 0.0)[0]
+    halo_len = gals["Len"][:][non_zero_stellar]
+
+    halos_per_bin, _ = np.histogram(halo_len, bins=model.bins["halo_len_bins"])
+    model.properties["halo_len"] += halos_per_bin
+
+def plot_num_particles_in_halo(models: List[Model], plot_output_path: str, plot_output_format: str = "png"):
+
+    # This should make a matplotlib plot but it's adequate enough to just test that we pass through this function.
+    logger.debug(models[0].properties["halo_len"])
 
 def my_compare_images(baseline_image_path: str, generated_image_path: str, cleanup_plots: bool = True) -> None:
 
@@ -156,7 +175,10 @@ def test_multiple_models() -> None:
     models[0].properties["SMF"] *= 1.5
 
     generated_image_path = "test_data/generated_plots/"
-    _generate_plots(models, generated_image_path, "png")
+    plot_functions = generate_func_dict(
+        models[0].plot_toggles, module_name="sage_analysis.example_plots", function_prefix="plot_"
+    )
+    _generate_plots(models, generated_image_path, "png", plot_functions)
 
     # Save these and test equality.
 
@@ -200,7 +222,86 @@ def test_defaults(caplog):
     models[0].label = "Mini-Millennium"
 
     generated_image_path = "test_data/generated_plots/"
-    _generate_plots(models, generated_image_path, "png")
+    plot_functions = generate_func_dict(
+        models[0].plot_toggles, module_name="sage_analysis.example_plots", function_prefix="plot_"
+    )
+    _generate_plots(models, generated_image_path, "png", plot_functions)
 
     baseline_image_path = "test_data/baseline_plots/"
     my_compare_images(baseline_image_path, generated_image_path)
+
+
+def test_additional_property(caplog):
+    """
+    A new property can be analysed and accounted for.
+    """
+
+    caplog.set_level(logging.INFO)
+
+    fname = ["test_data/mini-millennium.par"]
+    sage_output_formats = ["sage_hdf5"]
+
+    baseline_plot_toggles = {"SMF": True}
+    baseline_calculation_functions = generate_func_dict(baseline_plot_toggles, "sage_analysis.example_calcs", "calc_")
+    # baseline_plot_functions = generate_func_dict(baseline_plot_toggles, "sage_analysis.example_plots", "plot_")
+
+    extra_plot_toggles = {"num_particles_in_halo": True}
+    extra_calculation_functions = generate_func_dict(extra_plot_toggles, "sage_analysis.tests.test_sage_analysis", "calc_")
+    # extra_plot_functions = generate_func_dict(extra_plot_toggles, "sage_analysis.tests.test_sage_analysis", "plot_")
+
+    baseline_plot_toggles.update(extra_plot_toggles)
+    baseline_calculation_functions.update(extra_calculation_functions)
+    # baseline_plot_functions.update(extra_plot_functions)
+
+    galaxy_properties_to_analyse = {
+        "stellar_mass_bins": {
+                    "type": "binned",
+                    "bin_low": 8.0,
+                    "bin_high": 12.0,
+                    "bin_width": 0.1,
+                    "property_names": ["SMF", "red_SMF", "blue_SMF"],
+        },
+        "halo_len_bins": {
+            "type": "binned",
+            "bin_low": 1.0,
+            "bin_high": 1000.0,
+            "bin_width": 1,
+            "property_names": ["halo_len"],
+        }
+    }
+
+    models = analyse_sage_output(
+        fname,
+        sage_output_formats=sage_output_formats,
+        plot_toggles=baseline_plot_toggles,
+        calculation_functions=baseline_calculation_functions,
+        # plot_functions=baseline_plot_functions,
+        galaxy_properties_to_analyse=galaxy_properties_to_analyse,
+        generate_plots=False,
+    )
+
+    assert f"Initialized galaxy properties {galaxy_properties_to_analyse['stellar_mass_bins']}" in caplog.text
+    assert f"Initialized galaxy properties {galaxy_properties_to_analyse['halo_len_bins']}" in caplog.text
+
+
+def test_incorrect_additional_property():
+    """
+    The only accepted types of the properties are one of ``["binned", "scatter", "single"]``. Otherwise, it should
+    throw a ``ValueError``.
+    """
+
+    fname = ["test_data/mini-millennium.par"]
+    sage_output_formats = ["sage_hdf5"]
+
+    galaxy_properties_to_analyse = {
+        "incorrect_property": {
+                    "type": "this is an incorrect property type",
+        },
+    }
+
+    with pytest.raises(ValueError):
+        models = analyse_sage_output(
+            fname,
+            sage_output_formats=sage_output_formats,
+            galaxy_properties_to_analyse=galaxy_properties_to_analyse,
+        )
