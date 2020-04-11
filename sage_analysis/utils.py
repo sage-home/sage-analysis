@@ -129,7 +129,7 @@ def generate_func_dict(
                 # No extra arguments for this.
                 key_args = {}
 
-            func_dict[func_name] = (func, key_args)
+            func_dict[toggle] = (func, key_args)
 
     return func_dict
 

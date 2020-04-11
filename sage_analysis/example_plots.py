@@ -17,6 +17,7 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import numpy as np
 
+from sage_analysis.model import Model
 import sage_analysis.observations as obs
 
 colors = ["r", "b", "g", "m", "c"]
@@ -42,7 +43,6 @@ def adjust_legend(ax, location="upper right", scatter_plot=0):
 
     Parameters
     ----------
-
     ax : ``matplotlib`` axes object
         The axis whose legend we're adjusting
 
@@ -55,7 +55,6 @@ def adjust_legend(ax, location="upper right", scatter_plot=0):
 
     Returns
     -------
-
     None. The legend is placed directly onto the axis.
     """
 
@@ -77,21 +76,29 @@ def adjust_legend(ax, location="upper right", scatter_plot=0):
                 handle.set_sizes([10.0])
 
 
-def plot_SMF(models, plot_output_path, plot_output_format=".png", plot_sub_populations=False) -> matplotlib.figure.Figure:
+def plot_SMF(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png",
+    plot_sub_populations: bool = False
+) -> matplotlib.figure.Figure:
     """
     Plots the stellar mass function for the specified models.
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+
+    snapshot : int
+        Snapshot we're plotting at.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     plot_sub_populations : Boolean, default False
@@ -99,7 +106,6 @@ def plot_SMF(models, plot_output_path, plot_output_format=".png", plot_sub_popul
 
     Generates
     ---------
-
     The plot will be saved as "<plot_output_path>/1.StellarMassFunction<plot_output_format>"
     """
 
@@ -125,13 +131,13 @@ def plot_SMF(models, plot_output_path, plot_output_format=".png", plot_sub_popul
         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # The SMF is normalized by the simulation volume which is in Mpc/h.
-        norm_SMF = model.properties["SMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths
+        norm_SMF = model.properties[f"snapshot_{snapshot}"]["SMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths
         ax.plot(bin_middles, norm_SMF, color=color, ls=ls, label=label + " - All")
 
         # Be careful to not overcrowd the plot.
         if len(models) == 1 or plot_sub_populations:
-            norm_red = model.properties["red_SMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths
-            norm_blue = model.properties["blue_SMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths
+            norm_red = model.properties[f"snapshot_{snapshot}"]["red_SMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths
+            norm_blue = model.properties[f"snapshot_{snapshot}"]["blue_SMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths
 
             ax.plot(bin_middles, norm_red, "r:", lw=2, label=label + " - Red")
             ax.plot(bin_middles, norm_blue, "b:", lw=2, label=label + " - Blue")
@@ -165,7 +171,12 @@ def plot_SMF(models, plot_output_path, plot_output_format=".png", plot_sub_popul
     return fig
 
 
-def plot_temporal_SMF(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
+def plot_temporal_SMF(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format="png"
+) -> matplotlib.figure.Figure:
     """
     Plots the evolution of the stellar mass function for the specified models. Unlike
     ``plot_SMF()`` which only plots a SMF at a single snapshot, this function loops over
@@ -173,21 +184,22 @@ def plot_temporal_SMF(models, plot_output_path, plot_output_format=".png") -> ma
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``. In
-        particular, we acces the ``Model.properties["SMF_dict"][<snap>]`` values.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``. In
+        particular, we acces the ``Model.properties["snapshot_<snapshot>"]["SMF_dict"][<snap>]`` values.
+
+    snapshot : int
+        This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
     ---------
-
     The plot will be saved as "<plot_output_path>/A.StellarMassFunction<plot_output_format>"
     """
 
@@ -208,7 +220,7 @@ def plot_temporal_SMF(models, plot_output_path, plot_output_format=".png") -> ma
             label = "{0} z = {1:.3f}".format(model.label, model.redshifts[snap])
 
             # The SMF is normalized by the simulation volume which is in Mpc/h.
-            ax.plot(bin_middles, model.properties["SMF_dict"][snap] / model.volume*pow(model.hubble_h, 3)/bin_widths,
+            ax.plot(bin_middles, model.properties[f"snapshot_{snapshot}"]["SMF_dict"][snap] / model.volume*pow(model.hubble_h, 3)/bin_widths,
                     ls=ls, label=label)
 
     # For scaling the observational data, we use the values of the zeroth
@@ -239,27 +251,33 @@ def plot_temporal_SMF(models, plot_output_path, plot_output_format=".png") -> ma
     return fig
 
 
-def plot_BMF(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
+def plot_BMF(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png"
+) -> matplotlib.figure.Figure:
     """
     Plots the baryonic mass function for the specified models. This is the mass
     function for the stellar mass + cold gas.
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+
+    snapshot : int
+        Snapshot we're plotting at.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
     ---------
-
     The plot will be saved as "<plot_output_path>/2.BaryonicMassFunction<plot_output_format>"
     """
 
@@ -277,7 +295,7 @@ def plot_BMF(models, plot_output_path, plot_output_format=".png") -> matplotlib.
         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # The MF is normalized by the simulation volume which is in Mpc/h.
-        ax.plot(bin_middles, model.properties["BMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths,
+        ax.plot(bin_middles, model.properties[f"snapshot_{snapshot}"]["BMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths,
                 color=color, ls=ls, label=label + " - All")
 
     # For scaling the observational data, we use the values of the zeroth
@@ -308,26 +326,32 @@ def plot_BMF(models, plot_output_path, plot_output_format=".png") -> matplotlib.
     return fig
 
 
-def plot_GMF(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
+def plot_GMF(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png"
+) -> matplotlib.figure.Figure:
     """
     Plots the gas mass function for the specified models. This is the mass function for the cold gas.
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+
+    snapshot : int
+        Snapshot we're plotting at.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
     ---------
-
     The plot will be saved as "<plot_output_path>/3.GasMassFunction<plot_output_format>"
     """
 
@@ -345,7 +369,7 @@ def plot_GMF(models, plot_output_path, plot_output_format=".png") -> matplotlib.
         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # The MMF is normalized by the simulation volume which is in Mpc/h.
-        ax.plot(bin_middles, model.properties["GMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths,
+        ax.plot(bin_middles, model.properties[f"snapshot_{snapshot}"]["GMF"]/model.volume*pow(model.hubble_h, 3)/bin_widths,
                 color=color, ls=ls, label=label + " - Cold Gas")
 
     # For scaling the observational data, we use the values of the zeroth
@@ -376,26 +400,32 @@ def plot_GMF(models, plot_output_path, plot_output_format=".png") -> matplotlib.
     return fig
 
 
-def plot_BTF(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
+def plot_BTF(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png"
+) -> matplotlib.figure.Figure:
     """
     Plots the baryonic Tully-Fisher relationship for the specified models.
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+
+    snapshot : int
+        Snapshot we're plotting at.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
     ---------
-
     The plot will be saved as "<plot_output_path>/4.BaryonicTullyFisher<plot_output_format>"
     """
 
@@ -408,7 +438,7 @@ def plot_BTF(models, plot_output_path, plot_output_format=".png") -> matplotlib.
         color = colors[model_num]
         marker = markers[model_num]
 
-        ax.scatter(model.properties["BTF_vel"], model.properties["BTF_mass"], marker=marker, s=1,
+        ax.scatter(model.properties[f"snapshot_{snapshot}"]["BTF_vel"], model.properties[f"snapshot_{snapshot}"]["BTF_mass"], marker=marker, s=1,
                    color=color, alpha=0.5, label=label + " Sb/c galaxies")
 
     ax.set_xlim([1.4, 2.6])
@@ -434,27 +464,33 @@ def plot_BTF(models, plot_output_path, plot_output_format=".png") -> matplotlib.
     return fig
 
 
-def plot_sSFR(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
+def plot_sSFR(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png"
+) -> matplotlib.figure.Figure:
     """
     Plots the specific star formation rate as a function of stellar mass for the specified
     models.
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+
+    snapshot : int
+        Snapshot we're plotting at.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
     ---------
-
     The plot will be saved as "<plot_output_path>/5.SpecificStarFormationRate<plot_output_format>"
     """
 
@@ -467,7 +503,7 @@ def plot_sSFR(models, plot_output_path, plot_output_format=".png") -> matplotlib
         color = colors[model_num]
         marker = markers[model_num]
 
-        ax.scatter(model.properties["sSFR_mass"], model.properties["sSFR_sSFR"], marker=marker, s=1, color=color,
+        ax.scatter(model.properties[f"snapshot_{snapshot}"]["sSFR_mass"], model.properties[f"snapshot_{snapshot}"]["sSFR_sSFR"], marker=marker, s=1, color=color,
                    alpha=0.5, label=label)
 
     # Overplot a dividing line between passive and SF galaxies.
@@ -496,27 +532,33 @@ def plot_sSFR(models, plot_output_path, plot_output_format=".png") -> matplotlib
     return fig
 
 
-def plot_gas_fraction(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
+def plot_gas_fraction(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png"
+) -> matplotlib.figure.Figure:
     """
     Plots the fraction of baryons that are in the cold gas reservoir as a function of
     stellar mass for the specified models.
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+
+    snapshot : int
+        Snapshot we're plotting at.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
     ---------
-
     The plot will be saved as "<plot_output_path>/6.GasFraction<plot_output_format>"
     """
 
@@ -529,7 +571,7 @@ def plot_gas_fraction(models, plot_output_path, plot_output_format=".png") -> ma
         color = colors[model_num]
         marker = markers[model_num]
 
-        ax.scatter(model.properties["gas_frac_mass"], model.properties["gas_frac"], marker=marker, s=1,
+        ax.scatter(model.properties[f"snapshot_{snapshot}"]["gas_frac_mass"], model.properties[f"snapshot_{snapshot}"]["gas_frac"], marker=marker, s=1,
                    color=color, alpha=0.5, label=label + " Sb/c galaxies")
 
     ax.set_xlabel(r"$\log_{10} M_{\mathrm{stars}}\ (M_{\odot})$")
@@ -553,26 +595,31 @@ def plot_gas_fraction(models, plot_output_path, plot_output_format=".png") -> ma
     return fig
 
 
-def plot_metallicity(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
+def plot_metallicity(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png") -> matplotlib.figure.Figure:
     """
     Plots the metallicity as a function of stellar mass for the speicifed models.
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+
+    snapshot : int
+        Snapshot we're plotting at.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
     ---------
-
     The plot will be saved as "<plot_output_path>/7.Metallicity<plot_output_format>"
     """
 
@@ -585,7 +632,7 @@ def plot_metallicity(models, plot_output_path, plot_output_format=".png") -> mat
         color = colors[model_num]
         marker = markers[model_num]
 
-        ax.scatter(model.properties["metallicity_mass"], model.properties["metallicity"],
+        ax.scatter(model.properties[f"snapshot_{snapshot}"]["metallicity_mass"], model.properties[f"snapshot_{snapshot}"]["metallicity"],
                    marker=marker, s=1, color=color, alpha=0.5, label=label + " galaxies")
 
     # Use the IMF of the zeroth model to scale the observational results.
@@ -614,26 +661,32 @@ def plot_metallicity(models, plot_output_path, plot_output_format=".png") -> mat
     return fig
 
 
-def plot_bh_bulge(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
+def plot_bh_bulge(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png"
+) -> matplotlib.figure.Figure:
     """
     Plots the black-hole bulge relationship for the specified models.
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+
+    snapshot : int
+        Snapshot we're plotting at.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
     ---------
-
     The plot will be saved as "<plot_output_path>/8.BlackHoleBulgeRelationship<plot_output_format>"
     """
 
@@ -646,7 +699,7 @@ def plot_bh_bulge(models, plot_output_path, plot_output_format=".png") -> matplo
         color = colors[model_num]
         marker = markers[model_num]
 
-        ax.scatter(model.properties["bulge_mass"], model.properties["bh_mass"], marker=marker, s=1, color=color,
+        ax.scatter(model.properties[f"snapshot_{snapshot}"]["bulge_mass"], model.properties[f"snapshot_{snapshot}"]["bh_mass"], marker=marker, s=1, color=color,
                    alpha=0.5, label=label + " galaxies")
 
     ax = obs.plot_bh_bulge_data(ax)
@@ -672,23 +725,30 @@ def plot_bh_bulge(models, plot_output_path, plot_output_format=".png") -> matplo
     return fig
 
 
-def plot_quiescent(models, plot_output_path, plot_output_format=".png",
-                   plot_sub_populations=False) -> matplotlib.figure.Figure:
+def plot_quiescent(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png",
+    plot_sub_populations: bool = False
+) -> matplotlib.figure.Figure:
     """
     Plots the fraction of galaxies that are quiescent as a function of stellar mass for the
     specified models.  The quiescent cut is defined by ``Model.sSFRcut``.
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+
+    snapshot : int
+        Snapshot we're plotting at.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     plot_sub_populations : Boolean, default False
@@ -696,7 +756,6 @@ def plot_quiescent(models, plot_output_path, plot_output_format=".png",
 
     Generates
     ---------
-
     The plot will be saved as "<plot_output_path>/9.QuiescentFraction<plot_output_format>"
     """
 
@@ -714,14 +773,14 @@ def plot_quiescent(models, plot_output_path, plot_output_format=".png",
         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # We will keep the colour scheme consistent, but change the line styles.
-        ax.plot(bin_middles, model.properties["quiescent_galaxy_counts"] / model.properties["SMF"],
+        ax.plot(bin_middles, model.properties[f"snapshot_{snapshot}"]["quiescent_galaxy_counts"] / model.properties[f"snapshot_{snapshot}"]["SMF"],
                 label=label + " All", color=color, linestyle="-")
 
         if len(models) == 1 or plot_sub_populations:
-            ax.plot(bin_middles, model.properties["quiescent_centrals_counts"] / model.properties["centrals_MF"],
+            ax.plot(bin_middles, model.properties[f"snapshot_{snapshot}"]["quiescent_centrals_counts"] / model.properties[f"snapshot_{snapshot}"]["centrals_MF"],
                     label=label + " Centrals", color=color, linestyle="--")
 
-            ax.plot(bin_middles, model.properties["quiescent_satellites_counts"] / model.properties["satellites_MF"],
+            ax.plot(bin_middles, model.properties[f"snapshot_{snapshot}"]["quiescent_satellites_counts"] / model.properties[f"snapshot_{snapshot}"]["satellites_MF"],
                     label=label + " Satellites", color=color, linestyle="-.")
 
     ax.set_xlabel(r"$\log_{10} M_{\mathrm{stellar}}\ (M_{\odot})$")
@@ -745,23 +804,30 @@ def plot_quiescent(models, plot_output_path, plot_output_format=".png",
     return fig
 
 
-def plot_bulge_fraction(models, plot_output_path, plot_output_format=".png",
-                        plot_var=False) -> matplotlib.figure.Figure:
+def plot_bulge_fraction(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png",
+    plot_var: bool = False
+) -> matplotlib.figure.Figure:
     """
     Plots the fraction of the stellar mass that is located in the bulge/disk as a function
     of stellar mass for the specified models.
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+
+    snapshot : int
+        Snapshot we're plotting at.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     plot_var : Boolean, default False
@@ -769,7 +835,6 @@ def plot_bulge_fraction(models, plot_output_path, plot_output_format=".png",
 
     Generates
     ---------
-
     The plot will be saved as "<plot_output_path>/10.BulgeMassFraction<plot_output_format>"
     """
 
@@ -787,12 +852,12 @@ def plot_bulge_fraction(models, plot_output_path, plot_output_format=".png",
         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # Remember we need to average the properties in each bin.
-        bulge_mean = model.properties["fraction_bulge_sum"] / model.properties["SMF"]
-        disk_mean = model.properties["fraction_disk_sum"] / model.properties["SMF"]
+        bulge_mean = model.properties[f"snapshot_{snapshot}"]["fraction_bulge_sum"] / model.properties[f"snapshot_{snapshot}"]["SMF"]
+        disk_mean = model.properties[f"snapshot_{snapshot}"]["fraction_disk_sum"] / model.properties[f"snapshot_{snapshot}"]["SMF"]
 
         # The variance has already been weighted when we calculated it.
-        bulge_var = model.properties["fraction_bulge_var"]
-        disk_var = model.properties["fraction_disk_var"]
+        bulge_var = model.properties[f"snapshot_{snapshot}"]["fraction_bulge_var"]
+        disk_var = model.properties[f"snapshot_{snapshot}"]["fraction_disk_var"]
 
         # We will keep the colour scheme consistent, but change the line styles.
         ax.plot(bin_middles, bulge_mean, label=label + " bulge",
@@ -827,22 +892,29 @@ def plot_bulge_fraction(models, plot_output_path, plot_output_format=".png",
     return fig
 
 
-def plot_baryon_fraction(models, plot_output_path, plot_output_format=".png",
-                         plot_sub_populations=False) -> matplotlib.figure.Figure:
+def plot_baryon_fraction(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png",
+    plot_sub_populations: bool = False
+) -> matplotlib.figure.Figure:
     """
     Plots the total baryon fraction as afunction of halo mass for the specified models.
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+
+    snapshot : int
+        Snapshot we're plotting at.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     plot_sub_populations : Boolean, default False
@@ -851,7 +923,6 @@ def plot_baryon_fraction(models, plot_output_path, plot_output_format=".png",
 
     Generates
     ---------
-
     The plot will be saved as "<plot_output_path>/11.BaryonFraction<plot_output_format>"
     """
 
@@ -869,7 +940,7 @@ def plot_baryon_fraction(models, plot_output_path, plot_output_format=".png",
         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # Remember we need to average the properties in each bin.
-        baryon_mean = model.properties["halo_baryon_fraction_sum"] / model.properties["fof_HMF"]
+        baryon_mean = model.properties[f"snapshot_{snapshot}"]["halo_baryon_fraction_sum"] / model.properties[f"snapshot_{snapshot}"]["fof_HMF"]
 
         # We will keep the linestyle constant but change the color.
         ax.plot(bin_middles, baryon_mean, label=label + " Total",
@@ -883,7 +954,7 @@ def plot_baryon_fraction(models, plot_output_path, plot_output_format=".png",
 
             for (attr, label, color) in zip(attrs, labels, res_colors):
                 dict_key = "halo_{0}_fraction_sum".format(attr)
-                mean = model.properties[dict_key] / model.properties["fof_HMF"]
+                mean = model.properties[f"snapshot_{snapshot}"][dict_key] / model.properties[f"snapshot_{snapshot}"]["fof_HMF"]
 
                 ax.plot(bin_middles, mean, label=label + " " + label,
                         color=color, linestyle=linestyle)
@@ -907,30 +978,35 @@ def plot_baryon_fraction(models, plot_output_path, plot_output_format=".png",
     return fig
 
 
-def plot_reservoirs(models, plot_output_path, plot_output_format=".png") -> List[matplotlib.figure.Figure]:
+def plot_reservoirs(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png"
+) -> List[matplotlib.figure.Figure]:
     """
     Plots the mass in each reservoir as a function of halo mass for the
     specified models.
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+
+    snapshot : int
+        Snapshot we're plotting at.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
     ---------
 
-    A plot will be saved as
-    "<plot_output_path>/12.MassReservoirs<model.label><plot_output_path>"
-    for each mode.
+    A plot will be saved as ``"<plot_output_path>/12.MassReservoirs<model.label><plot_output_path>"`` for each mode.
     """
 
     # This scatter plot will be messy so we're going to make one for each model.
@@ -949,7 +1025,7 @@ def plot_reservoirs(models, plot_output_path, plot_output_format=".png") -> List
         for (attribute_name, label) in zip(attribute_names, labels):
 
             dict_key = "reservoir_{0}".format(attribute_name)
-            ax.scatter(model.properties["reservoir_mvir"], model.properties[dict_key], marker=marker,
+            ax.scatter(model.properties[f"snapshot_{snapshot}"]["reservoir_mvir"], model.properties[f"snapshot_{snapshot}"][dict_key], marker=marker,
                        s=0.3, label=label)
 
         ax.set_xlabel(r"$\log\ M_{\mathrm{vir}}\ (M_{\odot})$")
@@ -975,29 +1051,35 @@ def plot_reservoirs(models, plot_output_path, plot_output_format=".png") -> List
     return figs
 
 
-def plot_spatial(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
+def plot_spatial(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png"
+) -> matplotlib.figure.Figure:
     """
     Plots the spatial distribution of the galaxies for specified models.
 
     Parameters
     ----------
-
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
+
+    snapshot : int
+        Snapshot we're plotting at.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
     ---------
 
-    A plot will be saved as
-    "<plot_output_path>/13.SpatialDistribution<model.label><plot_output_path>"
-    for each model.
+    A plot will be saved as ``"<plot_output_path>/13.SpatialDistribution<model.label><plot_output_path>"`` for each
+    model.
     """
 
     fig = plt.figure()
@@ -1014,11 +1096,11 @@ def plot_spatial(models, plot_output_path, plot_output_format=".png") -> matplot
         color = colors[model_num]
         marker = markers[model_num]
 
-        ax1.scatter(model.properties["x_pos"], model.properties["y_pos"],
+        ax1.scatter(model.properties[f"snapshot_{snapshot}"]["x_pos"], model.properties[f"snapshot_{snapshot}"]["y_pos"],
                     marker=marker, s=0.3, color=color, alpha=0.5)
-        ax2.scatter(model.properties["x_pos"], model.properties["z_pos"],
+        ax2.scatter(model.properties[f"snapshot_{snapshot}"]["x_pos"], model.properties[f"snapshot_{snapshot}"]["z_pos"],
                     marker=marker, s=0.3, color=color, alpha=0.5)
-        ax3.scatter(model.properties["y_pos"], model.properties["z_pos"], marker=marker, s=0.3, color=color,
+        ax3.scatter(model.properties[f"snapshot_{snapshot}"]["y_pos"], model.properties[f"snapshot_{snapshot}"]["z_pos"], marker=marker, s=0.3, color=color,
                     alpha=0.5)
 
         # The bottom right panel will only contain the legend.
@@ -1111,7 +1193,12 @@ def plot_spatial_3d(pos, output_file, box_size) -> matplotlib.figure.Figure:
     return fig
 
 
-def plot_SMF_z(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
+def plot_SMF_history(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format="png"
+) -> matplotlib.figure.Figure:
     """
     Plots the evolution of the stellar mass function for the specified models.
     This function loops over the value of ``model.SMF_snaps`` and plots and the SMFs at
@@ -1122,13 +1209,16 @@ def plot_SMF_z(models, plot_output_path, plot_output_format=".png") -> matplotli
 
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``. In
-        particular, we acces the ``Model.properties["SMF_dict"][<snap>]`` values.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``. In
+        particular, we acces the ``Model.properties["snapshot_<snapshot>"]["SMF_dict"][<snap>]`` values.
+
+    snapshot : int
+        This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
@@ -1154,7 +1244,7 @@ def plot_SMF_z(models, plot_output_path, plot_output_format=".png") -> matplotli
             label = "{0} z = {1:.3f}".format(model.label, model.redshifts[snap])
 
             # The SMF is normalized by the simulation volume which is in Mpc/h.
-            ax.plot(bin_middles, model.properties["SMF_dict"][snap] / model.volume*pow(model.hubble_h, 3)/bin_widths,
+            ax.plot(bin_middles, model.properties[f"snapshot_{snapshot}"]["SMF_dict"][snap] / model.volume*pow(model.hubble_h, 3)/bin_widths,
                     ls=ls, label=label)
 
     # For scaling the observational data, we use the values of the zeroth
@@ -1185,7 +1275,12 @@ def plot_SMF_z(models, plot_output_path, plot_output_format=".png") -> matplotli
     return fig
 
 
-def plot_SFRD_z(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
+def plot_SFRD_history(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png"
+) -> matplotlib.figure.Figure:
     """
     Plots the evolution of star formation rate density for the specified models.
 
@@ -1194,13 +1289,19 @@ def plot_SFRD_z(models, plot_output_path, plot_output_format=".png") -> matplotl
 
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``. In
-        particular, we acces the ``Model.properties["SFRD_dict"][<snap>]`` values.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``. In
+        particular, we acces the ``Model.properties["snapshot_<snapshot>"]["SFRD_dict"][<snap>]`` values.
+
+    snapshot : int
+        This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    snapshot : int
+        This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
+
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
@@ -1219,7 +1320,7 @@ def plot_SFRD_z(models, plot_output_path, plot_output_format=".png") -> matplotl
         linestyle = linestyles[model_num]
 
         # The SFRD is in a dictionary. Pull it out into a array for plotting.
-        SFRD = np.array([model.properties["SFRD_dict"][snap] for snap in model.properties["SFRD_dict"].keys()])
+        SFRD = np.array([model.properties[f"snapshot_{snapshot}"]["SFRD_dict"][snap] for snap in model.properties[f"snapshot_{snapshot}"]["SFRD_dict"].keys()])
         ax.plot(model.redshifts[model.density_snaps], np.log10(SFRD / model.volume*pow(model.hubble_h, 3)),
                 label=label, color=color, ls=linestyle)
 
@@ -1246,7 +1347,11 @@ def plot_SFRD_z(models, plot_output_path, plot_output_format=".png") -> matplotl
     return fig
 
 
-def plot_SMD_z(models, plot_output_path, plot_output_format=".png") -> matplotlib.figure.Figure:
+def plot_SMD_history(
+    models: List[Model],
+    snapshot: int,
+    plot_output_path: str,
+    plot_output_format: str = "png") -> matplotlib.figure.Figure:
     """
     Plots the evolution of stellar mass density for the specified models.
 
@@ -1255,13 +1360,16 @@ def plot_SMD_z(models, plot_output_path, plot_output_format=".png") -> matplotli
 
     models : List of ``Model`` class instance
         Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["property_name"]``. In
-        particular, we acces the ``Model.properties["SMD_dict"][<snap>]`` values.
+        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``. In
+        particular, we acces the ``Model.properties["snapshot_<snapshot>"]["SMD_dict"][<snap>]`` values.
+
+    snapshot : int
+        This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
     plot_output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default ".png"
+    plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
@@ -1280,7 +1388,7 @@ def plot_SMD_z(models, plot_output_path, plot_output_format=".png") -> matplotli
         linestyle = linestyles[model_num]
 
         # The SMD is in a dictionary. Pull it out into a array for plotting.
-        SMD = np.array([model.properties["SMD_dict"][snap] for snap in model.properties["SMD_dict"].keys()])
+        SMD = np.array([model.properties[f"snapshot_{snapshot}"]["SMD_dict"][snap] for snap in model.properties[f"snapshot_{snapshot}"]["SMD_dict"].keys()])
         ax.plot(model.redshifts[model.density_snaps], np.log10(SMD / model.volume * pow(model.hubble_h, 3)),
                 label=label, color=color, ls=linestyle)
 

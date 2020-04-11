@@ -5,6 +5,9 @@ TODO
 Split this up into smaller functions. Its ghastly as is.
 Doc showing exactly how to generate non-default calc/plot functions.
 Doc showing exactly how to generate non-default extra properties.
+"Snapshot" should not be set in the init method. Rather, it should be passed to "analyse_galaxies".
+"properties" should be a nested dict where the first key specifies the snapshot and then the second key specifies
+exactly what property you want.
 """
 
 import logging
@@ -34,7 +37,6 @@ class GalaxyAnalysis:
     def __init__(
         self,
         sage_parameter_fnames: List[str],
-        snapshots_to_plot: Optional[List[int]] = None,
         IMFs: Optional[List[str]] = None,
         labels: Optional[List[str]] = None,
         sage_output_formats: Optional[List[str]] = None,
@@ -43,7 +45,9 @@ class GalaxyAnalysis:
         num_sage_output_files: Optional[List[int]] = None,
         output_format_data_classes: Optional[Dict[str, Any]] = None,
         random_seeds: Optional[List[int]] = None,
+        history_redshifts: Optional[Dict[str, Union[List[float], str]]] = None,
         plot_toggles: Optional[Dict[str, bool]] = None,
+        history_plot_toggles_keys: Optional[List[str]] = None,
         calculation_functions: Optional[Dict[str, Tuple[Callable, Dict[str, Any]]]] = None,
         plot_functions: Optional[Dict[str, Tuple[Callable, Dict[str, Any]]]] = None,
         galaxy_properties_to_analyse: Optional[Dict[str, Dict[str, Union[str, List[str]]]]] = None,
@@ -64,7 +68,7 @@ class GalaxyAnalysis:
 
         calculation_functions : dict [string, tuple(function, dict[string, variable])], optional
             A dictionary of functions that are used to compute the properties of galaxies being analysed.  Here, the string
-            is the name of the function (e.g., ``"calc_SMF"``), the value is a tuple containing the function itself (e.g.,
+            is the name of the plot toggle (e.g., ``"SMF"``), the value is a tuple containing the function itself (e.g.,
             ``calc_SMF()``), and another dictionary which specifies any optional keyword arguments to that function with
             keys as the name of variable (e.g., ``"calc_sub_populations"``) and values as the variable value (e.g.,
             ``True``).
@@ -100,10 +104,6 @@ class GalaxyAnalysis:
         num_models = len(sage_parameter_fnames)
         self._num_models = num_models
 
-        if snapshots_to_plot is None:
-            snapshots_to_plot = [None] * num_models
-        self._snapshots_to_plot = snapshots_to_plot
-
         if IMFs is None:
             IMFs = ["Chabrier"] * num_models
         self.IMFs = IMFs
@@ -136,9 +136,16 @@ class GalaxyAnalysis:
             random_seeds = [None] * num_models
         self._random_seeds = random_seeds
 
+        if history_redshifts is None:
+            history_redshifts = {
+                "SMF_history": [0.0, 0.5, 1.0, 2.0],
+                "SMD_history": "All",
+                "SFRD_history": "All",
+            }
+        self._history_redshifts = history_redshifts
+
         parameters = [
             sage_parameter_fnames,
-            snapshots_to_plot,
             IMFs,
             labels,
             sage_output_formats,
@@ -146,15 +153,18 @@ class GalaxyAnalysis:
             last_files_to_analyse,
             num_sage_output_files,
             random_seeds,
+            history_redshifts,
         ]
 
         # All the parameters should have the same lengths.
+        """
         for parameter_vals in parameters:
-            if len(parameter_vals) != self._num_models:
+            if len(parameter_vals) != self._num_models and parameter not in :
                 raise ValueError(
                     f"The number of parameter files is {self._num_models}. Ensure that all parameters passed to "
                     f"``analyse_sage_output`` are lists of this length."
                 )
+        """
 
         if plot_toggles is None:
             plot_toggles = {
@@ -170,7 +180,10 @@ class GalaxyAnalysis:
                 "bulge_fraction" : True,  # Fraction of galaxies that are bulge/disc dominated.
                 "baryon_fraction" : True,  # Fraction of baryons in galaxy/reservoir.
                 "reservoirs" : True,  # Mass in each reservoir.
-                "spatial" : True   # Spatial distribution of galaxies.
+                "spatial" : True,   # Spatial distribution of galaxies.
+                "SMF_history": False,
+                "SFRD_history": False,
+                "SMD_history": False,
             }
         self._plot_toggles = plot_toggles
 
@@ -235,6 +248,10 @@ class GalaxyAnalysis:
                         "y_pos", "z_pos"
                     ],
                 },
+                "single_properties": {
+                    "type": "single",
+                    "property_names": ["SMD", "SFRD"],
+                },
             }
         self._galaxy_properties_to_analyse = galaxy_properties_to_analyse
 
@@ -245,11 +262,72 @@ class GalaxyAnalysis:
 
             # Also initialise all of the properties that are required.
             for name, galaxy_properties in self._galaxy_properties_to_analyse.items():
-                self._initialise_properties(name, model, galaxy_properties)
+                for snapshot, _ in enumerate(model._redshifts):
+                    self._initialise_properties(name, model, galaxy_properties, snapshot)
 
             # Finally, set some attributes that are more suited to a per-model basis.
             model._calculation_functions = calculation_functions
 
+            # Go through the calculation functions and pull out those that are actually being analysed over a number of
+            # snapshots. Ensure these aren't in ``_calculation_functions`` because otherwise we'd double count.
+            history_calculation_functions = {}
+            for func_name in self._history_redshifts.keys():
+                try:
+                    calculation_function = calculation_functions[func_name]
+                except KeyError:
+                    continue
+                history_calculation_functions[func_name] = calculation_function
+                del model._calculation_functions[func_name]
+            model._history_calculation_functions = history_calculation_functions
+
+            self._set_history_snapshots(model)
+
+            # Based on the snapshots required to analyse over history, we may have to loop over different snapshots.
+            history_snaps_to_loop = []
+            for property_name in self._history_redshifts.keys():
+
+                # If the plot toggles have been changed, then there's no guarantee that the keys for
+                # ``_history_redshifts`` and ``_plot_toggles`` match.
+                try:
+                    plot_toggle_value = self._plot_toggles[property_name]
+                except KeyError:
+                    continue
+
+                # Furthermore, maybe plotting has been disabled for this property.
+                if not plot_toggle_value:
+                    continue
+
+                snaps = getattr(model, f"_history_{property_name}_snaps")
+                history_snaps_to_loop.extend(snaps)
+
+            model._history_snaps_to_loop = np.unique(history_snaps_to_loop)
+            print(model._history_snaps_to_loop)
+
+
+    def _set_history_snapshots(self, model: Model) -> None:
+
+        # Maybe there were no history redshifts specified.
+        if self._history_redshifts is None:
+            self._history_snapshots = None
+            return
+
+        # Convert these redshifts into snapshots.
+        for property_name, property_redshifts in self._history_redshifts.items():
+
+            if property_redshifts == "All":
+                redshifts = model._redshifts
+            else:
+                redshifts = property_redshifts
+
+            attrname = f"_history_{property_name}_redshifts"
+            setattr(model, property_name, redshifts)
+
+            # Find the snapshots that are closest to the requested redshifts.
+            property_snaps = [(np.abs(model._redshifts - redshift)).argmin() for redshift in redshifts]
+
+            attrname = f"_history_{property_name}_snaps"
+            setattr(model, attrname, property_snaps)
+        return
 
     def _read_sage_file(self, model: Model) -> None:
 
@@ -310,6 +388,7 @@ class GalaxyAnalysis:
         name: str,
         model: Model,
         galaxy_properties: Dict[str, Dict[str, Union[str, List[str]]]],
+        snapshot: int,
     ) -> None:
 
             # Properties can be binned (e.g., how many galaxies with mass between 10^8.0
@@ -335,28 +414,42 @@ class GalaxyAnalysis:
                     galaxy_properties["bin_width"],
                     name,
                     galaxy_properties["property_names"],
+                    snapshot,
                 )
             elif galaxy_properties["type"] == "scatter":
-                model.init_scatter_properties(galaxy_properties["property_names"])
+                model.init_scatter_properties(galaxy_properties["property_names"], snapshot)
             elif galaxy_properties["type"] == "single":
-                model.init_single_properties(galaxy_properties["property_names"])
+                model.init_single_properties(galaxy_properties["property_names"], snapshot)
 
-            logger.info(f"Initialized galaxy properties {galaxy_properties}")
+            logger.info(f"Initialized galaxy properties {galaxy_properties} for Snapshot {snapshot}")
 
-    def analyse_galaxies(self):
+    def analyse_galaxies(self, snapshot: Optional[int] = None):
 
         for model in self._models:
 
-            # To be more memory concious, we calculate the required properties on a
-            # file-by-file basis. This ensures we do not keep ALL the galaxy data in memory.
-            model.calc_properties_all_files(model._calculation_functions, model._snapshot, debug=False)
+            if snapshot is None:
+                snapshot = len(model._redshifts) - 1
 
-    def generate_plots(self) -> List[matplotlib.figure.Figure]:
+            model.calc_properties_all_files(model._calculation_functions, snapshot, debug=False)
+
+            # Now handle calculate properties that are tracked over redshift (if any).
+            if model._history_snaps_to_loop is None:
+                continue
+
+            for snap in model._history_snaps_to_loop:
+                model.calc_properties_all_files(model._history_calculation_functions, snapshot, debug=False)
+
+    def generate_plots(self, snapshot: Optional[int] = None) -> List[matplotlib.figure.Figure]:
+
+        # Snapshot needs to be a list to allow plotting different snapshots for different models.
+        if snapshot is None:
+            snapshot = len(self._models[0]._redshifts) - 1
 
         # Now do the plotting.
         figs = []
+
         for func, kwargs in self._plot_functions.values():
-            fig = func(self._models, self._plot_output_path, self._plot_output_format, **kwargs)
+            fig = func(self._models, snapshot, self._plot_output_path, self._plot_output_format, **kwargs)
 
             if type(fig) == list:
                 figs.extend(fig)

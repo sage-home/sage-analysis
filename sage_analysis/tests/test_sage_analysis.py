@@ -18,15 +18,15 @@ baseline_image_path = "test_data/baseline_plots/"
 generated_image_path = "test_data/generated_plots/"
 
 
-def calc_num_particles_in_halo(model: Model, gals):
+def calc_num_particles_in_halo(model: Model, gals, snapshot: int):
 
     non_zero_stellar = np.where(gals["StellarMass"][:] > 0.0)[0]
     halo_len = gals["Len"][:][non_zero_stellar]
 
     halos_per_bin, _ = np.histogram(halo_len, bins=model.bins["halo_len_bins"])
-    model.properties["halo_len"] += halos_per_bin
+    model.properties[f"snapshot_{snapshot}"]["halo_len"] += halos_per_bin
 
-def plot_num_particles_in_halo(models: List[Model], plot_output_path: str, plot_output_format: str = "png"):
+def plot_num_particles_in_halo(models: List[Model], snapshot: int, plot_output_path: str, plot_output_format: str = "png"):
 
     # This should make a matplotlib plot but it's adequate enough to just test that we pass through this function.
     logger.info(f"Passed through ``plot_num_particles_in_halo``.")
@@ -178,7 +178,7 @@ def test_multiple_models() -> None:
 
     # To ensure we have visual difference between the stellar mass function, let's add some offset to one model and
     # then plot the output.
-    galaxy_analysis._models[0].properties["SMF"] *= 1.5
+    galaxy_analysis._models[0].properties["snapshot_63"]["SMF"] *= 1.5
     galaxy_analysis.generate_plots()
 
     # Save these and test equality.
@@ -278,8 +278,8 @@ def test_additional_property(caplog):
     )
 
     galaxy_analysis.analyse_galaxies()
-    assert f"Initialized galaxy properties {galaxy_properties_to_analyse['stellar_mass_bins']}" in caplog.text
-    assert f"Initialized galaxy properties {galaxy_properties_to_analyse['halo_len_bins']}" in caplog.text
+    assert f"Initialized galaxy properties {galaxy_properties_to_analyse['stellar_mass_bins']} for Snapshot 63" in caplog.text
+    assert f"Initialized galaxy properties {galaxy_properties_to_analyse['halo_len_bins']} for Snapshot 63" in caplog.text
     galaxy_analysis.generate_plots()
     assert "Passed through ``plot_num_particles_in_halo``." in caplog.text
 
