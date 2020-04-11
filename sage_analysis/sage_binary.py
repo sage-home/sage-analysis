@@ -172,7 +172,7 @@ class SageBinaryData():
         self.galaxy_struct = galdesc
 
 
-    def determine_num_gals(self, model):
+    def determine_num_gals(self, model: Model, *args):
         """
         Determines the number of galaxies in all files for this
         :py:class:`~sage_analysis.model.Model`.
@@ -182,6 +182,10 @@ class SageBinaryData():
 
         model: :py:class:`~sage_analysis.model.Model` class
             The :py:class:`~sage_analysis.model.Model` we're reading data for.
+
+        *args : Any
+            Extra arguments to allow other data class to pass extra arguments to their version of
+            ``determine_num_gals``.
         """
 
         num_gals = 0
@@ -191,7 +195,8 @@ class SageBinaryData():
             fname = f"{model.sage_data_path}_{file_num}"
 
             if not os.path.isfile(fname):
-                raise FileNotFoundError(f"Could not file {fname}")
+                logger.debug(f"File\t{fname} \tdoes not exist!")
+                continue
 
             with open(fname, "rb") as f:
                 Ntrees = np.fromfile(f, np.dtype(np.int32),1)[0]

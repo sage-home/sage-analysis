@@ -1240,15 +1240,22 @@ def plot_SMF_history(
         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # Iterate over the snapshots.
-        for snap in model.SMF_snaps:
-            label = "{0} z = {1:.3f}".format(model.label, model.redshifts[snap])
+        for snap in model._history_SMF_history_snaps:
 
+            # Maybe there weren't any galaxies present for this snapshot.
+            if np.isclose(np.sum(model.properties[f"snapshot_{snap}"]["SMF"]), 0.0):
+                continue
+
+            label = f"{model.label} z = {model.redshifts[snap]:.3f}"
             # The SMF is normalized by the simulation volume which is in Mpc/h.
-            ax.plot(bin_middles, model.properties[f"snapshot_{snapshot}"]["SMF_dict"][snap] / model.volume*pow(model.hubble_h, 3)/bin_widths,
-                    ls=ls, label=label)
+            ax.plot(
+                bin_middles,
+                model.properties[f"snapshot_{snap}"]["SMF"] / model.volume*pow(model.hubble_h, 3)/bin_widths,
+                ls=ls,
+                label=label
+            )
 
-    # For scaling the observational data, we use the values of the zeroth
-    # model.
+    # For scaling the observational data, we use the values of the zeroth model.
     zeroth_IMF = models[0].IMF
     ax = obs.plot_temporal_smf_data(ax, zeroth_IMF)
 
@@ -1318,11 +1325,32 @@ def plot_SFRD_history(
         label = model.label
         color = colors[model_num]
         linestyle = linestyles[model_num]
+        marker = markers[model_num]
 
-        # The SFRD is in a dictionary. Pull it out into a array for plotting.
-        SFRD = np.array([model.properties[f"snapshot_{snapshot}"]["SFRD_dict"][snap] for snap in model.properties[f"snapshot_{snapshot}"]["SFRD_dict"].keys()])
-        ax.plot(model.redshifts[model.density_snaps], np.log10(SFRD / model.volume*pow(model.hubble_h, 3)),
-                label=label, color=color, ls=linestyle)
+        SFRD = np.array([model.properties[f"snapshot_{snap}"]["SFRD_history"] for snap in model._history_SFRD_history_snaps])
+        redshifts = model._history_SFRD_history_redshifts
+
+        # All snapshots are initialized with zero values for "SFRD_history".  We only want to plot those non-zero
+        # values.
+        non_zero_inds = np.where(SFRD > 0.0)[0]
+
+        # Only use a line if we have enough snapshots to plot.
+        if len(non_zero_inds) > 20:
+            ax.plot(
+                redshifts,
+                np.log10(SFRD[non_zero_inds] / model.volume*pow(model.hubble_h, 3)),
+                label=label,
+                color=color,
+                ls=linestyle
+            )
+        else:
+            ax.scatter(
+                redshifts[non_zero_inds],
+                np.log10(SFRD[non_zero_inds] / model.volume*pow(model.hubble_h, 3)),
+                label=label,
+                color=color,
+                marker=marker,
+            )
 
     ax = obs.plot_sfrd_data(ax)
 
@@ -1386,11 +1414,32 @@ def plot_SMD_history(
         label = model.label
         color = colors[model_num]
         linestyle = linestyles[model_num]
+        marker = markers[model_num]
 
-        # The SMD is in a dictionary. Pull it out into a array for plotting.
-        SMD = np.array([model.properties[f"snapshot_{snapshot}"]["SMD_dict"][snap] for snap in model.properties[f"snapshot_{snapshot}"]["SMD_dict"].keys()])
-        ax.plot(model.redshifts[model.density_snaps], np.log10(SMD / model.volume * pow(model.hubble_h, 3)),
-                label=label, color=color, ls=linestyle)
+        SMD = np.array([model.properties[f"snapshot_{snap}"]["SMD_history"] for snap in model._history_SMD_history_snaps])
+        redshifts = model._history_SMD_history_redshifts
+
+        # All snapshots are initialized with zero values for "SMD_history".  We only want to plot those non-zero
+        # values.
+        non_zero_inds = np.where(SMD > 0.0)[0]
+
+        # Only use a line if we have enough snapshots to plot.
+        if len(non_zero_inds) > 20:
+            ax.plot(
+                redshifts,
+                np.log10(SMD[non_zero_inds] / model.volume*pow(model.hubble_h, 3)),
+                label=label,
+                color=color,
+                ls=linestyle
+            )
+        else:
+            ax.scatter(
+                redshifts[non_zero_inds],
+                np.log10(SMD[non_zero_inds] / model.volume*pow(model.hubble_h, 3)),
+                label=label,
+                color=color,
+                marker=marker,
+            )
 
     # For scaling the observational data, we use the values of the zeroth
     # model.

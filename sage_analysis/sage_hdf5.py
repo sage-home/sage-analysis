@@ -58,8 +58,9 @@ class SageHdf5Data():
         logger.info(f"The read SAGE parameters are {sage_dict}")
 
         # The output data will be named via the parameter file with the ``.hdf5`` extension.
-        model_path = f"{sage_dict['_base_sage_output_path']}.hdf5"
-        model.hdf5_file = h5py.File(model_path, "r")
+        sage_data_path= f"{sage_dict['_base_sage_output_path']}.hdf5"
+        model.sage_data_path = sage_data_path
+        model.hdf5_file = h5py.File(sage_data_path, "r")
 
         # Due to how attributes are created in C, they will need to be decoded to get cast to a string.
         model.sage_version = model.hdf5_file["Header"]["Misc"].attrs["sage_version"].decode("ascii")
@@ -173,25 +174,37 @@ class SageHdf5Data():
 
         return model_dict
 
-    def determine_num_gals(self, model):
+    def determine_num_gals(self, model: Model, snapshot: int, *args):
         """
-        Determines the number of galaxies in all cores for this model at the specified
-        :py:attr:`~sage_analysis.model.Model.snapshot`.
+        Determines the number of galaxies in all cores for this model at the specified snapshot.
 
         Parameters
         ----------
 
         model: :py:class:`~sage_analysis.model.Model` class
             The :py:class:`~sage_analysis.model.Model` we're reading data for.
+
+        snapshot : int
+            The snapshot we're analysing.
+
+        *args : Any
+            Extra arguments to allow other data class to pass extra arguments to their version of
+            ``determine_num_gals``.
         """
 
         ngals = 0
-        snap_key = "Snap_{0}".format(model.snapshot)
+        snap_key = f"Snap_{snapshot}"
 
         for core_idx in range(model.first_file_to_analyse, model.last_file_to_analyse + 1):
 
-            core_key = "Core_{0}".format(core_idx)
-            ngals += model.hdf5_file[core_key][snap_key].attrs["num_gals"]
+            core_key = f"Core_{core_idx}"
+
+            # Maybe this Snapshot didn't have any galaxies saved.
+            try:
+                ngals += model.hdf5_file[core_key][snap_key].attrs["num_gals"]
+            except KeyError:
+                ngals = 0
+                continue
 
         model.num_gals_all_files = ngals
 
@@ -278,14 +291,18 @@ class SageHdf5Data():
     def update_snapshot_and_data_path(self, model: Model, snapshot: int):
         """
         Updates the :py:attr:`~sage_analysis.Model.snapshot` attribute to ``snapshot``.  As the HDF5 file contains all
-        snapshot information, we do **not** need to update the path to the output data.
+        snapshot information, we do **not** need to update the path to the output data. However, ensure that the file
+        itself is still open.
         """
         model._snapshot = snapshot
+
+        # If the file was closed, then ``__bool__()`` will return False.
+        if not model.hdf5_file.__bool__():
+            model.hdf5_file = h5py.File(model.sage_data_path, "r")
 
 
     def close_file(self, model):
         """
         Closes the open HDF5 file.
         """
-
         model.hdf5_file.close()

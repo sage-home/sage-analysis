@@ -15,6 +15,7 @@ To calculate (and plot) extra properties from the **SAGE** output, we refer to
 Author: Jacob Seiler.
 """
 
+import logging
 from collections import defaultdict
 from typing import Dict, Optional, Tuple, Any, Callable, Union, List
 
@@ -28,6 +29,7 @@ except ImportError:
 else:
     pass
 
+logger = logging.getLogger(__name__)
 
 class Model(object):
     """
@@ -643,10 +645,9 @@ class Model(object):
         self.data_class.update_snapshot_and_data_path(self, snapshot)
 
         # First determine how many galaxies are in all files.
-        self.data_class.determine_num_gals(self)
+        self.data_class.determine_num_gals(self, snapshot)
         if self.num_gals_all_files == 0:
-            print(f"There were no galaxies associated with this model at Snapshot "
-                  f"{self._snapshot}.")
+            logger.info(f"There were no galaxies associated with this model at Snapshot {self._snapshot}.")
             return
 
         # If the user requested the number of galaxies plotted/calculated
@@ -676,7 +677,7 @@ class Model(object):
 
         # Some data formats (e.g., HDF5) have a single file we read from.
         # For other formats, this method doesn't exist. Note: If we're calculating
-        # temporal results (i.e., running `history.py`) then we won't close here.
+        # temporal results then we won't close here.
         if close_file:
             try:
                 self.data_class.close_file(self)

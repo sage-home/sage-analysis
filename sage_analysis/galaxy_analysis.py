@@ -5,9 +5,9 @@ TODO
 Split this up into smaller functions. Its ghastly as is.
 Doc showing exactly how to generate non-default calc/plot functions.
 Doc showing exactly how to generate non-default extra properties.
-"Snapshot" should not be set in the init method. Rather, it should be passed to "analyse_galaxies".
-"properties" should be a nested dict where the first key specifies the snapshot and then the second key specifies
-exactly what property you want.
+"plot_output_path" should be passed to "generate_plots".
+Add more nuance to checking when/if SMF needs to be calculated.
+Add "*args" to data class functions to allow them to pass a variable number of arguments.
 """
 
 import logging
@@ -138,7 +138,7 @@ class GalaxyAnalysis:
 
         if history_redshifts is None:
             history_redshifts = {
-                "SMF_history": [0.0, 0.5, 1.0, 2.0],
+                "SMF_history": "All",
                 "SMD_history": "All",
                 "SFRD_history": "All",
             }
@@ -250,7 +250,7 @@ class GalaxyAnalysis:
                 },
                 "single_properties": {
                     "type": "single",
-                    "property_names": ["SMD", "SFRD"],
+                    "property_names": ["SMD_history", "SFRD_history"],
                 },
             }
         self._galaxy_properties_to_analyse = galaxy_properties_to_analyse
@@ -320,7 +320,7 @@ class GalaxyAnalysis:
                 redshifts = property_redshifts
 
             attrname = f"_history_{property_name}_redshifts"
-            setattr(model, property_name, redshifts)
+            setattr(model, attrname, redshifts)
 
             # Find the snapshots that are closest to the requested redshifts.
             property_snaps = [(np.abs(model._redshifts - redshift)).argmin() for redshift in redshifts]
@@ -372,16 +372,6 @@ class GalaxyAnalysis:
                 pass
 
         model.volume = model.data_class.determine_volume_analysed(model)
-
-        # Some properties require the stellar mass function to normalize their values. For
-        # these, the SMF plot toggle is explicitly required.
-        try:
-            if model.plot_toggles["SMF"]:
-                model.calc_SMF = True
-            else:
-                model.calc_SMF = False
-        except KeyError:  # Maybe we've removed "SMF" from plot_toggles...
-                model.calc_SMF = False
 
     def _initialise_properties(
         self,
@@ -437,7 +427,9 @@ class GalaxyAnalysis:
                 continue
 
             for snap in model._history_snaps_to_loop:
-                model.calc_properties_all_files(model._history_calculation_functions, snapshot, debug=False)
+                model.calc_properties_all_files(
+                    model._history_calculation_functions, snap, debug=False, close_file=False
+                )
 
     def generate_plots(self, snapshot: Optional[int] = None) -> List[matplotlib.figure.Figure]:
 

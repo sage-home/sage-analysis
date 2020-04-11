@@ -500,8 +500,7 @@ def calc_SMF_history(model, gals, snapshot: int, calc_sub_populations=False):
     """
 
     # Maybe SMF has already been computed for this snapshot.
-    if not all(np.isclose(bin_value, 0.0) for bin_value in  model.properties[f"snapshot_{snapshot}"]["SMF"]):
-        calc_SMF(model, gals, snapshot, calc_sub_populations)
+    calc_SMF(model, gals, snapshot, calc_sub_populations)
 
 
 def calc_SFRD_history(model, gals, snapshot: int):
