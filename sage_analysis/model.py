@@ -15,7 +15,7 @@ To calculate (and plot) extra properties from the **SAGE** output, we refer to
 Author: Jacob Seiler.
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple, Any, Callable
 
 import numpy as np
 import time
@@ -472,6 +472,21 @@ class Model(object):
     @plot_toggles.setter
     def plot_toggles(self, plot_toggles: Dict[str, bool]):
         self._plot_toggles = plot_toggles
+
+    @property
+    def calculation_functions(self):
+        """
+        dict[str, tuple[func, dict[str, any]]] : A dictionary of functions that are used to compute the properties of
+        galaxies.  Here, the string is the name of the function (e.g., ``"calc_SMF"``), the value is a tuple
+        containing the function itself (e.g., ``calc_SMF()``), and another dictionary which specifies any optional
+        keyword arguments to that function with keys as the name of variable (e.g., ``"calc_sub_populations"``) and
+        values as the variable value (e.g., ``True``).
+        """
+        return self._calculation_functions
+
+    @calculation_functions.setter
+    def calculation_functions(self, calculation_functions: Dict[str, Tuple[Callable, Dict[str, Any]]]):
+        self._calculation_functions = calculation_funtions
 
     def __repr__(self):
 
