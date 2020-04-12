@@ -112,7 +112,7 @@ class Model(object):
         else:
             self._num_sage_output_files = num_sage_output_files
 
-        if (first_file_to_analyse is None or last_file_to_analyse is None) and sage_output_format is "sage_binary":
+        if (first_file_to_analyse is None or last_file_to_analyse is None) and sage_output_format == "sage_binary":
             raise RuntimeError(
                 "When analysing binary SAGE output, the first and last SAGE output file to analyse must be specified."
             )
@@ -203,7 +203,6 @@ class Model(object):
             print("The volume analysed by a model cannot exceed the volume of the box "
                   "itself.  Error was encountered for the following model.")
             print(self)
-
             raise ValueError
 
         self._volume = vol

@@ -106,7 +106,7 @@ def plot_SMF(
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>/1.StellarMassFunction<plot_output_format>"
+    The plot will be saved as "<plot_output_path>1.StellarMassFunction.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -162,88 +162,7 @@ def plot_SMF(
 
     fig.tight_layout()
 
-    output_file = "{0}/1.StellarMassFunction.{1}".format(plot_output_path,
-                                                         plot_output_format)
-    fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
-    plt.close()
-
-    return fig
-
-
-def plot_temporal_SMF(
-    models: List[Model],
-    snapshot: int,
-    plot_output_path: str,
-    plot_output_format="png"
-) -> matplotlib.figure.Figure:
-    """
-    Plots the evolution of the stellar mass function for the specified models. Unlike
-    ``plot_SMF()`` which only plots a SMF at a single snapshot, this function loops over
-    the value of ``model.SMF_snaps`` and plots and the SMFs at each snapshots.
-
-    Parameters
-    ----------
-    models : List of ``Model`` class instance
-        Models that will be plotted. These instances contain the properties necessary to
-        create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``. In
-        particular, we acces the ``Model.properties["snapshot_<snapshot>"]["SMF_dict"][<snap>]`` values.
-
-    snapshot : int
-        This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
-
-    plot_output_path : string
-        Path to where the plot will be saved.
-
-    plot_output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
-
-    Generates
-    ---------
-    The plot will be saved as "<plot_output_path>/A.StellarMassFunction<plot_output_format>"
-    """
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-
-    # Go through each of the models and plot.
-    for (model_num, model) in enumerate(models):
-
-        ls = linestyles[model_num]
-
-        # Set the x-axis values to be the centre of the bins.
-        bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
-        bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
-
-        # Iterate over the snapshots.
-        for snap in model.SMF_snaps:
-            label = "{0} z = {1:.3f}".format(model.label, model.redshifts[snap])
-
-            # The SMF is normalized by the simulation volume which is in Mpc/h.
-            ax.plot(bin_middles, model.properties[f"snapshot_{snapshot}"]["SMF_dict"][snap] / model.volume*pow(model.hubble_h, 3)/bin_widths,
-                    ls=ls, label=label)
-
-    # For scaling the observational data, we use the values of the zeroth
-    # model.
-    zeroth_IMF = models[0].IMF
-    ax = obs.plot_temporal_smf_data(ax, zeroth_IMF)
-
-    ax.set_xlabel(r"$\log_{10} M_{\mathrm{stars}}\ (M_{\odot})$")
-    ax.set_ylabel(r"$\phi\ (\mathrm{Mpc}^{-3}\ \mathrm{dex}^{-1})$")
-
-    ax.set_yscale("log", nonposy="clip")
-
-    ax.set_xlim([8.0, 12.0])
-    ax.set_ylim([1.0e-6, 1.0e-1])
-
-    ax.xaxis.set_minor_locator(plt.MultipleLocator(0.1))
-
-    adjust_legend(ax, location="lower left", scatter_plot=0)
-
-    fig.tight_layout()
-
-    output_file = "{0}/A.StellarMassFunction.{1}".format(plot_output_path,
-                                                         plot_output_format)
+    output_file = f"{plot_output_path}1.StellarMassFunction.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -278,7 +197,7 @@ def plot_BMF(
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>/2.BaryonicMassFunction<plot_output_format>"
+    The plot will be saved as "<plot_output_path>2.BaryonicMassFunction.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -318,7 +237,7 @@ def plot_BMF(
 
     fig.tight_layout()
 
-    output_file = "{0}/2.BaryonicMassFunction.{1}".format(plot_output_path, plot_output_format)
+    output_file = f"{plot_output_path}2.BaryonicMassFunction.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -352,7 +271,7 @@ def plot_GMF(
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>/3.GasMassFunction<plot_output_format>"
+    The plot will be saved as "<plot_output_path>3.GasMassFunction.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -392,7 +311,7 @@ def plot_GMF(
 
     fig.tight_layout()
 
-    output_file = "{0}/3.GasMassFunction.{1}".format(plot_output_path, plot_output_format)
+    output_file = f"{plot_output_path}3.GasMassFunction.{plot_output_format}"
     fig.savefig(output_file)  # Save the figure
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -426,7 +345,7 @@ def plot_BTF(
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>/4.BaryonicTullyFisher<plot_output_format>"
+    The plot will be saved as "<plot_output_path>4.BaryonicTullyFisher.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -456,7 +375,7 @@ def plot_BTF(
 
     fig.tight_layout()
 
-    output_file = "{0}/4.BaryonicTullyFisher.{1}".format(plot_output_path, plot_output_format)
+    output_file = f"{plot_output_path}4.BaryonicTullyFisher.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -491,7 +410,7 @@ def plot_sSFR(
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>/5.SpecificStarFormationRate<plot_output_format>"
+    The plot will be saved as "<plot_output_path>5.SpecificStarFormationRate.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -524,7 +443,7 @@ def plot_sSFR(
 
     fig.tight_layout()
 
-    output_file = "{0}/5.SpecificStarFormationRate.{1}".format(plot_output_path, plot_output_format)
+    output_file = f"{plot_output_path}5.SpecificStarFormationRate.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -559,7 +478,7 @@ def plot_gas_fraction(
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>/6.GasFraction<plot_output_format>"
+    The plot will be saved as "<plot_output_path>6.GasFraction.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -587,7 +506,7 @@ def plot_gas_fraction(
 
     fig.tight_layout()
 
-    output_file = "{0}/6.GasFraction.{1}".format(plot_output_path, plot_output_format)
+    output_file = f"{plot_output_path}6.GasFraction.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -620,7 +539,7 @@ def plot_metallicity(
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>/7.Metallicity<plot_output_format>"
+    The plot will be saved as "<plot_output_path>7.Metallicity.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -653,7 +572,7 @@ def plot_metallicity(
 
     fig.tight_layout()
 
-    output_file = "{0}/7.Metallicity.{1}".format(plot_output_path, plot_output_format)
+    output_file = f"{plot_output_path}7.Metallicity.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -687,7 +606,7 @@ def plot_bh_bulge(
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>/8.BlackHoleBulgeRelationship<plot_output_format>"
+    The plot will be saved as "<plot_output_path>8.BlackHoleBulgeRelationship.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -717,7 +636,7 @@ def plot_bh_bulge(
 
     fig.tight_layout()
 
-    output_file = "{0}/8.BlackHoleBulgeRelationship.{1}".format(plot_output_path, plot_output_format)
+    output_file = f"{plot_output_path}8.BlackHoleBulgeRelationship.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -756,7 +675,7 @@ def plot_quiescent(
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>/9.QuiescentFraction<plot_output_format>"
+    The plot will be saved as "<plot_output_path>9.QuiescentFraction.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -796,7 +715,7 @@ def plot_quiescent(
 
     fig.tight_layout()
 
-    output_file = "{0}/9.QuiescentFraction.{1}".format(plot_output_path, plot_output_format)
+    output_file = f"{plot_output_path}9.QuiescentFraction.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -835,7 +754,7 @@ def plot_bulge_fraction(
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>/10.BulgeMassFraction<plot_output_format>"
+    The plot will be saved as "<plot_output_path>10.BulgeMassFraction.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -884,7 +803,7 @@ def plot_bulge_fraction(
 
     fig.tight_layout()
 
-    output_file = "{0}/10.BulgeMassFraction.{1}".format(plot_output_path, plot_output_format)
+    output_file = f"{plot_output_path}10.BulgeMassFraction.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -923,7 +842,7 @@ def plot_baryon_fraction(
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>/11.BaryonFraction<plot_output_format>"
+    The plot will be saved as "<plot_output_path>11.BaryonFraction.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -970,7 +889,7 @@ def plot_baryon_fraction(
 
     adjust_legend(ax, location="upper left", scatter_plot=0)
 
-    output_file = "{0}/11.BaryonFraction.{1}".format(plot_output_path, plot_output_format)
+    output_file = f"{plot_output_path}11.BaryonFraction.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -1006,7 +925,7 @@ def plot_reservoirs(
     Generates
     ---------
 
-    A plot will be saved as ``"<plot_output_path>/12.MassReservoirs<model.label><plot_output_path>"`` for each mode.
+    A plot will be saved as ``"<plot_output_path>12.MassReservoirs<model.label>.<plot_output_format>"`` for each mode.
     """
 
     # This scatter plot will be messy so we're going to make one for each model.
@@ -1041,7 +960,7 @@ def plot_reservoirs(
 
         fig.tight_layout()
 
-        output_file = f"{plot_output_path}/12.MassReservoirs.{plot_output_format}"
+        output_file = f"{plot_output_path}12.MassReservoirs.{plot_output_format}"
         fig.savefig(output_file)
         print(f"Saved file to {output_file}")
         plt.close()
@@ -1078,7 +997,7 @@ def plot_spatial(
     Generates
     ---------
 
-    A plot will be saved as ``"<plot_output_path>/13.SpatialDistribution<model.label><plot_output_path>"`` for each
+    A plot will be saved as ``"<plot_output_path>13.SpatialDistribution<model.label>.<plot_output_format>"`` for each
     model.
     """
 
@@ -1133,7 +1052,7 @@ def plot_spatial(
     # Make sure everything remains nicely layed out.
     fig.tight_layout()
 
-    output_file = "{0}/13.SpatialDistribution.{1}".format(plot_output_path, plot_output_format)
+    output_file = f"{plot_output_path}13.SpatialDistribution.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -1224,7 +1143,7 @@ def plot_SMF_history(
     Generates
     ---------
 
-    The plot will be saved as "<plot_output_path>/A.StellarMassFunction<plot_output_format>"
+    The plot will be saved as "<plot_output_path>A.StellarMassFunction.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -1273,8 +1192,7 @@ def plot_SMF_history(
 
     fig.tight_layout()
 
-    output_file = "{0}/A.StellarMassFunction.{1}".format(plot_output_path,
-                                                         plot_output_format)
+    output_file = f"{plot_output_path}A.StellarMassFunction.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -1314,7 +1232,7 @@ def plot_SFRD_history(
     Generates
     ---------
 
-    The plot will be saved as "<plot_output_path>/B.SFRDensity<plot_output_format>"
+    The plot will be saved as "<plot_output_path>B.SFRDensity.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -1367,7 +1285,7 @@ def plot_SFRD_history(
 
     fig.tight_layout()
 
-    output_file = "{0}/B.SFRDensity.{1}".format(plot_output_path, plot_output_format)
+    output_file = f"{plot_output_path}/B.SFRDensity.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -1403,7 +1321,7 @@ def plot_SMD_history(
     Generates
     ---------
 
-    The plot will be saved as "<plot_output_path>/C.StellarMassDensity<plot_output_format>"
+    The plot will be saved as "<plot_output_path>C.StellarMassDensity.<plot_output_format>"
     """
 
     fig = plt.figure()
@@ -1459,7 +1377,7 @@ def plot_SMD_history(
 
     fig.tight_layout()
 
-    output_file = "{0}/C.StellarMassDensity.{1}".format(plot_output_path, plot_output_format)
+    output_file = f"{plot_output_path}C.StellarMassDensity.{plot_output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()

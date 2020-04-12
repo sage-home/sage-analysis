@@ -252,10 +252,6 @@ def calc_quiescent(model, gals, snapshot: int):
     fraction, one must divide by the number of galaxies in each stellar mass bin, the stellar mass function
     ``Model.properties["snapshot_<snapshot>"]["SMF"]``. See :func:`~sage_analysis.example_plots.plot_quiescent` for an
     example implementation.
-
-    If the stellar mass function has not been calculated (``Model.plot_toggles["SMF"]`` is ``False``), a ``ValueError``
-    is thrown. Ensure that ``SMF`` has been switched on for the ``plot_toggles`` variable when the ``Model`` is
-    instantiated. Also ensure that the ``SMF`` binned property is initialized.
     """
 
     non_zero_stellar = np.where(gals["StellarMass"][:] > 0.0)[0]
@@ -268,18 +264,6 @@ def calc_quiescent(model, gals, snapshot: int):
     sSFR = (gals["SfrDisk"][:][non_zero_stellar] + gals["SfrBulge"][:][non_zero_stellar]) / \
            (gals["StellarMass"][:][non_zero_stellar] * 1.0e10 / model.hubble_h)
     quiescent = sSFR < 10.0 ** model.sSFRcut
-
-    # When plotting, we scale the number of quiescent galaxies by the total number of
-    # galaxies in that bin.  This is the Stellar Mass Function.
-    # So check if the SMF has been initialized.  If not, then it should be specified.
-    if model._plot_toggles["SMF"]:
-        pass
-    else:
-        raise ValueError("When calculating the quiescent galaxy population, we "
-                         "scale the results by the number of galaxies in each bin. "
-                         "This requires the stellar mass function to be calculated. "
-                         "Ensure that the 'SMF' plot toggle is switched on and that "
-                         "the 'SMF' binned property is initialized.")
 
     # Mass function for number of centrals/satellites.
     centrals_counts, _ = np.histogram(mass[gal_type == 0], bins=model.bins["stellar_mass_bins"])
@@ -318,10 +302,6 @@ def calc_bulge_fraction(model, gals, snapshot: int):
     divide by the number of galaxies in each stellar mass bin, the stellar mass function
     ``Model.properties["snapshot_<snapshot>"]["SMF"]``. See :func:`~sage_analysis.example_plots.plot_bulge_fraction`
     for full implementation.
-
-    If the stellar mass function has not been calculated (``Model.plot_toggles["SMF"]`` is ``False``), a ``ValueError``
-    is thrown.  Ensure that ``SMF`` has been switched on for the ``plot_toggles`` variable when the ``Model`` is
-    instantiated. Also ensure that the ``SMF`` binned property is initialized.
     """
 
     non_zero_stellar = np.where(gals["StellarMass"][:] > 0.0)[0]
@@ -329,19 +309,6 @@ def calc_bulge_fraction(model, gals, snapshot: int):
     stellar_mass = np.log10(gals["StellarMass"][:][non_zero_stellar] * 1.0e10 / model.hubble_h)
     fraction_bulge = gals["BulgeMass"][:][non_zero_stellar] / gals["StellarMass"][:][non_zero_stellar]
     fraction_disk = 1.0 - (gals["BulgeMass"][:][non_zero_stellar] / gals["StellarMass"][:][non_zero_stellar])
-
-    # When plotting, we scale the fraction of each galaxy type the total number of
-    # galaxies in that bin. This is the Stellar Mass Function.
-    # So check if we're calculating the SMF already, and if not, calculate it here.
-    if model._plot_toggles["SMF"]:
-        pass
-    else:
-        raise ValueError("When calculating the bulge fraction, we "
-                         "scale the results by the number of galaxies in each bin. "
-                         "This requires the stellar mass function to be calculated. "
-                         "Ensure that the 'SMF' plot toggle is switched on and that "
-                         "the 'SMF' binned property is initialized.")
-
 
     # We want the mean bulge/disk fraction as a function of stellar mass. To allow
     # us to sum across each file, we will record the sum in each bin and then average later.

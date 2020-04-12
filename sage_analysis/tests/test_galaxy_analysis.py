@@ -7,7 +7,7 @@ import pytest
 import matplotlib.pyplot as plt
 import os
 
-
+from pathlib import Path
 import hypothesis.strategies as st
 from hypothesis import given, settings
 from matplotlib.testing.compare import compare_images
@@ -18,8 +18,10 @@ from sage_analysis.galaxy_analysis import GalaxyAnalysis
 from sage_analysis.model import Model
 
 logger = logging.getLogger(__name__)
-baseline_image_path = "test_data/baseline_plots/"
-generated_image_path = "test_data/generated_plots/"
+
+test_path = Path(__file__).parent
+baseline_image_path = f"{test_path}/test_data/baseline_plots/"
+generated_image_path = f"{test_path}/test_data/generated_plots/"
 
 
 def calc_num_particles_in_halo(model: Model, gals, snapshot: int):
@@ -57,7 +59,7 @@ def my_compare_images(baseline_image_path: str, generated_image_path: str, clean
 @pytest.mark.parametrize("sage_output_formats", [(["sage_binary"]), (["sage_hdf5"])])
 def test_sage_output_format(sage_output_formats):
 
-    parameter_fnames = ["test_data/mini-millennium.par"]
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
     labels = ["Mini-Millennium"]
     first_files_to_analyse = [0]
     last_files_to_analyse = [0]
@@ -71,13 +73,12 @@ def test_sage_output_format(sage_output_formats):
         num_sage_output_files=num_sage_output_files,
         first_files_to_analyse=first_files_to_analyse,
         last_files_to_analyse=last_files_to_analyse,
-        plot_output_path=generated_image_path,
         labels=labels,
         random_seeds=random_seeds,
     )
 
     galaxy_analysis.analyse_galaxies()
-    galaxy_analysis.generate_plots()
+    galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
 
     my_compare_images(baseline_image_path, generated_image_path, False)
 
@@ -88,7 +89,7 @@ def test_binary_sage_num_output_file_error():
     error is thrown.
     """
 
-    parameter_fnames = ["test_data/mini-millennium.par"]
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
     sage_output_formats = ["sage_binary"]
 
     with pytest.raises(RuntimeError):
@@ -107,7 +108,7 @@ def test_hdf5_sage_num_output_file_message(caplog):
 
     caplog.set_level(logging.DEBUG)
 
-    parameter_fnames = ["test_data/mini-millennium.par"]
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
     sage_output_formats = ["sage_hdf5"]
     num_sage_output_files = [100]
 
@@ -134,7 +135,7 @@ def test_use_parameter_file_format(caplog) -> None:
 
     caplog.set_level(logging.INFO)
 
-    parameter_fnames = ["test_data/mini-millennium.par"]
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
     num_sage_output_files = [1]
     first_files_to_analyse = [0]
     last_files_to_analyse = [0]
@@ -148,7 +149,7 @@ def test_use_parameter_file_format(caplog) -> None:
     galaxy_analysis.analyse_galaxies()
 
     assert galaxy_analysis._models[0].sage_output_format == "sage_binary"
-    assert "No SAGE output format specified. Attempting to read ``test_data/mini-millennium.par`` and using the " \
+    assert f"No SAGE output format specified. Attempting to read ``{parameter_fnames[0]}`` and using the " \
         "format specified inside." in caplog.text
     assert "Using ``sage_binary`` output format."
 
@@ -158,7 +159,7 @@ def test_multiple_models() -> None:
     If the user specifies multiple models, they should be analysed and plotted no problemo.
     """
 
-    parameter_fnames = ["test_data/mini-millennium.par", "test_data/mini-millennium.par"]
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par", f"{test_path}/test_data/mini-millennium.par"]
     sage_output_formats = ["sage_binary", "sage_hdf5"]
     labels = ["Binary", "HDF5"]
     num_sage_output_files = [1, None]
@@ -172,7 +173,6 @@ def test_multiple_models() -> None:
         first_files_to_analyse=first_files_to_analyse,
         last_files_to_analyse=last_files_to_analyse,
         labels=labels,
-        plot_output_path=generated_image_path,
     )
     galaxy_analysis.analyse_galaxies()
 
@@ -181,12 +181,33 @@ def test_multiple_models() -> None:
     # To ensure we have visual difference between the stellar mass function, let's add some offset to one model and
     # then plot the output.
     galaxy_analysis._models[0].properties["snapshot_63"]["SMF"] *= 1.5
-    galaxy_analysis.generate_plots()
+    # galaxy_analysis.generate_plots()
 
     # Save these and test equality.
 
 # Need to add an option to add a tag to outputs?
 # Test to ensure that wrong number of parameters yield error.
+
+def test_single_parameter_file_as_string():
+    """
+    The parameter file name can be passed as just a string.
+    """
+
+    parameter_fname = f"{test_path}/test_data/mini-millennium.par"
+    sage_output_formats = ["sage_hdf5"]
+    random_seeds = [666]
+    labels = ["Mini-Millennium"]
+
+    galaxy_analysis = GalaxyAnalysis(
+        parameter_fname,
+        sage_output_formats=sage_output_formats,
+        random_seeds=random_seeds,
+        labels=labels,
+    )
+
+    galaxy_analysis.analyse_galaxies()
+    galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
+    my_compare_images(baseline_image_path, generated_image_path)
 
 
 def test_defaults(caplog):
@@ -196,7 +217,7 @@ def test_defaults(caplog):
 
     caplog.set_level(logging.INFO)
 
-    parameter_fnames = ["test_data/mini-millennium.par"]
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
     sage_output_formats = ["sage_hdf5"]
     random_seeds = [666]
 
@@ -225,8 +246,7 @@ def test_defaults(caplog):
     galaxy_analysis._models[0].label = "Mini-Millennium"
 
     generated_image_path = "test_data/generated_plots/"
-    galaxy_analysis._plot_output_path = generated_image_path
-    galaxy_analysis.generate_plots()
+    galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
 
     my_compare_images(baseline_image_path, generated_image_path)
 
@@ -237,7 +257,7 @@ def test_additional_property(caplog):
 
     caplog.set_level(logging.INFO)
 
-    parameter_fnames = ["test_data/mini-millennium.par"]
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
     sage_output_formats = ["sage_hdf5"]
 
     baseline_plot_toggles = {"SMF": True}
@@ -276,13 +296,12 @@ def test_additional_property(caplog):
         calculation_functions=baseline_calculation_functions,
         plot_functions=baseline_plot_functions,
         galaxy_properties_to_analyse=galaxy_properties_to_analyse,
-        plot_output_path=generated_image_path,
     )
 
     galaxy_analysis.analyse_galaxies()
     assert f"Initialized galaxy properties {galaxy_properties_to_analyse['stellar_mass_bins']} for Snapshot 63" in caplog.text
     assert f"Initialized galaxy properties {galaxy_properties_to_analyse['halo_len_bins']} for Snapshot 63" in caplog.text
-    galaxy_analysis.generate_plots()
+    galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
     assert "Passed through ``plot_num_particles_in_halo``." in caplog.text
     os.remove(f"{generated_image_path}/1.StellarMassFunction.png")
 
@@ -292,7 +311,7 @@ def test_incorrect_additional_property():
     throw a ``ValueError``.
     """
 
-    parameter_fnames = ["test_data/mini-millennium.par"]
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
     sage_output_formats = ["sage_hdf5"]
 
     galaxy_properties_to_analyse = {
@@ -319,7 +338,7 @@ def test_random_combinations(plot_toggles: Dict[str, bool]) -> None:
     Consequently, it takes ~2 minutes to run. This test can be skipped by running ``pytest -m "not hypothesis"``.
     """
 
-    parameter_fnames = ["test_data/mini-millennium.par"]
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
     sage_output_formats = ["sage_hdf5"]
     labels = ["Mini-Millennium"]
     random_seeds = [666]
@@ -331,11 +350,10 @@ def test_random_combinations(plot_toggles: Dict[str, bool]) -> None:
         random_seeds=random_seeds,
         labels=labels,
         plot_toggles=plot_toggles,
-        plot_output_path=generated_image_path,
     )
 
     galaxy_analysis.analyse_galaxies()
-    figs = galaxy_analysis.generate_plots()
+    figs = galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
 
     # When ``plot_toggles = {}``, no figures are generated. This is still a valid scenario to test however there isn't
     # anything we want to be comparing.
