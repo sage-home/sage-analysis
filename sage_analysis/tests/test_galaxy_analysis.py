@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 import warnings
 import logging
 
@@ -7,8 +7,12 @@ import pytest
 import matplotlib.pyplot as plt
 import os
 
+
+import hypothesis.strategies as st
+from hypothesis import given, settings
 from matplotlib.testing.compare import compare_images
 
+from sage_analysis.default_analysis_arguments import default_plot_toggles
 from sage_analysis.utils import generate_func_dict
 from sage_analysis.galaxy_analysis import GalaxyAnalysis
 from sage_analysis.model import Model
@@ -75,7 +79,7 @@ def test_sage_output_format(sage_output_formats):
     galaxy_analysis.analyse_galaxies()
     galaxy_analysis.generate_plots()
 
-    my_compare_images(baseline_image_path, generated_image_path)
+    my_compare_images(baseline_image_path, generated_image_path, False)
 
 
 def test_binary_sage_num_output_file_error():
@@ -303,3 +307,39 @@ def test_incorrect_additional_property():
             sage_output_formats=sage_output_formats,
             galaxy_properties_to_analyse=galaxy_properties_to_analyse,
         )
+
+@pytest.mark.hypothesis
+@given(st.dictionaries(st.sampled_from(list(default_plot_toggles.keys())), st.sampled_from([True, False])))
+@settings(deadline=None)
+def test_random_combinations(plot_toggles: Dict[str, bool]) -> None:
+    """
+    Ensure that any random combination of plot toggles run as expected using default arugments.
+
+    Note: This runs 100 different combinations of plot toggles, each time opening/closing files and generating plots.
+    Consequently, it takes ~2 minutes to run. This test can be skipped by running ``pytest -m "not hypothesis"``.
+    """
+
+    parameter_fnames = ["test_data/mini-millennium.par"]
+    sage_output_formats = ["sage_hdf5"]
+    labels = ["Mini-Millennium"]
+    random_seeds = [666]
+    generated_image_path = "test_data/generated_plots/"
+
+    galaxy_analysis = GalaxyAnalysis(
+        parameter_fnames,
+        sage_output_formats=sage_output_formats,
+        random_seeds=random_seeds,
+        labels=labels,
+        plot_toggles=plot_toggles,
+        plot_output_path=generated_image_path,
+    )
+
+    galaxy_analysis.analyse_galaxies()
+    figs = galaxy_analysis.generate_plots()
+
+    # When ``plot_toggles = {}``, no figures are generated. This is still a valid scenario to test however there isn't
+    # anything we want to be comparing.
+    if figs is None:
+        return
+
+    my_compare_images(baseline_image_path, generated_image_path)

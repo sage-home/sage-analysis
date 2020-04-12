@@ -145,7 +145,7 @@ def calc_sSFR(model, gals, snapshot: int):
     non_zero_stellar = np.where(gals["StellarMass"][:] > 0.0)[0]
 
     # Select a random subset of galaxies (if necessary).
-    random_inds = select_random_indices(non_zero_stellar, model.num_gals_all_files, model.sample_size)
+    random_inds = select_random_indices(non_zero_stellar, model.num_gals_all_files, model.sample_size, model.random_seed)
 
     stellar_mass = np.log10(gals["StellarMass"][:][random_inds] * 1.0e10 / model.hubble_h)
     sSFR = (gals["SfrDisk"][:][random_inds] + gals["SfrBulge"][:][random_inds]) / \
@@ -172,7 +172,7 @@ def calc_gas_fraction(model, gals, snapshot: int):
                        (gals["BulgeMass"][:] / gals["StellarMass"][:] < 0.5))[0]
 
     # Select a random subset of galaxies (if necessary).
-    spirals = select_random_indices(spirals, model.num_gals_all_files, model.sample_size)
+    spirals = select_random_indices(spirals, model.num_gals_all_files, model.sample_size, model.random_seed)
 
     stellar_mass = np.log10(gals["StellarMass"][:][spirals] * 1.0e10 / model.hubble_h)
     gas_fraction = gals["ColdGas"][:][spirals] / (gals["StellarMass"][:][spirals] + gals["ColdGas"][:][spirals])
@@ -198,7 +198,7 @@ def calc_metallicity(model, gals, snapshot: int):
                         (gals["StellarMass"][:] > 0.01))[0]
 
     # Select a random subset of galaxies (if necessary).
-    centrals = select_random_indices(centrals, model.num_gals_all_files, model.sample_size)
+    centrals = select_random_indices(centrals, model.num_gals_all_files, model.sample_size, model.random_seed)
 
     stellar_mass = np.log10(gals["StellarMass"][:][centrals] * 1.0e10 / model.hubble_h)
     Z = np.log10((gals["MetalsColdGas"][:][centrals] / gals["ColdGas"][:][centrals]) / 0.02) + 9.0
@@ -226,7 +226,7 @@ def calc_bh_bulge(model, gals, snapshot: int):
     my_gals = np.where((gals["BulgeMass"][:] > 0.01) & (gals["BlackHoleMass"][:] > 0.00001))[0]
 
     # Select a random subset of galaxies (if necessary).
-    my_gals = select_random_indices(my_gals, model.num_gals_all_files, model.sample_size)
+    my_gals = select_random_indices(my_gals, model.num_gals_all_files, model.sample_size, model.random_seed)
 
     bh = np.log10(gals["BlackHoleMass"][:][my_gals] * 1.0e10 / model.hubble_h)
     bulge = np.log10(gals["BulgeMass"][:][my_gals] * 1.0e10 / model.hubble_h)
@@ -454,7 +454,7 @@ def calc_reservoirs(model, gals, snapshot: int):
                         (gals["StellarMass"][:] > 0.0))[0]
 
     # Select a random subset of galaxies (if necessary).
-    centrals = select_random_indices(centrals, model.num_gals_all_files, model.sample_size)
+    centrals = select_random_indices(centrals, model.num_gals_all_files, model.sample_size, model.random_seed)
 
     reservoirs = ["Mvir", "StellarMass", "ColdGas", "HotGas", "EjectedMass", "IntraClusterStars"]
     attribute_names = ["mvir", "stars", "cold", "hot", "ejected", "ICS"]
@@ -481,7 +481,7 @@ def calc_spatial(model, gals, snapshot: int):
     non_zero = np.where((gals["Mvir"][:] > 0.0) & (gals["StellarMass"][:] > 0.1))[0]
 
     # Select a random subset of galaxies (if necessary).
-    non_zero = select_random_indices(non_zero, model.num_gals_all_files, model.sample_size)
+    non_zero = select_random_indices(non_zero, model.num_gals_all_files, model.sample_size, model.random_seed)
 
     attribute_names = ["x_pos", "y_pos", "z_pos"]
     data_names = ["Posx", "Posy", "Posz"]

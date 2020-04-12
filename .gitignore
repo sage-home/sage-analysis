@@ -15,3 +15,4 @@ sage_analysis/tests/test_data/*.hdf5
 sage_analysis/tests/test_data/*.tar
 sage_analysis/tests/test_data/*.par
 sage_analysis/tests/test_data/*.a_list
+.hypothesis/

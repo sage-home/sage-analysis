@@ -214,8 +214,6 @@ class GalaxyAnalysis:
                     "However, ``calc_SMF`` was not found in ``calculation_functions``. Ensure that it is added."
                 )
 
-        print(calculation_functions)
-
         if plot_functions is None:
             plot_functions = generate_func_dict(
                 plot_toggles, module_name="sage_analysis.example_plots", function_prefix="plot_"
@@ -411,7 +409,11 @@ class GalaxyAnalysis:
         return False
 
 
-    def analyse_galaxies(self, snapshot: Optional[int] = None):
+    def analyse_galaxies(self, snapshot: Optional[int] = None) -> None:
+
+        if self._plot_toggles == {}:
+            logger.debug(f"No plot toggles specified.")
+            return
 
         for model in self._models:
 
@@ -429,7 +431,11 @@ class GalaxyAnalysis:
                     model._history_calculation_functions, snap, debug=False, close_file=False
                 )
 
-    def generate_plots(self, snapshot: Optional[int] = None) -> List[matplotlib.figure.Figure]:
+    def generate_plots(self, snapshot: Optional[int] = None) -> Optional[List[matplotlib.figure.Figure]]:
+
+        if self._plot_toggles == {}:
+            logger.debug(f"No plot toggles specified.")
+            return
 
         # Snapshot needs to be a list to allow plotting different snapshots for different models.
         if snapshot is None:
