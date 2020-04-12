@@ -18,10 +18,17 @@ Author: Jacob Seiler
 import numpy as np
 from scipy import stats
 
+from sage_analysis.model import Model
 from sage_analysis.utils import select_random_indices
 
 
-def calc_SMF(model, gals, snapshot: int, calc_sub_populations=False):
+def calc_SMF(
+    model:Model,
+    gals,
+    snapshot: int,
+    calc_sub_populations: bool = False,
+    smf_property_name: str = "SMF"
+):
     """
     Calculates the stellar mass function of the given galaxies.  That is, the number of galaxies at a given stellar
     mass.
@@ -37,6 +44,10 @@ def calc_SMF(model, gals, snapshot: int, calc_sub_populations=False):
 
     plot_sub_populations : boolean, optional
         If ``True``, calculates the stellar mass function for red and blue sub-populations.
+
+    smf_property_name : string, optional
+        The name of the property used to store the stellar mass function. Useful if different calculations are
+        computing the stellar mass function but saving it as a different property.
     """
 
     non_zero_stellar = np.where(gals["StellarMass"][:] > 0.0)[0]
@@ -46,7 +57,7 @@ def calc_SMF(model, gals, snapshot: int, calc_sub_populations=False):
                (gals["StellarMass"][:][non_zero_stellar] * 1.0e10 / model.hubble_h)
 
     gals_per_bin, _ = np.histogram(stellar_mass, bins=model.bins["stellar_mass_bins"])
-    model.properties[f"snapshot_{snapshot}"]["SMF"] += gals_per_bin
+    model.properties[f"snapshot_{snapshot}"][f"{smf_property_name}"] += gals_per_bin
 
     # We often want to plot the red and blue subpopulations. So bin them if requested.
     if calc_sub_populations:
@@ -482,25 +493,14 @@ def calc_spatial(model, gals, snapshot: int):
         model.properties[f"snapshot_{snapshot}"][attribute_name] = np.append(model.properties[f"snapshot_{snapshot}"][attribute_name], pos)
 
 
-def calc_SMF_history(model, gals, snapshot: int, calc_sub_populations=False):
+def calc_SMF_history(model, gals, snapshot: int):
     """
-    Calculates the stellar mass function of the given galaxies.  That is, the number of
-    galaxies at a given stellar mass.
+    Calculates the stellar mass function of the given galaxies.  That is, the number of galaxies at a given stellar
+    mass.
 
-    The ``Model.properties["SMF"]`` array will be updated. We also split the galaxy
-    population into "red" and "blue" based on the value of
-    :py:attr:`~sage_analysis.model.Model.sSFRcut` and update the
-    ``Model.properties["red_SMF"]`` and ``Model.properties["blue_SMF"]`` arrays.
-
-    Parameters
-    ----------
-
-    plot_sub_populations : boolean, optional
-        If ``True``, calculates the stellar mass function for red and blue sub-populations.
+    The ``Model.properties["SMF"_history]`` array will be updated.
     """
-
-    # Maybe SMF has already been computed for this snapshot.
-    calc_SMF(model, gals, snapshot, calc_sub_populations)
+    calc_SMF(model, gals, snapshot, calc_sub_populations=False, smf_property_name="SMF_history")
 
 
 def calc_SFRD_history(model, gals, snapshot: int):

@@ -31,26 +31,24 @@ def plot_num_particles_in_halo(models: List[Model], snapshot: int, plot_output_p
     # This should make a matplotlib plot but it's adequate enough to just test that we pass through this function.
     logger.info(f"Passed through ``plot_num_particles_in_halo``.")
 
+
 def my_compare_images(baseline_image_path: str, generated_image_path: str, cleanup_plots: bool = True) -> None:
 
-    # First ensure that we actually have baseline plots to compare against.
-    baseline_image_names = [os.path.join(baseline_image_path, name) for name in os.listdir(baseline_image_path)]
-    baseline_image_names = [image for image in baseline_image_names if ".DS_Store" not in image]
+    image_names = os.listdir(generated_image_path)
 
-    if len(baseline_image_names) == 0:
-        raise ValueError(f"No baseline images found.")
+    for name in image_names:
+        if ".DS_Store" in name:
+            continue
 
-    # Finally, compare and ensure that the images are as expected.
-    generated_image_names = [os.path.join(generated_image_path, name) for name in os.listdir(generated_image_path)]
-    generated_image_names = [image for image in generated_image_names if ".DS_Store" not in image]
+        baseline_image = os.path.join(baseline_image_path, name)
+        generated_image = os.path.join(generated_image_path, name)
 
-    for baseline, generated in zip(baseline_image_names, generated_image_names):
-        comparison = compare_images(baseline, generated, tol=1)
+        comparison = compare_images(baseline_image, generated_image, tol=1)
         assert comparison is None
 
         # Cleanup.
         if cleanup_plots:
-            os.remove(generated)
+            os.remove(generated_image)
 
 @pytest.mark.parametrize("sage_output_formats", [(["sage_binary"]), (["sage_hdf5"])])
 def test_sage_output_format(sage_output_formats):
@@ -243,8 +241,8 @@ def test_additional_property(caplog):
     baseline_plot_functions = generate_func_dict(baseline_plot_toggles, "sage_analysis.example_plots", "plot_")
 
     extra_plot_toggles = {"num_particles_in_halo": True}
-    extra_calculation_functions = generate_func_dict(extra_plot_toggles, "sage_analysis.tests.test_sage_analysis", "calc_")
-    extra_plot_functions = generate_func_dict(extra_plot_toggles, "sage_analysis.tests.test_sage_analysis", "plot_")
+    extra_calculation_functions = generate_func_dict(extra_plot_toggles, "sage_analysis.tests.test_galaxy_analysis", "calc_")
+    extra_plot_functions = generate_func_dict(extra_plot_toggles, "sage_analysis.tests.test_galaxy_analysis", "plot_")
 
     baseline_plot_toggles.update(extra_plot_toggles)
     baseline_calculation_functions.update(extra_calculation_functions)
@@ -282,6 +280,7 @@ def test_additional_property(caplog):
     assert f"Initialized galaxy properties {galaxy_properties_to_analyse['halo_len_bins']} for Snapshot 63" in caplog.text
     galaxy_analysis.generate_plots()
     assert "Passed through ``plot_num_particles_in_halo``." in caplog.text
+    os.remove(f"{generated_image_path}/1.StellarMassFunction.png")
 
 def test_incorrect_additional_property():
     """

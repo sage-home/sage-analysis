@@ -1243,14 +1243,14 @@ def plot_SMF_history(
         for snap in model._history_SMF_history_snaps:
 
             # Maybe there weren't any galaxies present for this snapshot.
-            if np.isclose(np.sum(model.properties[f"snapshot_{snap}"]["SMF"]), 0.0):
+            if np.isclose(np.sum(model.properties[f"snapshot_{snap}"]["SMF_history"]), 0.0):
                 continue
 
             label = f"{model.label} z = {model.redshifts[snap]:.3f}"
             # The SMF is normalized by the simulation volume which is in Mpc/h.
             ax.plot(
                 bin_middles,
-                model.properties[f"snapshot_{snap}"]["SMF"] / model.volume*pow(model.hubble_h, 3)/bin_widths,
+                model.properties[f"snapshot_{snap}"]["SMF_history"] / model.volume*pow(model.hubble_h, 3)/bin_widths,
                 ls=ls,
                 label=label
             )

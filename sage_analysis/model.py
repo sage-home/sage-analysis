@@ -52,6 +52,7 @@ class Model(object):
         num_sage_output_files: Optional[int],
         random_seed: Optional[int],
         history_redshifts: Dict[str, Union[List[float], str]],
+        plots_that_need_smf: List[str],
         plot_toggles: Dict[str, bool],
         sample_size: int = 1000
     ):
@@ -92,6 +93,7 @@ class Model(object):
         self._last_file_to_analyse = last_file_to_analyse
         self._random_seed = random_seed
         self._history_redshifts = history_redshifts
+        self._plots_that_need_smf = plots_that_need_smf
         self._plot_toggles = plot_toggles
 
         # Set default values. This needs to be done BEFORE the user specified params!
@@ -466,6 +468,19 @@ class Model(object):
         self._random_seed = random_seed
 
     @property
+    def plots_that_need_smf(self) -> List[str]:
+        """
+        list of ints : Specifies the plot toggles that require the stellar mass function to be properly computed and
+        analysed. For example, plotting the quiescent fraction of galaxies requires knowledge of the total number of
+        galaxies. The strings here must **EXACTLY** match the keys in :py:attr:`~plot_toggles`.
+        """
+        return self._plots_that_need_smf
+
+    @plots_that_need_smf.setter
+    def plots_that_need_smf(self, plots_that_need_smf: List[str]) -> None:
+        self._plots_that_need_smf = plots_that_need_smf
+
+    @property
     def plot_toggles(self):
         """
         dict[str, bool] : Specifies which plots should be created for this model. This will control which properties
@@ -720,8 +735,7 @@ class Model(object):
         :doc:`../user/data_class` for more information about adding your own Data Class to ingest data.
         """
 
-        # Now check which plots the user is creating and hence decide which properties
-        # they need.
+        # Now check which plots the user is creating and hence decide which properties they need.
         for func, kwargs in calculation_functions.values():
 
             # **kwargs unpacks the `kwargs` dictionary, passing each keyword properly to the function.

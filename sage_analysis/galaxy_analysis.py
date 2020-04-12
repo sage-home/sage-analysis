@@ -8,6 +8,7 @@ Doc showing exactly how to generate non-default extra properties.
 "plot_output_path" should be passed to "generate_plots".
 Add more nuance to checking when/if SMF needs to be calculated.
 Add "*args" to data class functions to allow them to pass a variable number of arguments.
+Add extra tests to ensure that things are being logged when there are no galaxies present.
 """
 
 import logging
@@ -17,6 +18,7 @@ from typing import List, Dict, Union, Optional, Any, Tuple, Callable
 import sage_analysis.example_calcs
 import sage_analysis.example_plots
 
+from sage_analysis.default_analysis_arguments import default_plot_toggles, default_galaxy_properties_to_analyse
 from sage_analysis.utils import generate_func_dict, read_generic_sage_params
 from sage_analysis.model import Model
 from sage_analysis.sage_binary import SageBinaryData
@@ -51,6 +53,7 @@ class GalaxyAnalysis:
         calculation_functions: Optional[Dict[str, Tuple[Callable, Dict[str, Any]]]] = None,
         plot_functions: Optional[Dict[str, Tuple[Callable, Dict[str, Any]]]] = None,
         galaxy_properties_to_analyse: Optional[Dict[str, Dict[str, Union[str, List[str]]]]] = None,
+        plots_that_need_smf: Optional[List[str]] = None,
         plot_output_format: str = "png",
         plot_output_path: str = "./plots",
     ):
@@ -93,6 +96,13 @@ class GalaxyAnalysis:
 
             If not specified, will use the functions found in :py:module:`~sage_analysis.example_plots`, filtered to ensure
             that only those functions necessary to plot the plots specified by ``plot_toggles`` are run.
+
+        plots_that_need_smf : list of strings, optional
+            The plot toggles that require the stellar mass function to be properly computed and analysed. For example,
+            plotting the quiescent fraction of galaxies requires knowledge of the total number of galaxies. The strings
+            here must **EXACTLY** match the keys in ``plot_toggles``.
+
+            If not specified, uses a default value of ``["SMF", "quiescent", "bulge_fraction", "SMF_history"]``.
         """
 
         self._plot_output_path = plot_output_path
@@ -144,7 +154,10 @@ class GalaxyAnalysis:
             }
         self._history_redshifts = history_redshifts
 
-        parameters = [
+        if plots_that_need_smf is None:
+            plots_that_need_smf = ["SMF", "quiescent", "bulge_fraction", "SMF_history"]
+
+        individual_model_parameters = [
             sage_parameter_fnames,
             IMFs,
             labels,
@@ -153,47 +166,31 @@ class GalaxyAnalysis:
             last_files_to_analyse,
             num_sage_output_files,
             random_seeds,
-            history_redshifts,
         ]
 
-        # All the parameters should have the same lengths.
-        """
-        for parameter_vals in parameters:
-            if len(parameter_vals) != self._num_models and parameter not in :
-                raise ValueError(
-                    f"The number of parameter files is {self._num_models}. Ensure that all parameters passed to "
-                    f"``analyse_sage_output`` are lists of this length."
-                )
-        """
+        global_model_parameters = [
+            history_redshifts,
+            plots_that_need_smf,
+        ]
 
         if plot_toggles is None:
-            plot_toggles = {
-                "SMF" : True,  # Stellar mass function.
-                "BMF" : True,  # Baryonic mass function.
-                "GMF" : True,  # Gas mass function (cold gas).
-                "BTF" : True,  # Baryonic Tully-Fisher.
-                "sSFR" : True,  # Specific star formation rate.
-                "gas_fraction" : True,  # Fraction of galaxy that is cold gas.
-                "metallicity" : True,  # Metallicity scatter plot.
-                "bh_bulge" : True,  # Black hole-bulge relationship.
-                "quiescent" : True,  # Fraction of galaxies that are quiescent.
-                "bulge_fraction" : True,  # Fraction of galaxies that are bulge/disc dominated.
-                "baryon_fraction" : True,  # Fraction of baryons in galaxy/reservoir.
-                "reservoirs" : True,  # Mass in each reservoir.
-                "spatial" : True,   # Spatial distribution of galaxies.
-                "SMF_history": False,
-                "SFRD_history": False,
-                "SMD_history": False,
-            }
+            plot_toggles = default_plot_toggles
         self._plot_toggles = plot_toggles
 
         # ``parameters`` is a matrix of parameters with each "column" specifying the parameters for a single model. Hence
         # we want to iteratre through column-wise and use these to build the ``Model`` class instance. Here, the ``map``
         # function does this tranpose into a column-wise iterable.
         models = [
-            Model(*model_parameters, plot_toggles) for model_parameters in map(list, zip(*parameters))
+            Model(*model_parameters, *global_model_parameters, plot_toggles) for model_parameters in map(list, zip(*individual_model_parameters))
         ]
         self._models = models
+
+        # Determine if the stellar mass function needs to be computed for each model. Important we do this before
+        # checking ``calculation_functions``.
+        for model in models:
+            if self._does_smf_need_computing(model):
+                model.plot_toggles["SMF"] = True
+                plot_toggles["SMF"] = True
 
         # Then populate the `calculation_methods` dictionary. This dictionary will control
         # which properties each model will calculate.  The dictionary is populated using
@@ -207,6 +204,18 @@ class GalaxyAnalysis:
                 plot_toggles, module_name="sage_analysis.example_calcs", function_prefix="calc_"
             )
 
+        # Because we have adjusted the SMF, check if it's a calculation.
+        for model in models:
+            # Condition checks for condition where SMF is being compputed but not in ``calculation_functions``.
+            if model._plot_toggles.get("SMF", None) and not calculation_functions.get("SMF", None):
+                raise ValueError(
+                    "The stellar mass function (``SMF``) is being computed, either because it was set manually "
+                    "(through ``plot_toggles``) or because another plot requires it (``plots_that_need_smf``).\n"
+                    "However, ``calc_SMF`` was not found in ``calculation_functions``. Ensure that it is added."
+                )
+
+        print(calculation_functions)
+
         if plot_functions is None:
             plot_functions = generate_func_dict(
                 plot_toggles, module_name="sage_analysis.example_plots", function_prefix="plot_"
@@ -214,45 +223,7 @@ class GalaxyAnalysis:
         self._plot_functions = plot_functions
 
         if galaxy_properties_to_analyse is None:
-            galaxy_properties_to_analyse = {
-                "stellar_mass_bins": {
-                    "type": "binned",
-                    "bin_low": 8.0,
-                    "bin_high": 12.0,
-                    "bin_width": 0.1,
-                    "property_names": [
-                        "SMF", "red_SMF", "blue_SMF", "BMF", "GMF",
-                        "centrals_MF", "satellites_MF", "quiescent_galaxy_counts",
-                        "quiescent_centrals_counts", "quiescent_satellites_counts",
-                        "fraction_bulge_sum", "fraction_bulge_var",
-                        "fraction_disk_sum", "fraction_disk_var"
-                    ],
-                },
-                "halo_mass_bins": {
-                    "type": "binned",
-                    "bin_low": 10.0,
-                    "bin_high": 14.0,
-                    "bin_width": 0.1,
-                    "property_names": ["fof_HMF"] + [f"halo_{component}_fraction_sum"
-                        for component in ["baryon", "stars", "cold", "hot", "ejected", "ICS", "bh"]
-                    ],
-                },
-                "scatter_properties": {
-                    "type": "scatter",
-                    "property_names": [
-                        "BTF_mass", "BTF_vel", "sSFR_mass", "sSFR_sSFR",
-                        "gas_frac_mass", "gas_frac", "metallicity_mass",
-                        "metallicity", "bh_mass", "bulge_mass", "reservoir_mvir",
-                        "reservoir_stars", "reservoir_cold", "reservoir_hot",
-                        "reservoir_ejected", "reservoir_ICS", "x_pos",
-                        "y_pos", "z_pos"
-                    ],
-                },
-                "single_properties": {
-                    "type": "single",
-                    "property_names": ["SMD_history", "SFRD_history"],
-                },
-            }
+            galaxy_properties_to_analyse = default_galaxy_properties_to_analyse
         self._galaxy_properties_to_analyse = galaxy_properties_to_analyse
 
         for model in self._models:
@@ -278,6 +249,7 @@ class GalaxyAnalysis:
                     continue
                 history_calculation_functions[func_name] = calculation_function
                 del model._calculation_functions[func_name]
+
             model._history_calculation_functions = history_calculation_functions
 
             self._set_history_snapshots(model)
@@ -301,7 +273,7 @@ class GalaxyAnalysis:
                 history_snaps_to_loop.extend(snaps)
 
             model._history_snaps_to_loop = np.unique(history_snaps_to_loop)
-            print(model._history_snaps_to_loop)
+            logger.info(f"Looping through snapshots {model._history_snaps_to_loop}")
 
 
     def _set_history_snapshots(self, model: Model) -> None:
@@ -412,6 +384,32 @@ class GalaxyAnalysis:
                 model.init_single_properties(galaxy_properties["property_names"], snapshot)
 
             logger.info(f"Initialized galaxy properties {galaxy_properties} for Snapshot {snapshot}")
+
+
+    def _does_smf_need_computing(self, model: Model) -> bool:
+
+        # Maybe the SMF has already been toggled on.
+        try:
+            toggle = model._plot_toggles["SMF"]
+        except KeyError:
+            # Perhaps "SMF" isn't present in the plot toggles.
+            pass
+        else:
+            # "SMF" is present and is turned on -> SMF does need to be computed.
+            if toggle:
+                return True
+
+        # Determine those plots that are being computed.
+        plots = [toggle for toggle, value in model._plot_toggles.items() if value]
+
+        # Then, check if any of these plots need the SMF.
+        if any([plot in model._plots_that_need_smf for plot in plots]):
+            logger.info(f"One of your plots require the SMF to be calculated. Turning the SMF plot toggle on.")
+            return True
+
+        # Otherwise, they don't need the SMF.
+        return False
+
 
     def analyse_galaxies(self, snapshot: Optional[int] = None):
 
