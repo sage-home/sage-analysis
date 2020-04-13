@@ -57,10 +57,18 @@ class SageHdf5Data():
         self.sage_model_dict = sage_dict
         logger.info(f"The read SAGE parameters are {sage_dict}")
 
-        # The output data will be named via the parameter file with the ``.hdf5`` extension.
-        sage_data_path = f"{sage_dict['_base_sage_output_path']}.hdf5"
+        # The output data will be named via the parameter file with the ``.hdf5`` extension. However, the parameter
+        # file could refer to the absolute path or the relative path, so be careful.
+        sage_data_path = f"{sage_dict['_base_sage_output_path_absolute']}.hdf5"
+
+        try:
+            model._hdf5_file = h5py.File(sage_data_path, "r")
+        except OSError:
+            logger.debug(f"Could not find file {sage_data_path}. Trying a relative path instead.")
+            sage_data_path = f"{sage_dict['_base_sage_output_path_relative']}.hdf5"
+            model._hdf5_file = h5py.File(sage_data_path, "r")
+
         model._sage_data_path = sage_data_path
-        model._hdf5_file = h5py.File(sage_data_path, "r")
 
         # Due to how attributes are created in C, they will need to be decoded to get cast to a string.
         model.sage_version = model._hdf5_file["Header"]["Misc"].attrs["sage_version"].decode("ascii")

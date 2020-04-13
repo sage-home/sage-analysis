@@ -313,4 +313,6 @@ class SageBinaryData():
         model._snapshot = snapshot
 
         new_redshift = model.redshifts[snapshot]
-        model._sage_data_path = f"{model._base_sage_output_path}_z{new_redshift:.3f}"
+
+        # The parameter file could refer to the absolute path or the relative path, so be careful.
+        model._sage_data_path = f"{model._base_sage_output_path_relative}_z{new_redshift:.3f}"

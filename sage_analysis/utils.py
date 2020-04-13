@@ -291,13 +291,24 @@ def read_generic_sage_params(sage_file_path: str) -> Dict[str, Any]:
     model_dict["_output_format"] = SAGE_dict["OutputFormat"]
     model_dict["_parameter_dirpath"] = os.path.dirname(sage_file_path)
 
-    alist = np.loadtxt(f"{model_dict['_parameter_dirpath']}/{SAGE_dict['FileWithSnapList']}")
+    # ``FileWithSnapList`` may either be an absolute or relative path (wrt to ``_parameter_dirpath``).
+    try:
+        fname_absolute = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['FileWithSnapList']}"
+        alist = np.loadtxt(fname_absolute)
+    except FileNotFoundError:
+        fname_relative = f"{SAGE_dict['FileWithSnapList']}"
+        logger.debug(f"Could not find snapshot file {fname}. Trying as {fname_relative} instead.")
+        alist = np.loadtxt(f"{SAGE_dict['FileWithSnapList']}")
+
     redshifts = 1.0 / alist - 1.0
     model_dict["_redshifts"] = redshifts
     model_dict["_snapshot"] = len(alist) - 1  # By default, plot the final snapshot.
 
-    base_sage_output_path = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}"  # noqa: E501
-    model_dict["_base_sage_output_path"] = base_sage_output_path
+    base_sage_output_path_absolute = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}"  # noqa: E501
+    model_dict["_base_sage_output_path_absolute"] = base_sage_output_path_absolute
+
+    base_sage_output_path_relative = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}"  # noqa: E501
+    model_dict["_base_sage_output_path_relative"] = base_sage_output_path_relative
 
     model_dict["_output_dir"] = SAGE_dict['OutputDir']
 
