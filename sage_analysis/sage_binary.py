@@ -10,13 +10,14 @@ own Data Class to ingest data.
 
 Author: Jacob Seiler.
 """
-from typing import Dict, Any
 import logging
-from sage_analysis.model import Model
-from sage_analysis.utils import read_generic_sage_params
+import os
+from typing import Any, Dict, Optional
 
 import numpy as np
-import os
+
+from sage_analysis.model import Model
+from sage_analysis.utils import read_generic_sage_params
 
 logger = logging.getLogger(__name__)
 
@@ -188,9 +189,8 @@ class SageBinaryData():
 
         for file_num in range(model._first_file_to_analyze, model._last_file_to_analyze+1):
 
-            fname = f"{model._sage_data_path}_{file_num}"
-
-            if not os.path.isfile(fname):
+            fname = self._check_for_file(model, file_num)
+            if fname is None:
                 logger.debug(f"File\t{fname} \tdoes not exist!")
                 continue
 
@@ -239,12 +239,9 @@ class SageBinaryData():
         the ``tqdm`` progress bar if ``debug=True``.
         """
 
-        fname = f"{model._sage_data_path}_{file_num}"
-
-        # We allow the skipping of files.  If we skip, don't increment a counter.
-
-        if not os.path.isfile(fname):
-            print(f"File\t{fname} \tdoes not exist!")
+        fname = self._check_for_file(model, file_num)
+        if fname is None:
+            logger.debug(f"File\t{fname} \tdoes not exist!")
             return None
 
         with open(fname, "rb") as f:
@@ -297,17 +294,21 @@ class SageBinaryData():
 
         return gals
 
-    def update_snapshot_and_data_path(self, model: Model, snapshot: int):
+    def update_snapshot_and_data_path(self, model: Model, snapshot: int, use_absolute_path: bool = False):
         """
         Updates the :py:attr:`~sage_analysis.model.Model._sage_data_path` to point to a new redshift file. Uses the
         redshift array :py:attr:`~sage_analysis.model.Model.redshifts`.
 
         Parameters
         ----------
-
-        snapshot: int
+        snapshot : int
             Snapshot we're updating :py:attr:`~sage_analysis.model.Model._sage_data_path` to
             point to.
+
+        use_absolute_path : bool
+            If specified, will use the absolute path to the **SAGE** output data. Otherwise, will use the path that is
+            relative to the **SAGE** parameter file.  This is hand because the **SAGE** parameter file can contain
+            either relative or absolute paths.
         """
 
         model._snapshot = snapshot
@@ -315,4 +316,36 @@ class SageBinaryData():
         new_redshift = model.redshifts[snapshot]
 
         # The parameter file could refer to the absolute path or the relative path, so be careful.
-        model._sage_data_path = f"{model._base_sage_output_path_relative}_z{new_redshift:.3f}"
+        if use_absolute_path:
+            base_path = model._base_sage_output_path_absolute
+        else:
+            base_path = model._base_sage_output_path_relative
+
+        model._sage_data_path = f"{base_path}_z{new_redshift:.3f}"
+
+    def _check_for_file(self, model: Model, file_num: int) -> Optional[str]:
+        """
+        Checks to see if a file for the given file number exists.  Importantly, we check assuming that the path given
+        in the **SAGE** parameter file is **relative** and **absolute**.
+
+        Parameters
+        ----------
+        file_num : int
+            The file number that we're checking for files.
+
+        Returns
+        -------
+        fname or ``None``
+            If a file exists, the name of that file.  Otherwise, if the file does not exist (using either relative or
+            absolute paths), then ``None``.
+        """
+
+        # Try relative, and then absolute paths.
+        for use_absolute_path in [False, True]:
+
+            self.update_snapshot_and_data_path(model, model._snapshot, use_absolute_path=use_absolute_path)
+
+            fname = f"{model._sage_data_path}_{file_num}"
+            if os.path.isfile(fname):
+                return fname
+        return None

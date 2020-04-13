@@ -1359,7 +1359,7 @@ def plot_SFRD_history(
         # Only use a line if we have enough snapshots to plot.
         if len(non_zero_inds) > 20:
             ax.plot(
-                redshifts,[non_zero_inds]
+                redshifts,[non_zero_inds],
                 np.log10(SFRD[non_zero_inds] / model._volume*pow(model.hubble_h, 3)),
                 label=label,
                 color=color,
