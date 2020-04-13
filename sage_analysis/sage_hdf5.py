@@ -59,12 +59,12 @@ class SageHdf5Data():
 
         # The output data will be named via the parameter file with the ``.hdf5`` extension.
         sage_data_path= f"{sage_dict['_base_sage_output_path']}.hdf5"
-        model.sage_data_path = sage_data_path
-        model.hdf5_file = h5py.File(sage_data_path, "r")
+        model._sage_data_path = sage_data_path
+        model._hdf5_file = h5py.File(sage_data_path, "r")
 
         # Due to how attributes are created in C, they will need to be decoded to get cast to a string.
-        model.sage_version = model.hdf5_file["Header"]["Misc"].attrs["sage_version"].decode("ascii")
-        model.sage_data_version = model.hdf5_file["Header"]["Misc"].attrs["sage_data_version"].decode("ascii")
+        model.sage_version = model._hdf5_file["Header"]["Misc"].attrs["sage_version"].decode("ascii")
+        model.sage_data_version = model._hdf5_file["Header"]["Misc"].attrs["sage_data_version"].decode("ascii")
 
         # Check that this module is current for the SAGE data version.
         if model.sage_data_version != sage_data_version:
@@ -79,7 +79,7 @@ class SageHdf5Data():
         # regarding the HDF5 file.
         self._check_model_compatibility(model, sage_dict)
 
-        model._num_output_files = model.hdf5_file["Header"]["Misc"].attrs["num_cores"]
+        model._num_output_files = model._hdf5_file["Header"]["Misc"].attrs["num_cores"]
 
         # The cores to analyze may have a default value.  To allow for this, explicitly set these as if they were read
         # from the parameter file.
@@ -111,7 +111,7 @@ class SageHdf5Data():
             logger.debug("It is not required to specify the number of SAGE output files when analysing HDF5 output.")
 
             # Check to ensure that there isn't a mismatch in the number specified and the number in the file.
-            hdf5_num_files = model.hdf5_file["Header"]["Misc"].attrs["num_cores"]
+            hdf5_num_files = model._hdf5_file["Header"]["Misc"].attrs["num_cores"]
             if model._num_sage_output_files != hdf5_num_files:
                 warnings.warn(
                     f"The number of SAGE output files according to the master HDF5 file is {hdf5_num_files}."
@@ -141,7 +141,7 @@ class SageHdf5Data():
         for core_idx in range(model._first_file_to_analyse, model._last_file_to_analyse + 1):
 
             core_key = "Core_{0}".format(core_idx)
-            frac_processed = model.hdf5_file[core_key]["Header"]["Runtime"].attrs["frac_volume_processed"]
+            frac_processed = model._hdf5_file[core_key]["Header"]["Runtime"].attrs["frac_volume_processed"]
             total_volume_frac_processed += frac_processed
             logger.info(
                 f"{core_key} processed {frac_processed} fraction of the volume. Total is {total_volume_frac_processed}"
@@ -201,12 +201,12 @@ class SageHdf5Data():
 
             # Maybe this Snapshot didn't have any galaxies saved.
             try:
-                ngals += model.hdf5_file[core_key][snap_key].attrs["num_gals"]
+                ngals += model._hdf5_file[core_key][snap_key].attrs["num_gals"]
             except KeyError:
                 ngals = 0
                 continue
 
-        model.num_gals_all_files = ngals
+        model._num_gals_all_files = ngals
 
 
     def read_gals(self, model, core_num, pbar=None, plot_galaxies=False, debug=False):
@@ -249,13 +249,13 @@ class SageHdf5Data():
         core_key = "Core_{0}".format(core_num)
         snap_key = "Snap_{0}".format(model.snapshot)
 
-        num_gals_read = model.hdf5_file[core_key][snap_key].attrs["num_gals"]
+        num_gals_read = model._hdf5_file[core_key][snap_key].attrs["num_gals"]
 
         # If there aren't any galaxies, exit here.
         if num_gals_read == 0:
             return None
 
-        gals = model.hdf5_file[core_key][snap_key]
+        gals = model._hdf5_file[core_key][snap_key]
 
         # If we're using the `tqdm` package, update the progress bar.
         if pbar is not None:
@@ -297,12 +297,12 @@ class SageHdf5Data():
         model._snapshot = snapshot
 
         # If the file was closed, then ``__bool__()`` will return False.
-        if not model.hdf5_file.__bool__():
-            model.hdf5_file = h5py.File(model.sage_data_path, "r")
+        if not model._hdf5_file.__bool__():
+            model._hdf5_file = h5py.File(model.sage_data_path, "r")
 
 
     def close_file(self, model):
         """
         Closes the open HDF5 file.
         """
-        model.hdf5_file.close()
+        model._hdf5_file.close()

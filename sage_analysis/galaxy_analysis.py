@@ -439,18 +439,18 @@ class GalaxyAnalysis:
     def _read_sage_file(self, model: Model) -> None:
 
         # If the format wasn't defined, then attempt to read a default parameter file to determine format.
-        if model.sage_output_format is None:
+        if model._sage_output_format is None:
             logger.info(
                 f"No SAGE output format specified. Attempting to read ``{model.sage_file}`` and using the format "
                 f"specified inside."
             )
             sage_dict = read_generic_sage_params(model.sage_file)
 
-            model.sage_output_format = sage_dict["_output_format"]
-            logger.info(f"Using ``{model.sage_output_format}`` output format.")
+            model._sage_output_format = sage_dict["_output_format"]
+            logger.info(f"Using ``{model._sage_output_format}`` output format.")
 
         # Each SAGE output has a specific class written to read in the data.
-        model.data_class = self._output_format_data_classes[model.sage_output_format](model, model.sage_file)
+        model.data_class = self._output_format_data_classes[model._sage_output_format](model, model.sage_file)
 
         # The data class has read the SAGE ini file.  Update the model with the parameters
         # read and those specified by the user. We will also log some of these.

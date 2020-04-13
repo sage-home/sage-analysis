@@ -243,7 +243,7 @@ def test_defaults(caplog):
     # The only thing that should be different to the baseline plots is the label in the legend. Hence if we update the
     # label and generate the plots, they should be identical.
     galaxy_analysis.analyse_galaxies()
-    galaxy_analysis._models[0].label = "Mini-Millennium"
+    galaxy_analysis._models[0]._label = "Mini-Millennium"
 
     generated_image_path = "test_data/generated_plots/"
     galaxy_analysis.generate_plots(plot_output_path=generated_image_path)

@@ -121,10 +121,6 @@ class Model(object):
     def sage_file(self):
         return self._sage_file
 
-    @sage_file.setter
-    def sage_file(self, sage_file: str):
-        self._sage_file = sage_file
-
     @property
     def num_sage_output_files(self):
         """
@@ -139,10 +135,6 @@ class Model(object):
 
         return self._num_sage_output_files
 
-    @num_sage_output_files.setter
-    def num_sage_output_files(self, num_sage_output_files):
-        self._num_sage_output_files = num_sage_output_files
-
     @property
     def hubble_h(self):
         """
@@ -150,10 +142,6 @@ class Model(object):
         """
 
         return self._hubble_h
-
-    @hubble_h.setter
-    def hubble_h(self, hubble_h):
-        self._hubble_h = hubble_h
 
     @property
     def box_size(self):
@@ -163,10 +151,6 @@ class Model(object):
 
         return self._box_size
 
-    @box_size.setter
-    def box_size(self, box_size):
-        self._box_size = box_size
-
     @property
     def num_sim_tree_files(self):
         """
@@ -174,10 +158,6 @@ class Model(object):
         """
 
         return self._num_sim_tree_files
-
-    @num_sim_tree_files.setter
-    def num_sim_tree_files(self, num_files):
-        self._num_sim_tree_files = num_files
 
     @property
     def volume(self):
@@ -207,19 +187,6 @@ class Model(object):
 
         self._volume = vol
 
-
-    @property
-    def plot_output_format(self):
-        """
-        int: Format plots for this model will be saved as.
-        """
-
-        return self._plot_output_format
-
-    @plot_output_format.setter
-    def plot_output_format(self, output_format):
-        self._plot_output_format = output_format
-
     @property
     def snapshot(self):
         """
@@ -236,10 +203,6 @@ class Model(object):
 
         return self._redshifts
 
-    @redshifts.setter
-    def redshifts(self, redshifts):
-        self._redshifts = redshifts
-
     @property
     def sage_output_format(self):
         """
@@ -253,10 +216,6 @@ class Model(object):
 
         return self._sage_output_format
 
-    @sage_output_format.setter
-    def sage_output_format(self, output_format):
-        self._sage_output_format = output_format
-
     @property
     def base_sage_data_path(self) -> str:
         """
@@ -265,10 +224,6 @@ class Model(object):
         """
 
         return self._base_sage_data_path
-
-    @base_sage_data_path.setter
-    def base_sage_data_path(self, path: str):
-        self._base_sage_data_path = path
 
     @property
     def sage_data_path(self) -> str:
@@ -283,10 +238,6 @@ class Model(object):
 
         return self._sage_data_path
 
-    @sage_data_path.setter
-    def sage_data_path(self, path: str):
-        self._sage_data_path = path
-
     @property
     def output_path(self):
         """
@@ -295,10 +246,6 @@ class Model(object):
         """
 
         return self._output_path
-
-    @output_path.setter
-    def output_path(self, path):
-        self._output_path = path
 
     @property
     def IMF(self):
@@ -327,10 +274,6 @@ class Model(object):
 
         return self._label
 
-    @label.setter
-    def label(self, label):
-        self._label = label
-
     @property
     def first_file_to_analyse(self):
         """
@@ -343,10 +286,6 @@ class Model(object):
         """
 
         return self._first_file_to_analyse
-
-    @first_file_to_analyse.setter
-    def first_file_to_analyse(self, file_num):
-        self._first_file_to_analyse = file_num
 
     @property
     def last_file_to_analyse(self):
@@ -361,10 +300,6 @@ class Model(object):
 
         return self._last_file_to_analyse
 
-    @last_file_to_analyse.setter
-    def last_file_to_analyse(self, file_num):
-        self._last_file_to_analyse = file_num
-
     @property
     def simulation(self):
         """
@@ -377,10 +312,6 @@ class Model(object):
 
         return self._simulation
 
-    @simulation.setter
-    def simulation(self, simulation):
-        self._simulation = simulation
-
     @property
     def snapshot(self):
         """
@@ -391,10 +322,6 @@ class Model(object):
         """
 
         return self._snapshot
-
-    @snapshot.setter
-    def snapshot(self, snapshot):
-        self._snapshot = snapshot
 
     @property
     def bins(self):
@@ -438,10 +365,6 @@ class Model(object):
         """
         return self._num_gals_all_files
 
-    @num_gals_all_files.setter
-    def num_gals_all_files(self, num_gals):
-        self._num_gals_all_files = num_gals
-
     @property
     def parameter_dirpath(self):
         """
@@ -450,10 +373,6 @@ class Model(object):
         """
         return self._parameter_dirpath
 
-    @parameter_dirpath.setter
-    def parameter_dirpath(self, parameter_dirpath: str):
-        self._parameter_dirpath = parameter_dirpath
-
     @property
     def random_seed(self) -> Optional[int]:
         """
@@ -461,10 +380,6 @@ class Model(object):
         purposes. If ``None``, then uses default call to :func:`~numpy.random.seed`.
         """
         return self._random_seed
-
-    @random_seed.setter
-    def random_seed(self, seed: Optional[int]) -> None:
-        self._random_seed = random_seed
 
     @property
     def plots_that_need_smf(self) -> List[str]:
@@ -475,10 +390,6 @@ class Model(object):
         """
         return self._plots_that_need_smf
 
-    @plots_that_need_smf.setter
-    def plots_that_need_smf(self, plots_that_need_smf: List[str]) -> None:
-        self._plots_that_need_smf = plots_that_need_smf
-
     @property
     def plot_toggles(self):
         """
@@ -487,10 +398,6 @@ class Model(object):
         computed.
         """
         return self._plot_toggles
-
-    @plot_toggles.setter
-    def plot_toggles(self, plot_toggles: Dict[str, bool]):
-        self._plot_toggles = plot_toggles
 
     @property
     def calculation_functions(self):
@@ -502,10 +409,6 @@ class Model(object):
         values as the variable value (e.g., ``True``).
         """
         return self._calculation_functions
-
-    @calculation_functions.setter
-    def calculation_functions(self, calculation_functions: Dict[str, Tuple[Callable, Dict[str, Any]]]):
-        self._calculation_functions = calculation_funtions
 
     def __repr__(self):
 
@@ -660,7 +563,7 @@ class Model(object):
 
         # First determine how many galaxies are in all files.
         self.data_class.determine_num_gals(self, snapshot)
-        if self.num_gals_all_files == 0:
+        if self._num_gals_all_files == 0:
             logger.info(f"There were no galaxies associated with this model at Snapshot {self._snapshot}.")
             return
 
@@ -671,7 +574,7 @@ class Model(object):
             if debug or not use_pbar:
                 pbar = None
             else:
-                pbar = tqdm(total=self.num_gals_all_files, unit="Gals", unit_scale=True)
+                pbar = tqdm(total=self._num_gals_all_files, unit="Gals", unit_scale=True)
         except NameError:
             pbar = None
         else:

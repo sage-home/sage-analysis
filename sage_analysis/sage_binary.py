@@ -192,7 +192,7 @@ class SageBinaryData():
 
         for file_num in range(model.first_file_to_analyse, model.last_file_to_analyse+1):
 
-            fname = f"{model.sage_data_path}_{file_num}"
+            fname = f"{model._sage_data_path}_{file_num}"
 
             if not os.path.isfile(fname):
                 logger.debug(f"File\t{fname} \tdoes not exist!")
@@ -204,7 +204,7 @@ class SageBinaryData():
 
                 num_gals += num_gals_file
 
-        model.num_gals_all_files = num_gals
+        model._num_gals_all_files = num_gals
 
 
     def read_gals(self, model, file_num, pbar=None, plot_galaxies=False, debug=False):
@@ -244,7 +244,7 @@ class SageBinaryData():
         the ``tqdm`` progress bar if ``debug=True``.
         """
 
-        fname = f"{model.sage_data_path}_{file_num}"
+        fname = f"{model._sage_data_path}_{file_num}"
 
         # We allow the skipping of files.  If we skip, don't increment a counter.
 
@@ -305,18 +305,18 @@ class SageBinaryData():
 
     def update_snapshot_and_data_path(self, model: Model, snapshot: int):
         """
-        Updates the :py:attr:`~sage_analysis.model.Model.sage_data_path` to point to a new redshift file. Uses the
+        Updates the :py:attr:`~sage_analysis.model.Model._sage_data_path` to point to a new redshift file. Uses the
         redshift array :py:attr:`~sage_analysis.model.Model.redshifts`.
 
         Parameters
         ----------
 
         snapshot: int
-            Snapshot we're updating :py:attr:`~sage_analysis.model.Model.sage_data_path` to
+            Snapshot we're updating :py:attr:`~sage_analysis.model.Model._sage_data_path` to
             point to.
         """
 
         model._snapshot = snapshot
 
         new_redshift = model.redshifts[snapshot]
-        model.sage_data_path = f"{model._base_sage_output_path}_z{new_redshift:.3f}"
+        model._sage_data_path = f"{model._base_sage_output_path}_z{new_redshift:.3f}"

@@ -109,7 +109,7 @@ def calc_BTF(model, gals, snapshot: int):
     The number of galaxies added to ``Model.properties["snapshot_<snapshot>"]["BTF_mass"]`` and
     ``Model.properties["snapshot_<snapshot>"]["BTF_vel"]`` arrays is given by
     :py:attr:`~sage_analysis.model.Model.sample_size` weighted by ``number_spirals_passed /``
-    :py:attr:`~sage_analysis.model.Model.num_gals_all_files`. If this value is greater than ``number_spirals_passed``,
+    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than ``number_spirals_passed``,
     then all spiral galaxies will be used.
     """
 
@@ -121,7 +121,7 @@ def calc_BTF(model, gals, snapshot: int):
                        (gals["BulgeMass"][:] / gals["StellarMass"][:] < 0.5))[0]
 
     # Select a random subset of galaxies (if necessary).
-    spirals = select_random_indices(spirals, model.num_gals_all_files, model.sample_size, model.random_seed)
+    spirals = select_random_indices(spirals, model._num_gals_all_files, model.sample_size, model.random_seed)
 
     baryon_mass = np.log10((gals["StellarMass"][:][spirals] + gals["ColdGas"][:][spirals]) * 1.0e10 / model.hubble_h)
     velocity = np.log10(gals["Vmax"][:][spirals])
@@ -138,14 +138,14 @@ def calc_sSFR(model, gals, snapshot: int):
     The number of galaxies added to ``Model.properties["snapshot_<snapshot>"]["sSFR_mass"]`` and
     ``Model.properties["snapshot_<snapshot>"]["sSFR_sSFR"]`` arrays is given by
     :py:attr:`~sage_analysis.model.Model.sample_size` weighted by ``number_gals_passed /``
-    :py:attr:`~sage_analysis.model.Model.num_gals_all_files`. If this value is greater than ``number_gals_passed``,
+    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than ``number_gals_passed``,
     then all galaxies with non-zero stellar mass will be used.
     """
 
     non_zero_stellar = np.where(gals["StellarMass"][:] > 0.0)[0]
 
     # Select a random subset of galaxies (if necessary).
-    random_inds = select_random_indices(non_zero_stellar, model.num_gals_all_files, model.sample_size, model.random_seed)
+    random_inds = select_random_indices(non_zero_stellar, model._num_gals_all_files, model.sample_size, model.random_seed)
 
     stellar_mass = np.log10(gals["StellarMass"][:][random_inds] * 1.0e10 / model.hubble_h)
     sSFR = (gals["SfrDisk"][:][random_inds] + gals["SfrBulge"][:][random_inds]) / \
@@ -162,7 +162,7 @@ def calc_gas_fraction(model, gals, snapshot: int):
     The number of galaxies added to ``Model.properties["snapshot_<snapshot>"]["gas_frac_mass"]`` and
     ``Model.properties["snapshot_<snapshot>"]["gas_frac"]`` arrays is given by
     :py:attr:`~sage_analysis.model.Model.sample_size` weighted by ``number_spirals_passed /``
-    :py:attr:`~sage_analysis.model.Model.num_gals_all_files`. If this value is greater than ``number_spirals_passed``,
+    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than ``number_spirals_passed``,
     then all spiral galaxies will be used.
     """
 
@@ -172,7 +172,7 @@ def calc_gas_fraction(model, gals, snapshot: int):
                        (gals["BulgeMass"][:] / gals["StellarMass"][:] < 0.5))[0]
 
     # Select a random subset of galaxies (if necessary).
-    spirals = select_random_indices(spirals, model.num_gals_all_files, model.sample_size, model.random_seed)
+    spirals = select_random_indices(spirals, model._num_gals_all_files, model.sample_size, model.random_seed)
 
     stellar_mass = np.log10(gals["StellarMass"][:][spirals] * 1.0e10 / model.hubble_h)
     gas_fraction = gals["ColdGas"][:][spirals] / (gals["StellarMass"][:][spirals] + gals["ColdGas"][:][spirals])
@@ -188,7 +188,7 @@ def calc_metallicity(model, gals, snapshot: int):
     The number of galaxies added to ``Model.properties["snapshot_<snapshot>"]["metallicity_mass"]`` and
     ``Model.properties["snapshot_<snapshot>"]["metallicity"]`` arrays is given by
     :py:attr:`~sage_analysis.model.Model.sample_size` weighted by ``number_centrals_passed /``
-    :py:attr:`~sage_analysis.model.Model.num_gals_all_files`. If this value is greater than ``number_centrals_passed``,
+    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than ``number_centrals_passed``,
     then all central galaxies will be used.
     """
 
@@ -198,7 +198,7 @@ def calc_metallicity(model, gals, snapshot: int):
                         (gals["StellarMass"][:] > 0.01))[0]
 
     # Select a random subset of galaxies (if necessary).
-    centrals = select_random_indices(centrals, model.num_gals_all_files, model.sample_size, model.random_seed)
+    centrals = select_random_indices(centrals, model._num_gals_all_files, model.sample_size, model.random_seed)
 
     stellar_mass = np.log10(gals["StellarMass"][:][centrals] * 1.0e10 / model.hubble_h)
     Z = np.log10((gals["MetalsColdGas"][:][centrals] / gals["ColdGas"][:][centrals]) / 0.02) + 9.0
@@ -214,7 +214,7 @@ def calc_bh_bulge(model, gals, snapshot: int):
     The number of galaxies added to ``Model.properties["snapshot_<snapshot>"]["BlackHoleMass"]`` and
     ``Model.propertiesp["snapshot_<snapshot>"]["BulgeMass"]`` arrays is given by
     :py:attr:`~sage_analysis.model.Model.sample_size` weighted by ``number_galaxies_passed /``
-    :py:attr:`~sage_analysis.model.Model.num_gals_all_files`. If this value is greater than ``number_galaxies_passed``,
+    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than ``number_galaxies_passed``,
     then all galaxies will be used.
 
     Notes
@@ -226,7 +226,7 @@ def calc_bh_bulge(model, gals, snapshot: int):
     my_gals = np.where((gals["BulgeMass"][:] > 0.01) & (gals["BlackHoleMass"][:] > 0.00001))[0]
 
     # Select a random subset of galaxies (if necessary).
-    my_gals = select_random_indices(my_gals, model.num_gals_all_files, model.sample_size, model.random_seed)
+    my_gals = select_random_indices(my_gals, model._num_gals_all_files, model.sample_size, model.random_seed)
 
     bh = np.log10(gals["BlackHoleMass"][:][my_gals] * 1.0e10 / model.hubble_h)
     bulge = np.log10(gals["BulgeMass"][:][my_gals] * 1.0e10 / model.hubble_h)
@@ -412,7 +412,7 @@ def calc_reservoirs(model, gals, snapshot: int):
     The number of galaxies added to ``Model.properties["snapshot_<snapshot>"]["reservoir_mvir"]`` and
     ``Model.properties["snapshot_<snapshot>"]["reservoir_<reservoir_name>"]`` arrays is given by
     :py:attr:`~sage_analysis.model.Model.sample_size` weighted by ``number_centrals_passed /``
-    :py:attr:`~sage_analysis.model.Model.num_gals_all_files`. If this value is greater than ``number_centrals_passed``,
+    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than ``number_centrals_passed``,
     then all central galaxies will be used.
     """
 
@@ -421,7 +421,7 @@ def calc_reservoirs(model, gals, snapshot: int):
                         (gals["StellarMass"][:] > 0.0))[0]
 
     # Select a random subset of galaxies (if necessary).
-    centrals = select_random_indices(centrals, model.num_gals_all_files, model.sample_size, model.random_seed)
+    centrals = select_random_indices(centrals, model._num_gals_all_files, model.sample_size, model.random_seed)
 
     reservoirs = ["Mvir", "StellarMass", "ColdGas", "HotGas", "EjectedMass", "IntraClusterStars"]
     attribute_names = ["mvir", "stars", "cold", "hot", "ejected", "ICS"]
@@ -441,14 +441,14 @@ def calc_spatial(model, gals, snapshot: int):
 
     The number of galaxies added to ``Model.properties["snapshot_<snapshot>"]["<x/y/z>_pos"]`` arrays is given by
     :py:attr:`~sage_analysis.model.Model.sample_size` weighted by ``number_galaxies_passed /``
-    :py:attr:`~sage_analysis.model.Model.num_gals_all_files`. If this value is greater than ``number_galaxies_passed``,
+    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than ``number_galaxies_passed``,
     then all galaxies will be used.
     """
 
     non_zero = np.where((gals["Mvir"][:] > 0.0) & (gals["StellarMass"][:] > 0.1))[0]
 
     # Select a random subset of galaxies (if necessary).
-    non_zero = select_random_indices(non_zero, model.num_gals_all_files, model.sample_size, model.random_seed)
+    non_zero = select_random_indices(non_zero, model._num_gals_all_files, model.sample_size, model.random_seed)
 
     attribute_names = ["x_pos", "y_pos", "z_pos"]
     data_names = ["Posx", "Posy", "Posz"]
