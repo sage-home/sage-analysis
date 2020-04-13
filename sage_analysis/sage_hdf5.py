@@ -17,7 +17,6 @@ from sage_analysis.model import Model
 from sage_analysis.utils import read_generic_sage_params
 from typing import Dict, Any, Optional
 import logging
-import os
 
 import numpy as np
 import h5py
@@ -25,9 +24,10 @@ import h5py
 
 logger = logging.getLogger(__name__)
 
-## DO NOT TOUCH ##
+# DO NOT TOUCH #
 sage_data_version = "1.00"
-## DO NOT TOUCH ##
+# DO NOT TOUCH #
+
 
 class SageHdf5Data():
     """
@@ -58,7 +58,7 @@ class SageHdf5Data():
         logger.info(f"The read SAGE parameters are {sage_dict}")
 
         # The output data will be named via the parameter file with the ``.hdf5`` extension.
-        sage_data_path= f"{sage_dict['_base_sage_output_path']}.hdf5"
+        sage_data_path = f"{sage_dict['_base_sage_output_path']}.hdf5"
         model._sage_data_path = sage_data_path
         model._hdf5_file = h5py.File(sage_data_path, "r")
 
@@ -68,12 +68,11 @@ class SageHdf5Data():
 
         # Check that this module is current for the SAGE data version.
         if model.sage_data_version != sage_data_version:
-            msg = "The 'sage_hdf5.py' module was written to be compatible with " \
-                  "sage_data_version {0}.  Your version of SAGE HDF5 has data version " \
-                  "{1}. Please update your version of SAGE or submit an issue at " \
-                  "https://github.com/sage-home/sage-model/issues".format(sage_data_version, \
-                  model.sage_data_version)
-            raise ValueError(msg)
+            raise ValueError(
+                f"The 'sage_hdf5.py' module was written to be compatible with sage_data_version {sage_data_version}. "
+                f"Your version of SAGE HDF5 has data version {model.sage_data_version}. Please update your version of "
+                f"SAGE or submit an issue at https://github.com/sage-home/sage-model/issues"
+            )
 
         # Finally, perform some checks to ensure that the data in ``model`` is compatible with our assumptions
         # regarding the HDF5 file.
@@ -83,8 +82,8 @@ class SageHdf5Data():
 
         # The cores to analyze may have a default value.  To allow for this, explicitly set these as if they were read
         # from the parameter file.
-        self.sage_model_dict["_first_file_to_analyse"] = 0
-        self.sage_model_dict["_last_file_to_analyse"] = model._num_output_files - 1
+        self.sage_model_dict["_first_file_to_analyze"] = 0
+        self.sage_model_dict["_last_file_to_analyze"] = model._num_output_files - 1
 
     def _check_model_compatibility(self, model: Model, sage_dict: Optional[Dict[str, Any]]) -> None:
         """
@@ -115,13 +114,13 @@ class SageHdf5Data():
             if model._num_sage_output_files != hdf5_num_files:
                 warnings.warn(
                     f"The number of SAGE output files according to the master HDF5 file is {hdf5_num_files}."
-                    f" However, ``analyse_sage_output`` was called with {model._num_sage_output_files}. "
+                    f" However, ``analyze_sage_output`` was called with {model._num_sage_output_files}. "
                     f"Using the number of files from the HDF5 file as the correct value."
                 )
 
-    def determine_volume_analysed(self, model: Model) -> float:
+    def determine_volume_analyzed(self, model: Model) -> float:
         """
-        Determines the volume analysed. This can be smaller than the total simulation box.
+        Determines the volume analyzed. This can be smaller than the total simulation box.
 
         Parameters
         ----------
@@ -138,7 +137,7 @@ class SageHdf5Data():
         # volume processed, loop through all of the files that we're analysing and use their volume fractions.
         total_volume_frac_processed = 0.0
 
-        for core_idx in range(model._first_file_to_analyse, model._last_file_to_analyse + 1):
+        for core_idx in range(model._first_file_to_analyze, model._last_file_to_analyze + 1):
 
             core_key = "Core_{0}".format(core_idx)
             frac_processed = model._hdf5_file[core_key]["Header"]["Runtime"].attrs["frac_volume_processed"]
@@ -195,7 +194,7 @@ class SageHdf5Data():
         ngals = 0
         snap_key = f"Snap_{snapshot}"
 
-        for core_idx in range(model.first_file_to_analyse, model.last_file_to_analyse + 1):
+        for core_idx in range(model._first_file_to_analyze, model._last_file_to_analyze + 1):
 
             core_key = f"Core_{core_idx}"
 
@@ -207,7 +206,6 @@ class SageHdf5Data():
                 continue
 
         model._num_gals_all_files = ngals
-
 
     def read_gals(self, model, core_num, pbar=None, plot_galaxies=False, debug=False):
         """
@@ -287,7 +285,6 @@ class SageHdf5Data():
 
         return gals
 
-
     def update_snapshot_and_data_path(self, model: Model, snapshot: int):
         """
         Updates the :py:attr:`~sage_analysis.Model.snapshot` attribute to ``snapshot``.  As the HDF5 file contains all
@@ -299,7 +296,6 @@ class SageHdf5Data():
         # If the file was closed, then ``__bool__()`` will return False.
         if not model._hdf5_file.__bool__():
             model._hdf5_file = h5py.File(model.sage_data_path, "r")
-
 
     def close_file(self, model):
         """

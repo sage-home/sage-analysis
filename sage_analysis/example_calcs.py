@@ -23,7 +23,7 @@ from sage_analysis.utils import select_random_indices
 
 
 def calc_SMF(
-    model:Model,
+    model: Model,
     gals,
     snapshot: int,
     calc_sub_populations: bool = False,
@@ -35,7 +35,8 @@ def calc_SMF(
 
     The ``Model.properties["snapshot_<snapshot>"]"SMF"]`` array will be updated. We also split the galaxy population
     into "red" and "blue" based on the value of :py:attr:`~sage_analysis.model.Model.sSFRcut` and update the
-    ``Model.properties["snapshot_<snapshot>"]["red_SMF"]`` and ``Model.properties["snapshot_<snapshot>"]["blue_SMF"]`` arrays.
+    ``Model.properties["snapshot_<snapshot>"]["red_SMF"]`` and ``Model.properties["snapshot_<snapshot>"]["blue_SMF"]``
+    arrays.
 
     Parameters
     ----------
@@ -54,19 +55,19 @@ def calc_SMF(
 
     stellar_mass = np.log10(gals["StellarMass"][:][non_zero_stellar] * 1.0e10 / model.hubble_h)
     sSFR = (gals["SfrDisk"][:][non_zero_stellar] + gals["SfrBulge"][:][non_zero_stellar]) / \
-               (gals["StellarMass"][:][non_zero_stellar] * 1.0e10 / model.hubble_h)
+        (gals["StellarMass"][:][non_zero_stellar] * 1.0e10 / model.hubble_h)
 
     gals_per_bin, _ = np.histogram(stellar_mass, bins=model.bins["stellar_mass_bins"])
     model.properties[f"snapshot_{snapshot}"][f"{smf_property_name}"] += gals_per_bin
 
     # We often want to plot the red and blue subpopulations. So bin them if requested.
     if calc_sub_populations:
-        red_gals = np.where(sSFR < 10.0**model.sSFRcut)[0]
+        red_gals = np.where(sSFR < 10.0**model._sSFRcut)[0]
         red_mass = stellar_mass[red_gals]
         counts, _ = np.histogram(red_mass, bins=model.bins["stellar_mass_bins"])
         model.properties[f"snapshot_{snapshot}"]["red_SMF"] += counts
 
-        blue_gals = np.where(sSFR > 10.0**model.sSFRcut)[0]
+        blue_gals = np.where(sSFR > 10.0**model._sSFRcut)[0]
         blue_mass = stellar_mass[blue_gals]
         counts, _ = np.histogram(blue_mass, bins=model.bins["stellar_mass_bins"])
         model.properties[f"snapshot_{snapshot}"]["blue_SMF"] += counts
@@ -81,8 +82,10 @@ def calc_BMF(model, gals, snapshot: int):
     """
 
     non_zero_baryon = np.where(gals["StellarMass"][:] + gals["ColdGas"][:] > 0.0)[0]
-    baryon_mass = np.log10((gals["StellarMass"][:][non_zero_baryon] + gals["ColdGas"][:][non_zero_baryon]) * 1.0e10 \
-                           / model.hubble_h)
+    baryon_mass = np.log10(
+        (gals["StellarMass"][:][non_zero_baryon] + gals["ColdGas"][:][non_zero_baryon])
+        * 1.0e10 / model.hubble_h
+    )
 
     (counts, _) = np.histogram(baryon_mass, bins=model.bins["stellar_mass_bins"])
     model.properties[f"snapshot_{snapshot}"]["BMF"] += counts
@@ -115,9 +118,9 @@ def calc_BTF(model, gals, snapshot: int):
 
     # Make sure we're getting spiral galaxies. That is, don't include galaxies
     # that are too bulgy.
-    spirals = np.where((gals["Type"][:] == 0) & (gals["StellarMass"][:] + gals["ColdGas"][:] > 0.0) & \
-                       (gals["StellarMass"][:] > 0.0) & (gals["ColdGas"][:] > 0.0) & \
-                       (gals["BulgeMass"][:] / gals["StellarMass"][:] > 0.1) & \
+    spirals = np.where((gals["Type"][:] == 0) & (gals["StellarMass"][:] + gals["ColdGas"][:] > 0.0) &
+                       (gals["StellarMass"][:] > 0.0) & (gals["ColdGas"][:] > 0.0) &
+                       (gals["BulgeMass"][:] / gals["StellarMass"][:] > 0.1) &
                        (gals["BulgeMass"][:] / gals["StellarMass"][:] < 0.5))[0]
 
     # Select a random subset of galaxies (if necessary).
@@ -126,8 +129,12 @@ def calc_BTF(model, gals, snapshot: int):
     baryon_mass = np.log10((gals["StellarMass"][:][spirals] + gals["ColdGas"][:][spirals]) * 1.0e10 / model.hubble_h)
     velocity = np.log10(gals["Vmax"][:][spirals])
 
-    model.properties[f"snapshot_{snapshot}"]["BTF_mass"] = np.append(model.properties[f"snapshot_{snapshot}"]["BTF_mass"], baryon_mass)
-    model.properties[f"snapshot_{snapshot}"]["BTF_vel"] = np.append(model.properties[f"snapshot_{snapshot}"]["BTF_vel"], velocity)
+    model.properties[f"snapshot_{snapshot}"]["BTF_mass"] = np.append(
+            model.properties[f"snapshot_{snapshot}"]["BTF_mass"], baryon_mass
+    )
+    model.properties[f"snapshot_{snapshot}"]["BTF_vel"] = np.append(
+        model.properties[f"snapshot_{snapshot}"]["BTF_vel"], velocity
+    )
 
 
 def calc_sSFR(model, gals, snapshot: int):
@@ -145,14 +152,20 @@ def calc_sSFR(model, gals, snapshot: int):
     non_zero_stellar = np.where(gals["StellarMass"][:] > 0.0)[0]
 
     # Select a random subset of galaxies (if necessary).
-    random_inds = select_random_indices(non_zero_stellar, model._num_gals_all_files, model.sample_size, model.random_seed)
+    random_inds = select_random_indices(
+        non_zero_stellar, model._num_gals_all_files, model.sample_size, model.random_seed
+    )
 
     stellar_mass = np.log10(gals["StellarMass"][:][random_inds] * 1.0e10 / model.hubble_h)
     sSFR = (gals["SfrDisk"][:][random_inds] + gals["SfrBulge"][:][random_inds]) / \
-               (gals["StellarMass"][:][random_inds] * 1.0e10 / model.hubble_h)
+        (gals["StellarMass"][:][random_inds] * 1.0e10 / model.hubble_h)
 
-    model.properties[f"snapshot_{snapshot}"]["sSFR_mass"] = np.append(model.properties[f"snapshot_{snapshot}"]["sSFR_mass"], stellar_mass)
-    model.properties[f"snapshot_{snapshot}"]["sSFR_sSFR"] = np.append(model.properties[f"snapshot_{snapshot}"]["sSFR_sSFR"], np.log10(sSFR))
+    model.properties[f"snapshot_{snapshot}"]["sSFR_mass"] = np.append(
+        model.properties[f"snapshot_{snapshot}"]["sSFR_mass"], stellar_mass
+    )
+    model.properties[f"snapshot_{snapshot}"]["sSFR_sSFR"] = np.append(
+        model.properties[f"snapshot_{snapshot}"]["sSFR_sSFR"], np.log10(sSFR)
+    )
 
 
 def calc_gas_fraction(model, gals, snapshot: int):
@@ -168,7 +181,7 @@ def calc_gas_fraction(model, gals, snapshot: int):
 
     # Make sure we're getting spiral galaxies. That is, don't include galaxies that are too bulgy.
     spirals = np.where((gals["Type"][:] == 0) & (gals["StellarMass"][:] + gals["ColdGas"][:] > 0.0) &
-                       (gals["BulgeMass"][:] / gals["StellarMass"][:] > 0.1) & \
+                       (gals["BulgeMass"][:] / gals["StellarMass"][:] > 0.1) &
                        (gals["BulgeMass"][:] / gals["StellarMass"][:] < 0.5))[0]
 
     # Select a random subset of galaxies (if necessary).
@@ -177,8 +190,12 @@ def calc_gas_fraction(model, gals, snapshot: int):
     stellar_mass = np.log10(gals["StellarMass"][:][spirals] * 1.0e10 / model.hubble_h)
     gas_fraction = gals["ColdGas"][:][spirals] / (gals["StellarMass"][:][spirals] + gals["ColdGas"][:][spirals])
 
-    model.properties[f"snapshot_{snapshot}"]["gas_frac_mass"] = np.append(model.properties[f"snapshot_{snapshot}"]["gas_frac_mass"], stellar_mass)
-    model.properties[f"snapshot_{snapshot}"]["gas_frac"] = np.append(model.properties[f"snapshot_{snapshot}"]["gas_frac"], gas_fraction)
+    model.properties[f"snapshot_{snapshot}"]["gas_frac_mass"] = np.append(
+        model.properties[f"snapshot_{snapshot}"]["gas_frac_mass"], stellar_mass
+    )
+    model.properties[f"snapshot_{snapshot}"]["gas_frac"] = np.append(
+        model.properties[f"snapshot_{snapshot}"]["gas_frac"], gas_fraction
+    )
 
 
 def calc_metallicity(model, gals, snapshot: int):
@@ -188,13 +205,13 @@ def calc_metallicity(model, gals, snapshot: int):
     The number of galaxies added to ``Model.properties["snapshot_<snapshot>"]["metallicity_mass"]`` and
     ``Model.properties["snapshot_<snapshot>"]["metallicity"]`` arrays is given by
     :py:attr:`~sage_analysis.model.Model.sample_size` weighted by ``number_centrals_passed /``
-    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than ``number_centrals_passed``,
-    then all central galaxies will be used.
+    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than
+    ``number_centrals_passed``, then all central galaxies will be used.
     """
 
     # Only care about central galaxies (Type 0) that have appreciable mass.
-    centrals = np.where((gals["Type"][:] == 0) & \
-                        (gals["ColdGas"][:] / (gals["StellarMass"][:] + gals["ColdGas"][:]) > 0.1) & \
+    centrals = np.where((gals["Type"][:] == 0) &
+                        (gals["ColdGas"][:] / (gals["StellarMass"][:] + gals["ColdGas"][:]) > 0.1) &
                         (gals["StellarMass"][:] > 0.01))[0]
 
     # Select a random subset of galaxies (if necessary).
@@ -203,8 +220,12 @@ def calc_metallicity(model, gals, snapshot: int):
     stellar_mass = np.log10(gals["StellarMass"][:][centrals] * 1.0e10 / model.hubble_h)
     Z = np.log10((gals["MetalsColdGas"][:][centrals] / gals["ColdGas"][:][centrals]) / 0.02) + 9.0
 
-    model.properties[f"snapshot_{snapshot}"]["metallicity_mass"] = np.append(model.properties[f"snapshot_{snapshot}"]["metallicity_mass"], stellar_mass)
-    model.properties[f"snapshot_{snapshot}"]["metallicity"] = np.append(model.properties[f"snapshot_{snapshot}"]["metallicity"], Z)
+    model.properties[f"snapshot_{snapshot}"]["metallicity_mass"] = np.append(
+        model.properties[f"snapshot_{snapshot}"]["metallicity_mass"], stellar_mass
+    )
+    model.properties[f"snapshot_{snapshot}"]["metallicity"] = np.append(
+        model.properties[f"snapshot_{snapshot}"]["metallicity"], Z
+    )
 
 
 def calc_bh_bulge(model, gals, snapshot: int):
@@ -214,8 +235,8 @@ def calc_bh_bulge(model, gals, snapshot: int):
     The number of galaxies added to ``Model.properties["snapshot_<snapshot>"]["BlackHoleMass"]`` and
     ``Model.propertiesp["snapshot_<snapshot>"]["BulgeMass"]`` arrays is given by
     :py:attr:`~sage_analysis.model.Model.sample_size` weighted by ``number_galaxies_passed /``
-    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than ``number_galaxies_passed``,
-    then all galaxies will be used.
+    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than
+    ``number_galaxies_passed``, then all galaxies will be used.
 
     Notes
     -----
@@ -231,8 +252,12 @@ def calc_bh_bulge(model, gals, snapshot: int):
     bh = np.log10(gals["BlackHoleMass"][:][my_gals] * 1.0e10 / model.hubble_h)
     bulge = np.log10(gals["BulgeMass"][:][my_gals] * 1.0e10 / model.hubble_h)
 
-    model.properties[f"snapshot_{snapshot}"]["bh_mass"] = np.append(model.properties[f"snapshot_{snapshot}"]["bh_mass"], bh)
-    model.properties[f"snapshot_{snapshot}"]["bulge_mass"] = np.append(model.properties[f"snapshot_{snapshot}"]["bulge_mass"], bulge)
+    model.properties[f"snapshot_{snapshot}"]["bh_mass"] = np.append(
+        model.properties[f"snapshot_{snapshot}"]["bh_mass"], bh
+    )
+    model.properties[f"snapshot_{snapshot}"]["bulge_mass"] = np.append(
+        model.properties[f"snapshot_{snapshot}"]["bulge_mass"], bulge
+    )
 
 
 def calc_quiescent(model, gals, snapshot: int):
@@ -263,7 +288,7 @@ def calc_quiescent(model, gals, snapshot: int):
     # False for star-forming galaxies.
     sSFR = (gals["SfrDisk"][:][non_zero_stellar] + gals["SfrBulge"][:][non_zero_stellar]) / \
            (gals["StellarMass"][:][non_zero_stellar] * 1.0e10 / model.hubble_h)
-    quiescent = sSFR < 10.0 ** model.sSFRcut
+    quiescent = sSFR < 10.0 ** model._sSFRcut
 
     # Mass function for number of centrals/satellites.
     centrals_counts, _ = np.histogram(mass[gal_type == 0], bins=model.bins["stellar_mass_bins"])
@@ -276,11 +301,11 @@ def calc_quiescent(model, gals, snapshot: int):
     quiescent_counts, _ = np.histogram(mass[quiescent], bins=model.bins["stellar_mass_bins"])
     model.properties[f"snapshot_{snapshot}"]["quiescent_galaxy_counts"] += quiescent_counts
 
-    quiescent_centrals_counts, _ = np.histogram(mass[(gal_type == 0) & (quiescent == True)],
+    quiescent_centrals_counts, _ = np.histogram(mass[(gal_type == 0) & quiescent],
                                                 bins=model.bins["stellar_mass_bins"])
     model.properties[f"snapshot_{snapshot}"]["quiescent_centrals_counts"] += quiescent_centrals_counts
 
-    quiescent_satellites_counts, _ = np.histogram(mass[(gal_type == 1) & (quiescent == True)],
+    quiescent_satellites_counts, _ = np.histogram(mass[(gal_type == 1) & quiescent],
                                                   bins=model.bins["stellar_mass_bins"])
 
     model.properties[f"snapshot_{snapshot}"]["quiescent_satellites_counts"] += quiescent_satellites_counts
@@ -328,13 +353,14 @@ def calc_bulge_fraction(model, gals, snapshot: int):
                                                       statistic=np.var,
                                                       bins=model.bins["stellar_mass_bins"])
     model.properties[f"snapshot_{snapshot}"]["fraction_bulge_var"] += fraction_bulge_var / \
-                                                (model.last_file_to_analyse - model.first_file_to_analyse + 1)
+        (model._last_file_to_analyze - model._first_file_to_analyze + 1)
 
-    fraction_disk_var, _, _ = stats.binned_statistic(stellar_mass, fraction_disk,
-                                                     statistic=np.var,
-                                                     bins=model.bins["stellar_mass_bins"])
+    fraction_disk_var, _, _ = stats.binned_statistic(
+        stellar_mass, fraction_disk, statistic=np.var, bins=model.bins["stellar_mass_bins"]
+    )
+
     model.properties[f"snapshot_{snapshot}"]["fraction_disk_var"] += fraction_disk_var / \
-                                                (model.last_file_to_analyse - model.first_file_to_analyse + 1)
+        (model._last_file_to_analyze - model._first_file_to_analyze + 1)
 
 
 def calc_baryon_fraction(model, gals, snapshot: int):
@@ -399,9 +425,9 @@ def calc_baryon_fraction(model, gals, snapshot: int):
 
     # Finally want the sum across all components.
     baryons = np.sum(gals[component_key][:][non_zero_mvir] for component_key in components)
-    baryon_fraction_sum, _, _ = stats.binned_statistic(fof_halo_mass_log, baryons / fof_halo_mass,
-                                                        statistic=np.sum,
-                                                        bins=model.bins["halo_mass_bins"])
+    baryon_fraction_sum, _, _ = stats.binned_statistic(
+        fof_halo_mass_log, baryons / fof_halo_mass, statistic=np.sum, bins=model.bins["halo_mass_bins"]
+    )
     model.properties[f"snapshot_{snapshot}"]["halo_baryon_fraction_sum"] += baryon_fraction_sum
 
 
@@ -412,12 +438,12 @@ def calc_reservoirs(model, gals, snapshot: int):
     The number of galaxies added to ``Model.properties["snapshot_<snapshot>"]["reservoir_mvir"]`` and
     ``Model.properties["snapshot_<snapshot>"]["reservoir_<reservoir_name>"]`` arrays is given by
     :py:attr:`~sage_analysis.model.Model.sample_size` weighted by ``number_centrals_passed /``
-    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than ``number_centrals_passed``,
-    then all central galaxies will be used.
+    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than
+    ``number_centrals_passed``, then all central galaxies will be used.
     """
 
     # To reduce scatter, only use galaxies in halos with mass > 1.0e10 Msun/h.
-    centrals = np.where((gals["Type"][:] == 0) & (gals["Mvir"][:] > 1.0) & \
+    centrals = np.where((gals["Type"][:] == 0) & (gals["Mvir"][:] > 1.0) &
                         (gals["StellarMass"][:] > 0.0))[0]
 
     # Select a random subset of galaxies (if necessary).
@@ -432,7 +458,9 @@ def calc_reservoirs(model, gals, snapshot: int):
 
         # Extend the previous list of masses with these new values.
         dict_key = "reservoir_{0}".format(attribute_name)
-        model.properties[f"snapshot_{snapshot}"][dict_key] = np.append(model.properties[f"snapshot_{snapshot}"][dict_key], mass)
+        model.properties[f"snapshot_{snapshot}"][dict_key] = np.append(
+            model.properties[f"snapshot_{snapshot}"][dict_key], mass
+        )
 
 
 def calc_spatial(model, gals, snapshot: int):
@@ -441,8 +469,8 @@ def calc_spatial(model, gals, snapshot: int):
 
     The number of galaxies added to ``Model.properties["snapshot_<snapshot>"]["<x/y/z>_pos"]`` arrays is given by
     :py:attr:`~sage_analysis.model.Model.sample_size` weighted by ``number_galaxies_passed /``
-    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than ``number_galaxies_passed``,
-    then all galaxies will be used.
+    :py:attr:`~sage_analysis.model.Model._num_gals_all_files`. If this value is greater than
+    ``number_galaxies_passed``, then all galaxies will be used.
     """
 
     non_zero = np.where((gals["Mvir"][:] > 0.0) & (gals["StellarMass"][:] > 0.1))[0]
@@ -457,7 +485,9 @@ def calc_spatial(model, gals, snapshot: int):
 
         # Units are Mpc/h.
         pos = gals[data_name][:][non_zero]
-        model.properties[f"snapshot_{snapshot}"][attribute_name] = np.append(model.properties[f"snapshot_{snapshot}"][attribute_name], pos)
+        model.properties[f"snapshot_{snapshot}"][attribute_name] = np.append(
+            model.properties[f"snapshot_{snapshot}"][attribute_name], pos
+        )
 
 
 def calc_SMF_history(model, gals, snapshot: int):

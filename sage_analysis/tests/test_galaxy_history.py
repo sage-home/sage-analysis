@@ -33,8 +33,8 @@ def test_history(sage_output_formats: List[str]) -> None:
 
     parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
     labels = ["Mini-Millennium"]
-    first_files_to_analyse = [0]
-    last_files_to_analyse = [0]
+    first_files_to_analyze = [0]
+    last_files_to_analyze = [0]
     num_sage_output_files = [1]
     plot_toggles = {"SMF_history": True, "SFRD_history": True, "SMD_history": True}
 
@@ -42,13 +42,13 @@ def test_history(sage_output_formats: List[str]) -> None:
         parameter_fnames,
         sage_output_formats=sage_output_formats,
         num_sage_output_files=num_sage_output_files,
-        first_files_to_analyse=first_files_to_analyse,
-        last_files_to_analyse=last_files_to_analyse,
+        first_files_to_analyze=first_files_to_analyze,
+        last_files_to_analyze=last_files_to_analyze,
         plot_toggles=plot_toggles,
         labels=labels,
     )
 
-    galaxy_analysis.analyse_galaxies()
+    galaxy_analysis.analyze_galaxies()
     galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
 
     my_compare_images(baseline_image_path, generated_image_path)
@@ -62,8 +62,8 @@ def test_history_and_baseline(sage_output_formats: List[str]) -> None:
 
     parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
     labels = ["Mini-Millennium"]
-    first_files_to_analyse = [0]
-    last_files_to_analyse = [0]
+    first_files_to_analyze = [0]
+    last_files_to_analyze = [0]
     num_sage_output_files = [1]
     random_seeds = [666]
 
@@ -77,14 +77,14 @@ def test_history_and_baseline(sage_output_formats: List[str]) -> None:
         parameter_fnames,
         sage_output_formats=sage_output_formats,
         num_sage_output_files=num_sage_output_files,
-        first_files_to_analyse=first_files_to_analyse,
-        last_files_to_analyse=last_files_to_analyse,
+        first_files_to_analyze=first_files_to_analyze,
+        last_files_to_analyze=last_files_to_analyze,
         random_seeds=random_seeds,
         plot_toggles=plot_toggles,
         labels=labels,
     )
 
-    galaxy_analysis.analyse_galaxies()
+    galaxy_analysis.analyze_galaxies()
     galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
 
     my_compare_images(baseline_image_path, generated_image_path)

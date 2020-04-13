@@ -61,26 +61,25 @@ def test_sage_output_format(sage_output_formats):
 
     parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
     labels = ["Mini-Millennium"]
-    first_files_to_analyse = [0]
-    last_files_to_analyse = [0]
+    first_files_to_analyze = [0]
+    last_files_to_analyze = [0]
     num_sage_output_files = [1]
-    generated_image_path = "test_data/generated_plots/"
     random_seeds = [666]
 
     galaxy_analysis = GalaxyAnalysis(
         parameter_fnames,
         sage_output_formats=sage_output_formats,
         num_sage_output_files=num_sage_output_files,
-        first_files_to_analyse=first_files_to_analyse,
-        last_files_to_analyse=last_files_to_analyse,
+        first_files_to_analyze=first_files_to_analyze,
+        last_files_to_analyze=last_files_to_analyze,
         labels=labels,
         random_seeds=random_seeds,
     )
 
-    galaxy_analysis.analyse_galaxies()
+    galaxy_analysis.analyze_galaxies()
     galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
 
-    my_compare_images(baseline_image_path, generated_image_path, False)
+    my_compare_images(baseline_image_path, generated_image_path, True)
 
 
 def test_binary_sage_num_output_file_error():
@@ -118,12 +117,12 @@ def test_hdf5_sage_num_output_file_message(caplog):
             sage_output_formats=sage_output_formats,
             num_sage_output_files=num_sage_output_files,
         )
-        galaxy_analysis.analyse_galaxies()
+        galaxy_analysis.analyze_galaxies()
 
     # Check that the messages appeared in the log.
     assert "It is not required to specify the number of SAGE output files when analysing HDF5 output." in caplog.text
     assert record[0].message.args[0] ==  f"The number of SAGE output files according to the master HDF5 file is 1. " \
-        f"However, ``analyse_sage_output`` was called with {num_sage_output_files[0]}. Using the number of files " \
+        f"However, ``analyze_sage_output`` was called with {num_sage_output_files[0]}. Using the number of files " \
         "from the HDF5 file as the correct value."
 
 
@@ -137,16 +136,16 @@ def test_use_parameter_file_format(caplog) -> None:
 
     parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
     num_sage_output_files = [1]
-    first_files_to_analyse = [0]
-    last_files_to_analyse = [0]
+    first_files_to_analyze = [0]
+    last_files_to_analyze = [0]
 
     galaxy_analysis = GalaxyAnalysis(
         parameter_fnames,
         num_sage_output_files=num_sage_output_files,
-        first_files_to_analyse=first_files_to_analyse,
-        last_files_to_analyse=last_files_to_analyse,
+        first_files_to_analyze=first_files_to_analyze,
+        last_files_to_analyze=last_files_to_analyze,
     )
-    galaxy_analysis.analyse_galaxies()
+    galaxy_analysis.analyze_galaxies()
 
     assert galaxy_analysis._models[0].sage_output_format == "sage_binary"
     assert f"No SAGE output format specified. Attempting to read ``{parameter_fnames[0]}`` and using the " \
@@ -156,25 +155,25 @@ def test_use_parameter_file_format(caplog) -> None:
 
 def test_multiple_models() -> None:
     """
-    If the user specifies multiple models, they should be analysed and plotted no problemo.
+    If the user specifies multiple models, they should be analyzed and plotted no problemo.
     """
 
     parameter_fnames = [f"{test_path}/test_data/mini-millennium.par", f"{test_path}/test_data/mini-millennium.par"]
     sage_output_formats = ["sage_binary", "sage_hdf5"]
     labels = ["Binary", "HDF5"]
     num_sage_output_files = [1, None]
-    first_files_to_analyse = [0, None]
-    last_files_to_analyse = [0, None]
+    first_files_to_analyze = [0, None]
+    last_files_to_analyze = [0, None]
 
     galaxy_analysis = GalaxyAnalysis(
         parameter_fnames,
         sage_output_formats=sage_output_formats,
         num_sage_output_files=num_sage_output_files,
-        first_files_to_analyse=first_files_to_analyse,
-        last_files_to_analyse=last_files_to_analyse,
+        first_files_to_analyze=first_files_to_analyze,
+        last_files_to_analyze=last_files_to_analyze,
         labels=labels,
     )
-    galaxy_analysis.analyse_galaxies()
+    galaxy_analysis.analyze_galaxies()
 
     assert len(galaxy_analysis._models) == 2
 
@@ -184,31 +183,7 @@ def test_multiple_models() -> None:
     # galaxy_analysis.generate_plots()
 
     # Save these and test equality.
-
-# Need to add an option to add a tag to outputs?
 # Test to ensure that wrong number of parameters yield error.
-
-def test_single_parameter_file_as_string():
-    """
-    The parameter file name can be passed as just a string.
-    """
-
-    parameter_fname = f"{test_path}/test_data/mini-millennium.par"
-    sage_output_formats = ["sage_hdf5"]
-    random_seeds = [666]
-    labels = ["Mini-Millennium"]
-
-    galaxy_analysis = GalaxyAnalysis(
-        parameter_fname,
-        sage_output_formats=sage_output_formats,
-        random_seeds=random_seeds,
-        labels=labels,
-    )
-
-    galaxy_analysis.analyse_galaxies()
-    galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
-    my_compare_images(baseline_image_path, generated_image_path)
-
 
 def test_defaults(caplog):
     """
@@ -228,21 +203,21 @@ def test_defaults(caplog):
     )
 
     assert galaxy_analysis._models[0].snapshot == 63
-    assert "Snapshot to analyse not specified; using the final snapshot of the simulation (63)" in caplog.text
+    assert "Snapshot to analyze not specified; using the final snapshot of the simulation (63)" in caplog.text
 
     assert galaxy_analysis._models[0].label == "correct-mini-millennium-output"
     assert "Label not specified; using the FileNameGalaxies from parameter file (correct-mini-millennium-output)" \
         in caplog.text
 
-    assert galaxy_analysis._models[0].first_file_to_analyse == 0
-    assert "First file to analyse not specified; using 0" in caplog.text
+    assert galaxy_analysis._models[0].first_file_to_analyze == 0
+    assert "First file to analyze not specified; using 0" in caplog.text
 
-    assert galaxy_analysis._models[0].last_file_to_analyse == 0
-    assert "Last file to analyse not specified; using num cores SAGE ran with minus 1 (0)"
+    assert galaxy_analysis._models[0].last_file_to_analyze == 0
+    assert "Last file to analyze not specified; using num cores SAGE ran with minus 1 (0)"
 
     # The only thing that should be different to the baseline plots is the label in the legend. Hence if we update the
     # label and generate the plots, they should be identical.
-    galaxy_analysis.analyse_galaxies()
+    galaxy_analysis.analyze_galaxies()
     galaxy_analysis._models[0]._label = "Mini-Millennium"
 
     generated_image_path = "test_data/generated_plots/"
@@ -252,7 +227,7 @@ def test_defaults(caplog):
 
 def test_additional_property(caplog):
     """
-    A new property can be analysed and accounted for.
+    A new property can be analyzed and accounted for.
     """
 
     caplog.set_level(logging.INFO)
@@ -272,7 +247,7 @@ def test_additional_property(caplog):
     baseline_calculation_functions.update(extra_calculation_functions)
     baseline_plot_functions.update(extra_plot_functions)
 
-    galaxy_properties_to_analyse = {
+    galaxy_properties_to_analyze = {
         "stellar_mass_bins": {
                     "type": "binned",
                     "bin_low": 8.0,
@@ -295,12 +270,12 @@ def test_additional_property(caplog):
         plot_toggles=baseline_plot_toggles,
         calculation_functions=baseline_calculation_functions,
         plot_functions=baseline_plot_functions,
-        galaxy_properties_to_analyse=galaxy_properties_to_analyse,
+        galaxy_properties_to_analyze=galaxy_properties_to_analyze,
     )
 
-    galaxy_analysis.analyse_galaxies()
-    assert f"Initialized galaxy properties {galaxy_properties_to_analyse['stellar_mass_bins']} for Snapshot 63" in caplog.text
-    assert f"Initialized galaxy properties {galaxy_properties_to_analyse['halo_len_bins']} for Snapshot 63" in caplog.text
+    galaxy_analysis.analyze_galaxies()
+    assert f"Initialized galaxy properties {galaxy_properties_to_analyze['stellar_mass_bins']} for Snapshot 63" in caplog.text
+    assert f"Initialized galaxy properties {galaxy_properties_to_analyze['halo_len_bins']} for Snapshot 63" in caplog.text
     galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
     assert "Passed through ``plot_num_particles_in_halo``." in caplog.text
     os.remove(f"{generated_image_path}/1.StellarMassFunction.png")
@@ -314,7 +289,7 @@ def test_incorrect_additional_property():
     parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
     sage_output_formats = ["sage_hdf5"]
 
-    galaxy_properties_to_analyse = {
+    galaxy_properties_to_analyze = {
         "incorrect_property": {
                     "type": "this is an incorrect property type",
         },
@@ -324,7 +299,7 @@ def test_incorrect_additional_property():
         galaxy_analysis = GalaxyAnalysis(
             parameter_fnames,
             sage_output_formats=sage_output_formats,
-            galaxy_properties_to_analyse=galaxy_properties_to_analyse,
+            galaxy_properties_to_analyze=galaxy_properties_to_analyze,
         )
 
 @pytest.mark.hypothesis
@@ -352,7 +327,7 @@ def test_random_combinations(plot_toggles: Dict[str, bool]) -> None:
         plot_toggles=plot_toggles,
     )
 
-    galaxy_analysis.analyse_galaxies()
+    galaxy_analysis.analyze_galaxies()
     figs = galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
 
     # When ``plot_toggles = {}``, no figures are generated. This is still a valid scenario to test however there isn't

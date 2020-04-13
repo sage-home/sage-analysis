@@ -16,3 +16,6 @@ sage_analysis/tests/test_data/*.tar
 sage_analysis/tests/test_data/*.par
 sage_analysis/tests/test_data/*.a_list
 .hypothesis/
+
+.mypy_cache
+.coverage*

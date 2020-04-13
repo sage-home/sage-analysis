@@ -17,7 +17,7 @@ default_plot_toggles = {
     "SMD_history": False,
 }
 
-default_galaxy_properties_to_analyse = {
+default_galaxy_properties_to_analyze = {
     "stellar_mass_bins": {
         "type": "binned",
         "bin_low": 8.0,

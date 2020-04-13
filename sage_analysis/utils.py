@@ -1,7 +1,8 @@
-from typing import Dict, Any, Optional, Tuple, Callable
 import os
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
+
 
 def generate_func_dict(
     plot_toggles,
@@ -116,11 +117,10 @@ def generate_func_dict(
             try:
                 func = getattr(module, func_name)
             except AttributeError:
-                msg = "Tried to get the func named '{0}' corresponding to " \
-                      "'plot_toggle' value '{1}'.  However, no func named '{0}' " \
-                      "could be found in '{2}' module.".format(func_name,
-                      toggle, module_name)
-                raise AttributeError(msg)
+                raise AttributeError(
+                    "Tried to get the func named ``{func_name}`` corresponding to ``plot_toggle`` value ``{toggle}``. "
+                    f"However, no func named ``{func_name}`` could be found in ``{module_name}`` module."
+                )
 
             # We may have specified some keyword arguments for this plot toggle. Check.
             try:
@@ -211,7 +211,6 @@ def select_random_indices(
     return random_inds
 
 
-
 def read_generic_sage_params(sage_file_path: str) -> Dict[str, Any]:
     """
     Reads the **SAGE** parameter file values. This function is used for the default ``sage_binary`` and ``sage_hdf5``
@@ -297,7 +296,7 @@ def read_generic_sage_params(sage_file_path: str) -> Dict[str, Any]:
     model_dict["_redshifts"] = redshifts
     model_dict["_snapshot"] = len(alist) - 1  # By default, plot the final snapshot.
 
-    base_sage_output_path = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}"
+    base_sage_output_path = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}"  # noqa: E501
     model_dict["_base_sage_output_path"] = base_sage_output_path
 
     model_dict["_output_dir"] = SAGE_dict['OutputDir']
