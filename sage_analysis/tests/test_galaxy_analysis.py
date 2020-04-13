@@ -203,7 +203,7 @@ def test_defaults(caplog):
     )
 
     assert galaxy_analysis._models[0].snapshot == 63
-    assert "Snapshot to analyze not specified; using the final snapshot of the simulation (63)" in caplog.text
+    assert "Snapshot to analyze not specified; using final snapshot of the simulation (63)" in caplog.text
 
     assert galaxy_analysis._models[0].label == "correct-mini-millennium-output"
     assert "Label not specified; using the FileNameGalaxies from parameter file (correct-mini-millennium-output)" \
