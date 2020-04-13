@@ -129,10 +129,8 @@ class Model(object):
 
         Notes
         -----
-        If :py:attr:`~sage_output_format` is ``sage_hdf5``, this number does **NOT**
-        include the Master file. That is, it is the number of numbered output files.
+        If :py:attr:`~sage_output_format` is ``sage_hdf5``, this attribute is not required.
         """
-
         return self._num_sage_output_files
 
     @property
@@ -140,7 +138,6 @@ class Model(object):
         """
         float: Value of the fractional Hubble parameter. That is, ``H = 100*hubble_h``.
         """
-
         return self._hubble_h
 
     @property
@@ -148,16 +145,7 @@ class Model(object):
         """
         float: Size of the simulation box. Units are Mpc/h.
         """
-
         return self._box_size
-
-    @property
-    def num_sim_tree_files(self):
-        """
-        int: Number of tree files that encompass the simulation for this model.
-        """
-
-        return self._num_sim_tree_files
 
     @property
     def volume(self):
@@ -173,7 +161,6 @@ class Model(object):
         This is **not** necessarily :py:attr:`~box_size` cubed. It is possible that this
         model is only analysing a subset of files and hence the volume will be less.
         """
-
         return self._volume
 
     @volume.setter
@@ -192,7 +179,6 @@ class Model(object):
         """
         :obj:`~numpy.ndarray`: Redshifts for this simulation.
         """
-
         return self._redshifts
 
     @property
@@ -205,7 +191,6 @@ class Model(object):
         :doc:`../user/data_class` for more information about adding your own Data Class to ingest
         data.
         """
-
         return self._sage_output_format
 
     @property
@@ -214,7 +199,6 @@ class Model(object):
         string: Base path to the output data. This is the path without specifying any extra information about redshift
         or the file extension itself.
         """
-
         return self._base_sage_data_path
 
     @property
@@ -227,16 +211,14 @@ class Model(object):
         :py:attr:`~snapshot`. In both cases, ``XXX`` represents the numbers in the range
         [:py:attr:`~first_file_to_analyze`, :py:attr:`~last_file_to_analyze`] inclusive.
         """
-
         return self._sage_data_path
 
     @property
     def output_path(self):
         """
         string: Path to where some plots will be saved. Used for
-        :py:meth:`!sage_analysis.plots.plot_spatial_3d`.
+        :py:meth:`~sage_analysis.plots.plot_spatial_3d`.
         """
-
         return self._output_path
 
     @property
@@ -244,7 +226,6 @@ class Model(object):
         """
         {``"Chabrier"``, ``"Salpeter"``}: The initial mass function.
         """
-
         return self._IMF
 
     @IMF.setter
@@ -263,7 +244,6 @@ class Model(object):
         """
         string: Label that will go on axis legends for this :py:class:`~Model`.
         """
-
         return self._label
 
     @property
@@ -276,7 +256,6 @@ class Model(object):
         ``XXX`` represents the numbers in the range
         [:py:attr:`~first_file_to_analyze`, :py:attr:`~last_file_to_analyze`] inclusive.
         """
-
         return self._first_file_to_analyze
 
     @property
@@ -289,20 +268,7 @@ class Model(object):
         ``XXX`` represents the numbers in the range
         [:py:attr:`~first_file_to_analyze`, :py:attr:`~last_file_to_analyze`] inclusive.
         """
-
         return self._last_file_to_analyze
-
-    @property
-    def simulation(self):
-        """
-        {``"Mini-Millennium"``, ``"Millennium"``, ``"Genesis-L500-N2160"``}: Specifies the
-        cosmoloogical values (Omega, box size, etc) for this :py:class:`~Model`.
-        Only required if :py:attr:`~sage_output_format` is ``sage_binary``.
-        Otherwise, if :py:attr:`sage_output_format` is ``sage_hdf5``, the
-        parameters are read from the ``["Header"]["Simulation"]`` attributes.
-        """
-
-        return self._simulation
 
     @property
     def snapshot(self):
@@ -312,7 +278,6 @@ class Model(object):
         :py:attr:`sage_output_format` is ``sage_binary``, this attribute will be used to
         index :py:attr:`~redshifts` and generate the suffix for :py:attr:`~sage_data_path`.
         """
-
         return self._snapshot
 
     @property
@@ -323,7 +288,6 @@ class Model(object):
         :py:meth:`~Model.init_binned_properties`. Key is the name of the bin,
         (``bin_name`` in :py:meth:`~Model.init_binned_properties` ).
         """
-
         return self._bins
 
     @property
@@ -336,7 +300,6 @@ class Model(object):
         The outside key is ``"snapshot_XX"`` where ``XX`` is the snapshot number for the property. The inner key is the
         name of the proeprty (e.g., ``"SMF"``).
         """
-
         return self._properties
 
     @property
@@ -346,7 +309,6 @@ class Model(object):
         :obj:`~numpy.ndarray`.  These :py:attr:`~properties` are initialized using
         :py:meth:`~init_scatter_properties`.
         """
-
         return self._sample_size
 
     @property
