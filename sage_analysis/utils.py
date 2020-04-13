@@ -1,7 +1,10 @@
+import logging
 import os
 from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 def generate_func_dict(
@@ -307,7 +310,7 @@ def read_generic_sage_params(sage_file_path: str) -> Dict[str, Any]:
     base_sage_output_path_absolute = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}"  # noqa: E501
     model_dict["_base_sage_output_path_absolute"] = base_sage_output_path_absolute
 
-    base_sage_output_path_relative = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}"  # noqa: E501
+    base_sage_output_path_relative = f"{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}"  # noqa: E501
     model_dict["_base_sage_output_path_relative"] = base_sage_output_path_relative
 
     model_dict["_output_dir"] = SAGE_dict['OutputDir']
