@@ -34,7 +34,7 @@ class DataClass(ABC):
         volume : float
             The numeric volume being processed during this run of the code in (Mpc/h)^3.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def read_sage_params(self, sage_file_path: str, *kwargs: Any) -> Dict[str, Any]:
@@ -54,7 +54,7 @@ class DataClass(ABC):
         model_dict: dict [str, var]
             Dictionary containing the parameter names and their values.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def determine_num_gals(self, model: Model, **kwargs: Any):
@@ -69,7 +69,7 @@ class DataClass(ABC):
         **kwargs : any
             Extra arguments to allow other data classes to pass extra arguments to their implementation.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def read_gals(
@@ -113,7 +113,7 @@ class DataClass(ABC):
         gals : The format is specified by the underlying data class implementation
             The galaxies for this file.
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def update_snapshot_and_data_path(self, model: Model, snapshot: int, **kwargs: Any) -> None:
@@ -130,4 +130,4 @@ class DataClass(ABC):
         **kwargs : any
             Extra arguments to allow other data classes to pass extra arguments to their implementation.
         """
-        pass
+        pass  # pragma: no cover

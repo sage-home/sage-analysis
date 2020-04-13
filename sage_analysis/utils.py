@@ -55,39 +55,6 @@ def generate_func_dict(
         additional keyword arguments to be passed to the function. The inner dictionary is
         keyed by the keyword argument names with the value specifying the keyword argument
         value.
-
-    Examples
-    --------
-    >>> import sage_analysis.example_calcs
-    >>> import sage_analysis.example_plots
-    >>> plot_toggles = {"SMF": 1}
-    >>> module_name = "sage_analysis.example_calcs"
-    >>> function_prefix = "calc_"
-    >>> generate_func_dict(plot_toggles, module_name, function_prefix) #doctest: +ELLIPSIS
-    {'calc_SMF': (<function calc_SMF at 0x...>, {})}
-    >>> module_name = "sage_analysis.example_plots"
-    >>> function_prefix = "plot_"
-    >>> generate_func_dict(plot_toggles, module_name, function_prefix) #doctest: +ELLIPSIS
-    {'plot_SMF': (<function plot_SMF at 0x...>, {})}
-
-    >>> import sage_analysis.example_plots
-    >>> plot_toggles = {"SMF": 1}
-    >>> module_name = "sage_analysis.example_plots"
-    >>> function_prefix = "plot_"
-    >>> keyword_args = {"SMF": {"plot_sub_populations": True}}
-    >>> generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args) #doctest: +ELLIPSIS
-    {'plot_SMF': (<function plot_SMF at 0x...>, {'plot_sub_populations': True})}
-
-    >>> import sage_analysis.example_plots
-    >>> plot_toggles = {"SMF": 1, "quiescent": 1}
-    >>> module_name = "sage_analysis.example_plots"
-    >>> function_prefix = "plot_"
-    >>> keyword_args = {"SMF": {"plot_sub_populations": True},
-    ...                 "quiescent": {"plot_output_format": "pdf", "plot_sub_populations": True}}
-    >>> generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args) #doctest: +ELLIPSIS
-    {'plot_SMF': (<function plot_SMF at 0x...>, {'plot_sub_populations': True}), \
-'plot_quiescent': (<function plot_quiescent at 0x...>, {'plot_output_format': 'pdf', \
-'plot_sub_populations': True})}
     """
 
     # If the functions are defined in this module, then `module_name` is empty. Need to
@@ -148,14 +115,13 @@ def select_random_indices(
 
     Parameters
     ----------
-
-    vals: :obj:`~numpy.ndarray` of values
+    vals : :obj:`~numpy.ndarray` of values
         Values that the random subset is selected from.
 
-    global_num_inds_available: int
+    global_num_inds_available : int
         The total number of indices available across all files.
 
-    global_num_inds_requested: int
+    global_num_inds_requested : int
         The total number of indices requested across all files.
 
     seed : int, optional
@@ -163,7 +129,6 @@ def select_random_indices(
 
     Returns
     -------
-
     random_vals: :obj:`~numpy.ndarray` of values
         Values chosen.
 
