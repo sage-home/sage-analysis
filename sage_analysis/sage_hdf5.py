@@ -11,16 +11,17 @@ own Data Class to ingest data.
 Author: Jacob Seiler.
 """
 
-import warnings
-
-from sage_analysis.model import Model
-from sage_analysis.utils import read_generic_sage_params
-from typing import Dict, Any, Optional
 import logging
+import warnings
+from typing import Any, Dict, Optional
 
 import numpy as np
-import h5py
+from tqdm import tqdm
 
+import h5py
+from sage_analysis.data_class import DataClass
+from sage_analysis.model import Model
+from sage_analysis.utils import read_generic_sage_params
 
 logger = logging.getLogger(__name__)
 
@@ -29,12 +30,11 @@ sage_data_version = "1.00"
 # DO NOT TOUCH #
 
 
-class SageHdf5Data():
+class SageHdf5Data(DataClass):
     """
-    Class intended to inteface with the :py:class:`~sage_analysis.model.Model` class to
-    ingest the data written by **SAGE**. It includes methods for reading the output
-    galaxies, setting cosmology etc. It is specifically written for when
-    :py:attr:`~sage_analysis.model.Model.sage_output_format` is ``sage_hdf5``.
+    Class intended to inteface with the :py:class:`~sage_analysis.model.Model` class to ingest the data written by
+    **SAGE**. It includes methods for reading the output galaxies, setting cosmology etc. It is specifically written
+    for when :py:attr:`~sage_analysis.model.Model.sage_output_format` is ``sage_hdf5``.
     """
 
     def __init__(self, model: Model, sage_file_to_read: str) -> None:
@@ -53,7 +53,7 @@ class SageHdf5Data():
         logger.info("Reading using SAGE HDF5 output format.")
 
         # Use the SAGE parameter file to generate a bunch of attributes.
-        sage_dict = self._read_sage_params(sage_file_to_read)
+        sage_dict = self.read_sage_params(sage_file_to_read)
         self.sage_model_dict = sage_dict
         logger.info(f"The read SAGE parameters are {sage_dict}")
 
@@ -162,7 +162,7 @@ class SageHdf5Data():
 
         return volume
 
-    def _read_sage_params(self, sage_file_path: str) -> Dict[str, Any]:
+    def read_sage_params(self, sage_file_path: str) -> Dict[str, Any]:
         """
         Read the **SAGE** parameter file.
 
@@ -215,7 +215,15 @@ class SageHdf5Data():
 
         model._num_gals_all_files = ngals
 
-    def read_gals(self, model, core_num, pbar=None, plot_galaxies=False, debug=False):
+    def read_gals(
+        self,
+        model: Model,
+        core_num: int,
+        snapshot: int,
+        pbar: Optional[tqdm] = None,
+        plot_galaxies: bool = False,
+        debug: bool = False,
+    ) -> Any:
         """
         Reads the galaxies of a single core at the specified
         :py:attr:`~sage_analysis.model.Model.snapshot`.

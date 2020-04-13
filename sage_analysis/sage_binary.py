@@ -15,14 +15,16 @@ import os
 from typing import Any, Dict, Optional
 
 import numpy as np
+from tqdm import tqdm
 
+from sage_analysis.data_class import DataClass
 from sage_analysis.model import Model
 from sage_analysis.utils import read_generic_sage_params
 
 logger = logging.getLogger(__name__)
 
 
-class SageBinaryData():
+class SageBinaryData(DataClass):
     """
     Class intended to inteface with the :py:class:`~sage_analysis.model.Model` class to
     ingest the data written by **SAGE**. It includes methods for reading the output
@@ -42,10 +44,10 @@ class SageBinaryData():
 
         logger.info("Reading using SAGE binary output format.")
 
-        self.get_galaxy_struct()
+        self._get_galaxy_struct()
 
         # Use the SAGE parameter file to generate a bunch of attributes.
-        sage_dict = self._read_sage_params(sage_file_to_read)
+        sage_dict = self.read_sage_params(sage_file_to_read)
         self.sage_model_dict = sage_dict
         logger.info(f"The read SAGE parameters are {sage_dict}")
 
@@ -89,7 +91,7 @@ class SageBinaryData():
 
         return volume
 
-    def _read_sage_params(self, sage_file_path: str) -> Dict[str, Any]:
+    def read_sage_params(self, sage_file_path: str) -> Dict[str, Any]:
         """
         Read the **SAGE** parameter file.
 
@@ -108,7 +110,7 @@ class SageBinaryData():
 
         return model_dict
 
-    def get_galaxy_struct(self):
+    def _get_galaxy_struct(self):
         """
         Sets the ``numpy`` structured array for holding the galaxy data.
         """
@@ -202,7 +204,15 @@ class SageBinaryData():
 
         model._num_gals_all_files = num_gals
 
-    def read_gals(self, model, file_num, pbar=None, plot_galaxies=False, debug=False):
+    def read_gals(
+        self,
+        model: Model,
+        file_num: int,
+        snapshot: int,
+        pbar: Optional[tqdm] = None,
+        plot_galaxies: bool = False,
+        debug: bool = False
+    ):
         """
         Reads the galaxies of a model file at snapshot specified by
         :py:attr:`~sage_analysis.model.Model.snapshot`.
@@ -228,13 +238,11 @@ class SageBinaryData():
 
         Returns
         -------
-
-        gals : ``numpy`` structured array with format given by ``get_galaxy_struct()``
+        gals : ``numpy`` structured array with format given by :py:method:`~_get_galaxy_struct`
             The galaxies for this file.
 
         Notes
         -----
-
         ``tqdm`` does not play nicely with printing to stdout. Hence we disable
         the ``tqdm`` progress bar if ``debug=True``.
         """

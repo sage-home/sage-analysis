@@ -544,7 +544,7 @@ class Model(object):
         for file_num in range(self.first_file_to_analyze, self.last_file_to_analyze + 1):
 
             # This is Data Class specific. Refer to the relevant module for implementation.
-            gals = self.data_class.read_gals(self, file_num, pbar=pbar, debug=debug)
+            gals = self.data_class.read_gals(self, file_num, snapshot, pbar=pbar, debug=debug)
 
             # We may have skipped a file.
             if gals is None:
