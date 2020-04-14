@@ -159,7 +159,7 @@ def select_random_indices(
     >>> global_num_inds_requested = 500 # Request more than the number of inds available
     ...                                 # across all file.
     >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested) # All input indices are returned.
-    array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+            array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     """
 
     if seed is not None:

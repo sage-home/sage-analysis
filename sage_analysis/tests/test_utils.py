@@ -53,6 +53,5 @@ def test_random_indices_less_than_number_available():
     inds = np.arange(10)
     global_num_inds_available = 100
     global_num_inds_requested = 50
-    inds = select_random_indices(inds, global_num_inds_available, global_num_inds_requested, seed)
-
+    inds = list(select_random_indices(inds, global_num_inds_available, global_num_inds_requested, seed))
     assert inds == [2, 6, 9, 4, 3]
