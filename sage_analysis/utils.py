@@ -263,9 +263,9 @@ def read_generic_sage_params(sage_file_path: str) -> Dict[str, Any]:
     try:
         fname_absolute = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['FileWithSnapList']}"
         alist = np.loadtxt(fname_absolute)
-    except FileNotFoundError:
+    except IOError:
         fname_relative = f"{SAGE_dict['FileWithSnapList']}"
-        logger.debug(f"Could not find snapshot file {fname}. Trying as {fname_relative} instead.")
+        logger.debug(f"Could not find snapshot file {fname_absolute}. Trying as {fname_relative} instead.")
         alist = np.loadtxt(f"{SAGE_dict['FileWithSnapList']}")
 
     redshifts = 1.0 / alist - 1.0
