@@ -15,6 +15,7 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import matplotlib
+matplotlib.use('Agg') 
 import numpy as np
 
 import sage_analysis.example_calcs

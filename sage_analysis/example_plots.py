@@ -11,15 +11,16 @@ Authors: (Jacob Seiler, Manodeep Sinha)
 from typing import List
 
 import matplotlib
+# Make the plotting scripts function without a
+# valid DISPLAY variable -- MS 17/03/2020
+matplotlib.use('Agg')
+
 import numpy as np
 from matplotlib import pyplot as plt
 
 import sage_analysis.observations as obs
 from sage_analysis.model import Model
 
-# Make the plotting scripts function without a
-# valid DISPLAY variable -- MS 17/03/2020
-matplotlib.use('Agg')
 
 
 colors = ["r", "b", "g", "m", "c"]
