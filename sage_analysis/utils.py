@@ -57,23 +57,14 @@ def generate_func_dict(
         value.
     """
 
-    # If the functions are defined in this module, then `module_name` is empty. Need to
-    # treat this differently.
-    import sys
-    if module_name == "":
-
-        # Get the name of this module.
-        module = sys.modules[__name__]
-
-    else:
-
-        # Otherwise, check if the specified module is present.
-        try:
-            module = sys.modules[module_name]
-        except KeyError:
-            msg = "Module {0} has not been imported.\nPerhaps you need to create an empty " \
-                  "`__init__.py` file to ensure your package can be imported.".format(module_name)
-            raise KeyError(msg)
+    # Check if the specified module is present.
+    try:
+        module = sys.modules[module_name]
+    except KeyError:
+        raise KeyError(
+            f"Module ``{module_name}`` has not been imported.\nPerhaps you need to create an empty ``__init__.py`` "
+            f"file to ensure your package can be imported."
+        )
 
     # Only populate those methods that have been marked in the `plot_toggles` dictionary.
     func_dict = {}
@@ -129,37 +120,8 @@ def select_random_indices(
 
     Returns
     -------
-    random_vals: :obj:`~numpy.ndarray` of values
+    random_inds : :obj:`~numpy.ndarray` of values
         Values chosen.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> seed = 666
-    >>> inds = np.arange(10)
-    >>> global_num_inds_available = 100
-    >>> global_num_inds_requested = 50 # Request less than the number of inds available
-    ...                                # across all files, but more than is in this file.
-    >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested, seed) # Returns a random subset.
-    array([2, 6, 9, 4, 3])
-
-    >>> import numpy as np
-    >>> seed = 666
-    >>> inds = np.arange(30)
-    >>> global_num_inds_available = 100
-    >>> global_num_inds_requested = 10 # Request less than the number of inds available
-    ...                                # across all files, and also less than what is
-    ...                                # available in this file.
-    >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested, seed) # Returns a random subset.
-    array([12,  2, 13])
-
-    >>> import numpy as np
-    >>> inds = np.arange(10)
-    >>> global_num_inds_available = 100
-    >>> global_num_inds_requested = 500 # Request more than the number of inds available
-    ...                                 # across all file.
-    >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested) # All input indices are returned.
-            array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     """
 
     if seed is not None:
@@ -285,8 +247,3 @@ def read_generic_sage_params(sage_file_path: str) -> Dict[str, Any]:
     model_dict["_num_sim_tree_files"] = int(SAGE_dict["NumSimulationTreeFiles"])
 
     return model_dict
-
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
