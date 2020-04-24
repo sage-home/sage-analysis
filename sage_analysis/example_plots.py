@@ -81,7 +81,7 @@ def adjust_legend(ax, location="upper right", scatter_plot=0):
 
 def plot_SMF(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png",
     plot_sub_populations: bool = False
@@ -95,8 +95,11 @@ def plot_SMF(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : list of ints
-        The snapshot to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, the stellar mass
+        function of all snapshots are plotted on the figure.
 
     plot_output_path : string
         Path to where the plot will be saved.
@@ -116,18 +119,7 @@ def plot_SMF(
     ax = fig.add_subplot(111)
 
     # Go through each of the models and plot.
-    for model_num, (model, snapshot) in enumerate(zip(models, snapshots)):
-
-        label = model.label
-
-        # If we only have one model, we will split it into red and blue
-        # sub-populations.
-        if len(models) > 1:
-            color = colors[model_num]
-            ls = linestyles[model_num]
-        else:
-            color = "k"
-            ls = "-"
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         # Set the x-axis values to be the centre of the bins.
         bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
@@ -136,16 +128,39 @@ def plot_SMF(
         # The SMF is normalized by the simulation volume which is in Mpc/h.
         normalization_factor = model._volume / pow(model.hubble_h, 3) * bin_widths
 
-        norm_SMF = model.properties[f"snapshot_{snapshot}"]["SMF"] / normalization_factor
-        ax.plot(bin_middles, norm_SMF, color=color, ls=ls, label=label + " - All")
+        # Colour will be used for the snapshot, linestyle for the model.
+        ls = linestyles[model_num]
+        label = model.label
 
-        # Be careful to not overcrowd the plot.
-        if len(models) == 1 or plot_sub_populations:
-            norm_red = model.properties[f"snapshot_{snapshot}"]["red_SMF"] / normalization_factor
-            norm_blue = model.properties[f"snapshot_{snapshot}"]["blue_SMF"] / normalization_factor
+        for snapshot_num, snapshot in enumerate(model_snapshots):
+            color = colors[snapshot_num]
 
-            ax.plot(bin_middles, norm_red, "r:", lw=2, label=label + " - Red")
-            ax.plot(bin_middles, norm_blue, "b:", lw=2, label=label + " - Blue")
+            norm_SMF = model.properties[f"snapshot_{snapshot}"]["SMF"] / normalization_factor
+            ax.plot(
+                bin_middles,
+                norm_SMF,
+                color=color,
+                ls=ls,
+                label=f"{label} - z = {model._redshifts[snapshot]:.2f} - All",
+            )
+
+            # Be careful to not overcrowd the plot.
+            if plot_sub_populations:
+                norm_red = model.properties[f"snapshot_{snapshot}"]["red_SMF"] / normalization_factor
+                norm_blue = model.properties[f"snapshot_{snapshot}"]["blue_SMF"] / normalization_factor
+
+                ax.plot(
+                    bin_middles,
+                    norm_red, "r:",
+                    lw=2,
+                    label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Red"
+                )
+                ax.plot(
+                    bin_middles,
+                    norm_blue, "b:",
+                    lw=2,
+                    label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Blue"
+                )
 
     # For scaling the observational data, we use the values of the zeroth
     # model.
@@ -177,7 +192,7 @@ def plot_SMF(
 
 def plot_BMF(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png"
 ) -> matplotlib.figure.Figure:
@@ -191,8 +206,11 @@ def plot_BMF(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : List of ints
-        The snapshot to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, the baryonic mass
+        function of all snapshots are plotted on the figure.
 
     plot_output_path : string
         Path to where the plot will be saved.
@@ -208,11 +226,7 @@ def plot_BMF(
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    for model_num, (model, snapshot) in enumerate(zip(models, snapshots)):
-
-        label = model.label
-        color = colors[model_num]
-        ls = linestyles[model_num]
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         # Set the x-axis values to be the centre of the bins.
         bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
@@ -220,13 +234,20 @@ def plot_BMF(
 
         # The MF is normalized by the simulation volume which is in Mpc/h.
         normalization_factor = model._volume / pow(model.hubble_h, 3) * bin_widths
-        ax.plot(
-            bin_middles,
-            model.properties[f"snapshot_{snapshot}"]["BMF"] / normalization_factor,
-            color=color,
-            ls=ls,
-            label=label + " - All"
-        )
+
+        # Colour will be used for the snapshot, linestyle for the model.
+        ls = linestyles[model_num]
+        label = model.label
+
+        for snapshot_num, snapshot in enumerate(model_snapshots):
+            color = colors[snapshot_num]
+            ax.plot(
+                bin_middles,
+                model.properties[f"snapshot_{snapshot}"]["BMF"] / normalization_factor,
+                color=color,
+                ls=ls,
+                label=f"{label} - z = {model._redshifts[snapshot]:.2f} - All",
+            )
 
     # For scaling the observational data, we use the values of the zeroth
     # model.
@@ -258,7 +279,7 @@ def plot_BMF(
 
 def plot_GMF(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png"
 ) -> matplotlib.figure.Figure:
@@ -271,8 +292,11 @@ def plot_GMF(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : list of ints
-        The snapshot to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, the gas mass
+        function of all snapshots are plotted on the figure.
 
     plot_output_path : string
         Path to where the plot will be saved.
@@ -288,11 +312,7 @@ def plot_GMF(
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    for model_num, (model, snapshot) in enumerate(zip(models, snapshots)):
-
-        label = model.label
-        color = colors[model_num]
-        ls = linestyles[model_num]
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         # Set the x-axis values to be the centre of the bins.
         bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
@@ -300,13 +320,21 @@ def plot_GMF(
 
         # The GMF is normalized by the simulation volume which is in Mpc/h.
         normalization_factor = model._volume / pow(model.hubble_h, 3) * bin_widths
-        ax.plot(
-            bin_middles,
-            model.properties[f"snapshot_{snapshot}"]["GMF"] / normalization_factor,
-            color=color,
-            ls=ls,
-            label=label + " - Cold Gas"
-        )
+
+        # Colour will be used for the snapshot, linestyle for the model.
+        ls = linestyles[model_num]
+        label = model.label
+
+        for snapshot_num, snapshot in enumerate(model_snapshots):
+            color = colors[snapshot_num]
+
+            ax.plot(
+                bin_middles,
+                model.properties[f"snapshot_{snapshot}"]["GMF"] / normalization_factor,
+                color=color,
+                ls=ls,
+                label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Cold Gas",
+            )
 
     # For scaling the observational data, we use the values of the zeroth
     # model.
@@ -338,7 +366,7 @@ def plot_GMF(
 
 def plot_BTF(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png"
 ) -> matplotlib.figure.Figure:
@@ -351,8 +379,11 @@ def plot_BTF(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : list of ints
-        The snapshot to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, the baryonic
+        Tully-Fisher relationship of all snapshots are plotted on the figure.
 
     plot_output_path : string
         Path to where the plot will be saved.
@@ -368,21 +399,25 @@ def plot_BTF(
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    for model_num, (model, snapshot) in enumerate(zip(models, snapshots)):
+    # Go through each of the models and plot.
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
-        label = model.label
-        color = colors[model_num]
+        # Colour will be used for the snapshot, marker style for the model.
         marker = markers[model_num]
+        label = model.label
 
-        ax.scatter(
-            model.properties[f"snapshot_{snapshot}"]["BTF_vel"],
-            model.properties[f"snapshot_{snapshot}"]["BTF_mass"],
-            marker=marker,
-            s=1,
-            color=color,
-            alpha=0.5,
-            label=label + " Sb/c galaxies"
-        )
+        for snapshot_num, snapshot in enumerate(model_snapshots):
+            color = colors[snapshot_num]
+
+            ax.scatter(
+                model.properties[f"snapshot_{snapshot}"]["BTF_vel"],
+                model.properties[f"snapshot_{snapshot}"]["BTF_mass"],
+                marker=marker,
+                s=1,
+                color=color,
+                alpha=0.5,
+                label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Sb/c galaxies",
+            )
 
     ax.set_xlim([1.4, 2.6])
     ax.set_ylim([8.0, 12.0])
@@ -409,7 +444,7 @@ def plot_BTF(
 
 def plot_sSFR(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png"
 ) -> matplotlib.figure.Figure:
@@ -423,11 +458,11 @@ def plot_sSFR(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : list of ints
-        The snapshot to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
 
-    plot_output_path : string
-        Path to where the plot will be saved.
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, the specific star
+        formation rate of all snapshots are plotted on the figure.
 
     plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
@@ -440,21 +475,25 @@ def plot_sSFR(
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    for model_num, (model, snapshot) in enumerate(zip(models, snapshots)):
+    # Go through each of the models and plot.
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
-        label = model.label
-        color = colors[model_num]
+        # Colour will be used for the snapshot, marker style for the model.
         marker = markers[model_num]
+        label = model.label
 
-        ax.scatter(
-            model.properties[f"snapshot_{snapshot}"]["sSFR_mass"],
-            model.properties[f"snapshot_{snapshot}"]["sSFR_sSFR"],
-            marker=marker,
-            s=1,
-            color=color,
-            alpha=0.5,
-            label=label
-        )
+        for snapshot_num, snapshot in enumerate(model_snapshots):
+            color = colors[snapshot_num]
+
+            ax.scatter(
+                model.properties[f"snapshot_{snapshot}"]["sSFR_mass"],
+                model.properties[f"snapshot_{snapshot}"]["sSFR_sSFR"],
+                marker=marker,
+                s=1,
+                color=color,
+                alpha=0.5,
+                label=f"{label} - z = {model._redshifts[snapshot]:.2f}",
+            )
 
     # Overplot a dividing line between passive and SF galaxies.
     w = np.arange(7.0, 13.0, 1.0)
@@ -484,7 +523,7 @@ def plot_sSFR(
 
 def plot_gas_fraction(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png"
 ) -> matplotlib.figure.Figure:
@@ -498,8 +537,11 @@ def plot_gas_fraction(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : list of ints
-        The snapshot to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, the gas fraction
+        of all snapshots are plotted on the figure.
 
     plot_output_path : string
         Path to where the plot will be saved.
@@ -515,21 +557,25 @@ def plot_gas_fraction(
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    for model_num, (model, snapshot) in enumerate(zip(models, snapshots)):
+    # Go through each of the models and plot.
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
-        label = model.label
-        color = colors[model_num]
+        # Colour will be used for the snapshot, marker style for the model.
         marker = markers[model_num]
+        label = model.label
 
-        ax.scatter(
-            model.properties[f"snapshot_{snapshot}"]["gas_frac_mass"],
-            model.properties[f"snapshot_{snapshot}"]["gas_frac"],
-            marker=marker,
-            s=1,
-            color=color,
-            alpha=0.5,
-            label=label + " Sb/c galaxies"
-        )
+        for snapshot_num, snapshot in enumerate(model_snapshots):
+            color = colors[snapshot_num]
+
+            ax.scatter(
+                model.properties[f"snapshot_{snapshot}"]["gas_frac_mass"],
+                model.properties[f"snapshot_{snapshot}"]["gas_frac"],
+                marker=marker,
+                s=1,
+                color=color,
+                alpha=0.5,
+                label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Sb/c galaxies",
+            )
 
     ax.set_xlabel(r"$\log_{10} M_{\mathrm{stars}}\ (M_{\odot})$")
     ax.set_ylabel(r"$\mathrm{Cold\ Mass\ /\ (Cold+Stellar\ Mass)}$")
@@ -554,7 +600,7 @@ def plot_gas_fraction(
 
 def plot_metallicity(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png"
 ) -> matplotlib.figure.Figure:
@@ -567,8 +613,11 @@ def plot_metallicity(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : list of ints
-        The snapshot to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, the metallicity
+        of all snapshots are plotted on the figure.
 
     plot_output_path : string
         Path to where the plot will be saved.
@@ -584,21 +633,25 @@ def plot_metallicity(
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    for model_num, (model, snapshot) in enumerate(zip(models, snapshots)):
+    # Go through each of the models and plot.
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
-        label = model.label
-        color = colors[model_num]
+        # Colour will be used for the snapshot, marker style for the model.
         marker = markers[model_num]
+        label = model.label
 
-        ax.scatter(
-            model.properties[f"snapshot_{snapshot}"]["metallicity_mass"],
-            model.properties[f"snapshot_{snapshot}"]["metallicity"],
-            marker=marker,
-            s=1,
-            color=color,
-            alpha=0.5,
-            label=label + " galaxies"
-        )
+        for snapshot_num, snapshot in enumerate(model_snapshots):
+            color = colors[snapshot_num]
+
+            ax.scatter(
+                model.properties[f"snapshot_{snapshot}"]["metallicity_mass"],
+                model.properties[f"snapshot_{snapshot}"]["metallicity"],
+                marker=marker,
+                s=1,
+                color=color,
+                alpha=0.5,
+                label=f"{label} - z = {model._redshifts[snapshot]:.2f}",
+            )
 
     # Use the IMF of the zeroth model to scale the observational results.
     zeroth_IMF = models[0].IMF
@@ -628,7 +681,7 @@ def plot_metallicity(
 
 def plot_bh_bulge(
     models: List[Model],
-    snapshots: int,
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png"
 ) -> matplotlib.figure.Figure:
@@ -641,9 +694,11 @@ def plot_bh_bulge(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : list of ints
-        The snapshot to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
 
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, the black hole
+        bulge relationship of all snapshots are plotted on the figure.
     plot_output_path : string
         Path to where the plot will be saved.
 
@@ -658,21 +713,25 @@ def plot_bh_bulge(
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    for model_num, (model, snapshot) in enumerate(zip(models, snapshots)):
+    # Go through each of the models and plot.
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
-        label = model.label
-        color = colors[model_num]
+        # Colour will be used for the snapshot, marker style for the model.
         marker = markers[model_num]
+        label = model.label
 
-        ax.scatter(
-            model.properties[f"snapshot_{snapshot}"]["bulge_mass"],
-            model.properties[f"snapshot_{snapshot}"]["bh_mass"],
-            marker=marker,
-            s=1,
-            color=color,
-            alpha=0.5,
-            label=label + " galaxies"
-        )
+        for snapshot_num, snapshot in enumerate(model_snapshots):
+            color = colors[snapshot_num]
+
+            ax.scatter(
+                model.properties[f"snapshot_{snapshot}"]["bulge_mass"],
+                model.properties[f"snapshot_{snapshot}"]["bh_mass"],
+                marker=marker,
+                s=1,
+                color=color,
+                alpha=0.5,
+                label=f"{label} - z = {model._redshifts[snapshot]:.2f}",
+            )
 
     ax = obs.plot_bh_bulge_data(ax)
 
@@ -699,7 +758,7 @@ def plot_bh_bulge(
 
 def plot_quiescent(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png",
     plot_sub_populations: bool = False
@@ -714,8 +773,11 @@ def plot_quiescent(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : list of ints
-        The snapshot to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, the quiescent
+        fraction of all snapshots are plotted on the figure.
 
     plot_output_path : string
         Path to where the plot will be saved.
@@ -734,46 +796,50 @@ def plot_quiescent(
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    for model_num, (model, snapshot) in enumerate(zip(models, snapshots)):
-
-        label = model.label
-        color = colors[model_num]
+    # Go through each of the models and plot.
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         # Set the x-axis values to be the centre of the bins.
         bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
-        # We will keep the colour scheme consistent, but change the line styles.
-        quiescent_fraction = model.properties[f"snapshot_{snapshot}"]["quiescent_galaxy_counts"] / \
-            model.properties[f"snapshot_{snapshot}"]["SMF"]
-        ax.plot(
-            bin_middles,
-            quiescent_fraction,
-            label=label + " All",
-            color=color,
-            linestyle="-"
-        )
+        # Colour will be used for the snapshot, linestyle for the model.
+        ls = linestyles[model_num]
+        label = model.label
 
-        if len(models) == 1 or plot_sub_populations:
-            quiescent_central_fraction = model.properties[f"snapshot_{snapshot}"]["quiescent_centrals_counts"] / \
-                model.properties[f"snapshot_{snapshot}"]["centrals_MF"]
+        for snapshot_num, snapshot in enumerate(model_snapshots):
+            color = colors[snapshot_num]
+
+            quiescent_fraction = model.properties[f"snapshot_{snapshot}"]["quiescent_galaxy_counts"] / \
+                model.properties[f"snapshot_{snapshot}"]["SMF"]
             ax.plot(
                 bin_middles,
-                quiescent_central_fraction,
-                label=label + " Centrals",
+                quiescent_fraction,
                 color=color,
-                linestyle="--"
+                ls=ls,
+                label=f"{label} - z = {model._redshifts[snapshot]:.2f} - All",
             )
 
-            quiescent_sat_fraction = model.properties[f"snapshot_{snapshot}"]["quiescent_satellites_counts"] / \
-                model.properties[f"snapshot_{snapshot}"]["satellites_MF"]
-            ax.plot(
-                bin_middles,
-                quiescent_sat_fraction,
-                label=label + " Satellites",
-                color=color,
-                linestyle="-."
-            )
+            # Be careful to not overcrowd the plot.
+            if plot_sub_populations:
+                quiescent_central_fraction = model.properties[f"snapshot_{snapshot}"]["quiescent_centrals_counts"] / \
+                    model.properties[f"snapshot_{snapshot}"]["centrals_MF"]
+                ax.plot(
+                    bin_middles,
+                    quiescent_central_fraction,
+                    color=color,
+                    linestyle="--",
+                )
+
+                quiescent_sat_fraction = model.properties[f"snapshot_{snapshot}"]["quiescent_satellites_counts"] / \
+                    model.properties[f"snapshot_{snapshot}"]["satellites_MF"]
+                ax.plot(
+                    bin_middles,
+                    quiescent_sat_fraction,
+                    color=color,
+                    linestyle="-.",
+                    label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Satellites",
+                )
 
     ax.set_xlabel(r"$\log_{10} M_{\mathrm{stellar}}\ (M_{\odot})$")
     ax.set_ylabel(r"$\mathrm{Quescient\ Fraction}$")
@@ -798,9 +864,10 @@ def plot_quiescent(
 
 def plot_bulge_fraction(
     models: List[Model],
-    snapshots: int,
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png",
+    plot_disk_fraction: bool = False,
     plot_var: bool = False
 ) -> matplotlib.figure.Figure:
     """
@@ -813,11 +880,17 @@ def plot_bulge_fraction(
         Models that will be plotted. These instances contain the properties necessary to
         create the plot, accessed via ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshot : int
-        Snapshot we're plotting at.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
 
-    plot_output_path : string
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, the bulge fraction
+        of all snapshots are plotted on the figure.
+
+    plot_output_path : string, optional
         Path to where the plot will be saved.
+
+    plot_disk_fraction : bool, optional
+        If specified, will also plot the disk fraction.
 
     plot_output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
@@ -833,40 +906,64 @@ def plot_bulge_fraction(
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    for model_num, (model, snapshot) in enumerate(zip(models, snapshots)):
-
-        label = model.label
-        color = colors[model_num]
+    # Go through each of the models and plot.
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         # Set the x-axis values to be the centre of the bins.
         bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
-        # Remember we need to average the properties in each bin.
-        bulge_mean = model.properties[f"snapshot_{snapshot}"]["fraction_bulge_sum"] / \
-            model.properties[f"snapshot_{snapshot}"]["SMF"]
-        disk_mean = model.properties[f"snapshot_{snapshot}"]["fraction_disk_sum"] / \
-            model.properties[f"snapshot_{snapshot}"]["SMF"]
+        # Colour will be used for the snapshot, linestyle for the model.
+        ls = linestyles[model_num]
+        label = model.label
 
-        # The variance has already been weighted when we calculated it.
-        bulge_var = model.properties[f"snapshot_{snapshot}"]["fraction_bulge_var"]
-        disk_var = model.properties[f"snapshot_{snapshot}"]["fraction_disk_var"]
+        for snapshot_num, snapshot in enumerate(model_snapshots):
+            color = colors[snapshot_num]
 
-        # We will keep the colour scheme consistent, but change the line styles.
-        ax.plot(
-            bin_middles, bulge_mean, label=label + " bulge", color=color, linestyle="-"
-        )
-        ax.plot(
-            bin_middles, disk_mean, label=label + " disk", color=color, linestyle="--"
-        )
+            # Remember we need to average the properties in each bin.
+            bulge_mean = model.properties[f"snapshot_{snapshot}"]["fraction_bulge_sum"] / \
+                model.properties[f"snapshot_{snapshot}"]["SMF"]
+            disk_mean = model.properties[f"snapshot_{snapshot}"]["fraction_disk_sum"] / \
+                model.properties[f"snapshot_{snapshot}"]["SMF"]
 
-        if plot_var:
-            ax.fill_between(
-                bin_middles, bulge_mean+bulge_var, bulge_mean-bulge_var, facecolor=color, alpha=0.25
+            # The variance has already been weighted when we calculated it.
+            bulge_var = model.properties[f"snapshot_{snapshot}"]["fraction_bulge_var"]
+            disk_var = model.properties[f"snapshot_{snapshot}"]["fraction_disk_var"]
+
+            ax.plot(
+                bin_middles,
+                bulge_mean,
+                color=color,
+                ls=ls,
+                label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Bulge",
             )
-            ax.fill_between(
-                bin_middles, disk_mean+disk_var, disk_mean-disk_var, facecolor=color, alpha=0.25
-            )
+
+            if plot_disk_fraction:
+                ax.plot(
+                    bin_middles,
+                    disk_mean,
+                    color=color,
+                    ls=linestyles[model_num+1],
+                    label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Disk",
+                )
+
+            if plot_var:
+                ax.fill_between(
+                    bin_middles,
+                    bulge_mean+bulge_var,
+                    bulge_mean-bulge_var,
+                    facecolor=color,
+                    alpha=0.25
+                )
+
+                if plot_disk_fraction:
+                    ax.fill_between(
+                        bin_middles,
+                        disk_mean+disk_var,
+                        disk_mean-disk_var,
+                        facecolor=color,
+                        alpha=0.25
+                    )
 
     ax.set_xlabel(r"$\log_{10} M_{\mathrm{stars}}\ (M_{\odot})$")
     ax.set_ylabel(r"$\mathrm{Stellar\ Mass\ Fraction}$")
@@ -891,7 +988,7 @@ def plot_bulge_fraction(
 
 def plot_baryon_fraction(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png",
     plot_sub_populations: bool = False
@@ -905,8 +1002,11 @@ def plot_baryon_fraction(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : list of ints
-        The snapshot to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, the baryon fraction
+        of all snapshots are plotted on the figure.
 
     plot_output_path : string
         Path to where the plot will be saved.
@@ -926,39 +1026,49 @@ def plot_baryon_fraction(
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    for model_num, (model, snapshot) in enumerate(zip(models, snapshots)):
-
-        label = model.label
-        color = colors[model_num]
-        linestyle = linestyles[model_num]
+    # Go through each of the models and plot.
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         # Set the x-axis values to be the centre of the bins.
         bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
-        # Remember we need to average the properties in each bin.
-        baryon_mean = model.properties[f"snapshot_{snapshot}"]["halo_baryon_fraction_sum"] / \
-            model.properties[f"snapshot_{snapshot}"]["fof_HMF"]
+        # Colour will be used for the snapshot, linestyle for the model.
+        ls = linestyles[model_num]
+        label = model.label
 
-        # We will keep the linestyle constant but change the color.
-        ax.plot(
-            bin_middles, baryon_mean, label=label + " Total", color=color, linestyle=linestyle
-        )
+        for snapshot_num, snapshot in enumerate(model_snapshots):
+            color = colors[snapshot_num]
 
-        # If we have multiple models, we want to be careful of overcrowding the plot.
-        if len(models) == 1 or plot_sub_populations:
-            attrs = ["stars", "cold", "hot", "ejected", "ICS"]
-            labels = ["Stars", "Cold", "Hot", "Ejected", "ICS"]
-            res_colors = ["k", "b", "r", "g", "y"]
+            # Remember we need to average the properties in each bin.
+            baryon_mean = model.properties[f"snapshot_{snapshot}"]["halo_baryon_fraction_sum"] / \
+                model.properties[f"snapshot_{snapshot}"]["fof_HMF"]
 
-            for (attr, label, color) in zip(attrs, labels, res_colors):
-                dict_key = "halo_{0}_fraction_sum".format(attr)
-                mean = model.properties[f"snapshot_{snapshot}"][dict_key] / \
-                    model.properties[f"snapshot_{snapshot}"]["fof_HMF"]
+            ax.plot(
+                bin_middles,
+                baryon_mean,
+                label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Total",
+                color=color,
+                ls=ls,
+            )
 
-                ax.plot(
-                    bin_middles, mean, label=label + " " + label, color=color, linestyle=linestyle
-                )
+            if plot_sub_populations:
+                attrs = ["stars", "cold", "hot", "ejected", "ICS"]
+                res_labels = ["Stars", "Cold", "Hot", "Ejected", "ICS"]
+                res_colors = ["k", "b", "r", "g", "y"]
+
+                for (attr, res_label, rest_color) in zip(attrs, labels, res_colors):
+                    dict_key = "halo_{0}_fraction_sum".format(attr)
+                    mean = model.properties[f"snapshot_{snapshot}"][dict_key] / \
+                        model.properties[f"snapshot_{snapshot}"]["fof_HMF"]
+
+                    ax.plot(
+                        bin_middles,
+                        mean,
+                        label=f"{label} - z = {model._redshifts[snapshot]:.2f} - {res_label}",
+                        res_color=color,
+                        ls=linestyle,
+                    )
 
     ax.set_xlabel(r"$\mathrm{Central}\ \log_{10} M_{\mathrm{vir}}\ (M_{\odot})$")
     ax.set_ylabel(r"$\mathrm{Baryon\ Fraction}$")
@@ -981,7 +1091,7 @@ def plot_baryon_fraction(
 
 def plot_reservoirs(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png"
 ) -> List[matplotlib.figure.Figure]:
@@ -995,8 +1105,11 @@ def plot_reservoirs(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : list of ints
-        The snapshot to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, each snapshot will
+        be plotted and saved as a separate figure.
 
     plot_output_path : string
         Path to where the plot will be saved.
@@ -1006,60 +1119,62 @@ def plot_reservoirs(
 
     Generates
     ---------
-
     A plot will be saved as ``"<plot_output_path>12.MassReservoirs<model.label>.<plot_output_format>"`` for each mode.
     """
 
     # This scatter plot will be messy so we're going to make one for each model.
     figs = []
-    for model_num, (model, snapshot) in enumerate(zip(models, snapshots)):
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         label = model.label
         marker = markers[model_num]
 
-        attribute_names = ["stars", "cold", "hot", "ejected", "ICS"]
-        labels = ["Stars", "ColdGas", "HotGas", "EjectedGas", "IntraclusterStars"]
+        # Furthermore, make one for each snapshot we requested.
+        for snapshot_num, snapshot in enumerate(model_snapshots):
 
-        for (attribute_name, label) in zip(attribute_names, labels):
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
 
-            dict_key = "reservoir_{0}".format(attribute_name)
-            ax.scatter(
-                model.properties[f"snapshot_{snapshot}"]["reservoir_mvir"],
-                model.properties[f"snapshot_{snapshot}"][dict_key],
-                marker=marker,
-                s=0.3,
-                label=label
-            )
+            attribute_names = ["stars", "cold", "hot", "ejected", "ICS"]
+            res_labels = ["Stars", "ColdGas", "HotGas", "EjectedGas", "IntraclusterStars"]
 
-        ax.set_xlabel(r"$\log\ M_{\mathrm{vir}}\ (M_{\odot})$")
-        ax.set_ylabel(r"$\mathrm{Reservoir\ Mass\ (M_{\odot})}$")
+            for (attribute_name, res_label) in zip(attribute_names, res_labels):
 
-        ax.set_xlim([9.8, 14.2])
-        ax.set_ylim([7.5, 12.5])
+                dict_key = f"reservoir_{attribute_name}"
+                ax.scatter(
+                    model.properties[f"snapshot_{snapshot}"]["reservoir_mvir"],
+                    model.properties[f"snapshot_{snapshot}"][dict_key],
+                    marker=marker,
+                    s=0.3,
+                    label=res_label
+                )
 
-        ax.xaxis.set_minor_locator(plt.MultipleLocator(0.25))
-        ax.yaxis.set_minor_locator(plt.MultipleLocator(0.25))
+            ax.set_xlabel(r"$\log\ M_{\mathrm{vir}}\ (M_{\odot})$")
+            ax.set_ylabel(r"$\mathrm{Reservoir\ Mass\ (M_{\odot})}$")
 
-        adjust_legend(ax, location="upper left", scatter_plot=1)
+            ax.set_xlim([9.8, 14.2])
+            ax.set_ylim([7.5, 12.5])
 
-        fig.tight_layout()
+            ax.xaxis.set_minor_locator(plt.MultipleLocator(0.25))
+            ax.yaxis.set_minor_locator(plt.MultipleLocator(0.25))
 
-        output_file = f"{plot_output_path}12.MassReservoirs.{plot_output_format}"
-        fig.savefig(output_file)
-        print(f"Saved file to {output_file}")
-        plt.close()
+            adjust_legend(ax, location="upper left", scatter_plot=1)
 
-        figs.append(fig)
+            fig.tight_layout()
+
+            output_file = f"{plot_output_path}12.MassReservoirs_{label}_snapshot{snapshot}.{plot_output_format}"
+            fig.savefig(output_file)
+            print(f"Saved file to {output_file}")
+            plt.close()
+
+            figs.append(fig)
 
     return figs
 
 
 def plot_spatial(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png"
 ) -> matplotlib.figure.Figure:
@@ -1072,8 +1187,11 @@ def plot_spatial(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : list of ints
-        The snapshot to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+    snapshots : nested list of ints
+        The snapshots to be plotted for each :py:class:`~sage_analysis.model.Model` in ``models``.
+
+        The length of the outer list **MUST** be equal to the length of ``models``. For each model, the spatial
+        position of all snapshots are plotted on the figure.
 
     plot_output_path : string
         Path to where the plot will be saved.
@@ -1096,44 +1214,54 @@ def plot_spatial(
     ax3 = fig.add_subplot(223)
     ax4 = fig.add_subplot(224)
 
-    for model_num, (model, snapshot) in enumerate(zip(models, snapshots)):
+    # Go through each of the models and plot.
+    for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
-        label = model.label
-        color = colors[model_num]
+        # Colour will be used for the snapshot, marker style for the model.
         marker = markers[model_num]
+        label = model.label
 
-        ax1.scatter(
-            model.properties[f"snapshot_{snapshot}"]["x_pos"],
-            model.properties[f"snapshot_{snapshot}"]["y_pos"],
-            marker=marker,
-            s=0.3,
-            color=color,
-            alpha=0.5
-        )
+        for snapshot_num, snapshot in enumerate(model_snapshots):
+            color = colors[snapshot_num]
 
-        ax2.scatter(
-            model.properties[f"snapshot_{snapshot}"]["x_pos"],
-            model.properties[f"snapshot_{snapshot}"]["z_pos"],
-            marker=marker,
-            s=0.3,
-            color=color,
-            alpha=0.5
-        )
+            ax1.scatter(
+                model.properties[f"snapshot_{snapshot}"]["x_pos"],
+                model.properties[f"snapshot_{snapshot}"]["y_pos"],
+                marker=marker,
+                s=0.3,
+                color=color,
+                alpha=0.5
+            )
 
-        ax3.scatter(
-            model.properties[f"snapshot_{snapshot}"]["y_pos"],
-            model.properties[f"snapshot_{snapshot}"]["z_pos"],
-            marker=marker,
-            s=0.3,
-            color=color,
-            alpha=0.5
-        )
+            ax2.scatter(
+                model.properties[f"snapshot_{snapshot}"]["x_pos"],
+                model.properties[f"snapshot_{snapshot}"]["z_pos"],
+                marker=marker,
+                s=0.3,
+                color=color,
+                alpha=0.5
+            )
 
-        # The bottom right panel will only contain the legend.
-        # For some odd reason, plotting `np.nan` causes some legend entries to not
-        # appear. Plot junk and we'll adjust the axis to not show it.
-        ax4.scatter(-999, -999, marker=marker, color=color, label=label)
-        ax4.axis("off")
+            ax3.scatter(
+                model.properties[f"snapshot_{snapshot}"]["y_pos"],
+                model.properties[f"snapshot_{snapshot}"]["z_pos"],
+                marker=marker,
+                s=0.3,
+                color=color,
+                alpha=0.5
+            )
+
+            # The bottom right panel will only contain the legend.
+            # For some odd reason, plotting `np.nan` causes some legend entries to not
+            # appear. Plot junk and we'll adjust the axis to not show it.
+            ax4.scatter(
+                -999,
+                -999,
+                marker=marker,
+                color=color,
+                label=f"{label} - z = {model._redshifts[snapshot]:.2f}",
+            )
+            ax4.axis("off")
 
     ax1.set_xlabel(r"$\mathrm{x}\ [\mathrm{Mpc}/h]$")
     ax1.set_ylabel(r"$\mathrm{y}\ [\mathrm{Mpc}/h]$")

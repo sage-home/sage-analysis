@@ -15,7 +15,7 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import matplotlib
-matplotlib.use('Agg') 
+matplotlib.use('Agg')
 import numpy as np
 
 import sage_analysis.example_calcs
@@ -35,10 +35,14 @@ logger = logging.getLogger(__name__)
 
 
 class GalaxyAnalysis:
+    """
+    Handles the ingestion, analysis, and plotting of **SAGE** galaxy outputs.
+    """
 
     def __init__(
         self,
         sage_parameter_fnames: List[str],
+        plot_toggles: Optional[Dict[str, bool]] = None,
         sage_output_formats: Optional[List[str]] = None,
         labels: Optional[List[str]] = None,
         first_files_to_analyze: Optional[List[int]] = None,
@@ -46,7 +50,6 @@ class GalaxyAnalysis:
         num_sage_output_files: Optional[List[int]] = None,
         output_format_data_classes_dict: Optional[Dict[str, Any]] = None,
         random_seeds: Optional[List[int]] = None,
-        plot_toggles: Optional[Dict[str, bool]] = None,
         history_redshifts: Optional[Dict[str, Union[List[float], str]]] = None,
         calculation_functions: Optional[Dict[str, Tuple[Callable, Dict[str, Any]]]] = None,
         plot_functions: Optional[Dict[str, Tuple[Callable, Dict[str, Any]]]] = None,
@@ -55,6 +58,8 @@ class GalaxyAnalysis:
         IMFs: Optional[List[str]] = None,
     ):
         """
+        Parameters
+        ----------
         sage_parameter_fnames : list of strings
             The name of the **SAGE** parameter files that are to be analyzed. These are the ``.ini`` files used to
             generate the galaxy files. The length of this variable is equal to the number of models to be analyzed.
@@ -63,6 +68,8 @@ class GalaxyAnalysis:
             Specifies which properties should be analyzed and plotted.
 
             If not specified, uses
+
+            .. highlight:: python
             .. code-block:: python
 
                 default_plot_toggles = {
@@ -121,7 +128,7 @@ class GalaxyAnalysis:
             If not specified, will use a default value
             ``output_format_data_classes_dict = {"sage_binary":`` :py:class:`~sage_analysis.sage_binary.SageBinaryData`
             ``,
-            "sage_hdf5":`` :py:class:`~sage_analysis.sage_binary.SageHdf5Data` ``}``.
+            "sage_hdf5":`` :py:class:`~sage_analysis.sage_hdf5.SageHdf5Data` ``}``.
 
         random_seeds : list of ints, optional
             The values to seed the random number generator for each model.  If the value is ``None``, then the
@@ -132,17 +139,21 @@ class GalaxyAnalysis:
 
         history_redshifts : dict [string, string or list of floats], optional
             Specifies which redshifts should be analyzed for properties and plots that are tracked over time. The keys
-            here **MUST** correspond to the keys in ``plot_toggles``. If the value of the entry is ``"All"``, then all
-            snapshots will be analyzed. Otherwise, will search for the closest snapshots to the requested redshifts.
+            here **MUST** have the same name as in ``plot_toggles``.
+
+            If the value of the entry is ``"All"``, then all snapshots will be analyzed. Otherwise, will search for the
+            closest snapshots to the requested redshifts.
 
             If not specified, uses
+
+            .. highlight:: python
             .. code-block:: python
 
-            history_redshifts = {
-                "SMF_history": "All",
-                "SMD_history": "All",
-                "SFRD_history": "All",
-            }
+                history_redshifts = {
+                    "SMF_history": "All",
+                    "SMD_history": "All",
+                    "SFRD_history": "All",
+                }
 
         calculation_functions : dict [string, tuple(function, dict[string, variable])], optional
             A dictionary of functions that are used to compute the properties of galaxies being analyzed.  Here, the
@@ -155,7 +166,7 @@ class GalaxyAnalysis:
             ``func(Model, gals, snapshot, optional_keyword_arguments)``. This dict can be generated using
             :py:func:`~sage_analysis.utils.generate_func_dict`.
 
-            If not specified, will use the functions found in :py:module:`~sage_analysis.example_calcs`, filtered to
+            If not specified, will use the functions found in :py:mod:`~sage_analysis.example_calcs`, filtered to
             ensure that only those functions necessary to plot the plots specified by ``plot_toggles`` are run.
 
         plot_functions : dict [string, tuple(function, dict[string, variable])], optional
@@ -169,14 +180,15 @@ class GalaxyAnalysis:
             ``func(Models, snapshots, plot_output_path, plot_output_format, optional_keyword_arguments)``. This dict
             can be generated using :py:func:`~sage_analysis.utils.generate_func_dict`.
 
-            If not specified, will use the functions found in :py:module:`~sage_analysis.example_plots`, filtered to
+            If not specified, will use the functions found in :py:mod:`~sage_analysis.example_plots`, filtered to
             ensure that only those functions necessary to plot the plots specified by ``plot_toggles`` are run.
 
         galaxy_properties_to_analyze : dict [string, dict[str, float or str or list of strings]], optional
             The galaxy properties that are used when running ``calculation_functions``. The properties initialized here
-            will be accessible through ``model.properties["property_name"]``. This variable is a nested dictionary with
-            the outer dictionary specifying the name of the bins (if the properties will be binned), or a unique name
-            otherwise.
+            will be accessible through ``model.properties["property_name"]``.
+
+            This variable is a nested dictionary with the outer dictionary specifying the name of the bins (if the
+            properties will be binned), or a unique name otherwise.
 
             The inner dictionary has a number of fields that depend upon the type of property.  We support properties
             being either binned against a property (e.g., the stellar or halo mass functions are binned on stellar/halo
@@ -197,47 +209,49 @@ class GalaxyAnalysis:
             initialized with a value of 0.0.
 
             If not specified, uses
+
+            .. highlight:: python
             .. code-block:: python
 
-            default_galaxy_properties_to_analyze = {
-                "stellar_mass_bins": {
-                    "type": "binned",
-                    "bin_low": 8.0,
-                    "bin_high": 12.0,
-                    "bin_width": 0.1,
-                    "property_names": [
-                        "SMF", "red_SMF", "blue_SMF", "BMF", "GMF",
-                        "centrals_MF", "satellites_MF", "quiescent_galaxy_counts",
-                        "quiescent_centrals_counts", "quiescent_satellites_counts",
-                        "fraction_bulge_sum", "fraction_bulge_var",
-                        "fraction_disk_sum", "fraction_disk_var", "SMF_history",
-                    ],
-                },
-                "halo_mass_bins": {
-                    "type": "binned",
-                    "bin_low": 10.0,
-                    "bin_high": 14.0,
-                    "bin_width": 0.1,
-                    "property_names": ["fof_HMF"] + [f"halo_{component}_fraction_sum"
-                        for component in ["baryon", "stars", "cold", "hot", "ejected", "ICS", "bh"]
-                    ],
-                },
-                "scatter_properties": {
-                    "type": "scatter",
-                    "property_names": [
-                        "BTF_mass", "BTF_vel", "sSFR_mass", "sSFR_sSFR",
-                        "gas_frac_mass", "gas_frac", "metallicity_mass",
-                        "metallicity", "bh_mass", "bulge_mass", "reservoir_mvir",
-                        "reservoir_stars", "reservoir_cold", "reservoir_hot",
-                        "reservoir_ejected", "reservoir_ICS", "x_pos",
-                        "y_pos", "z_pos"
-                    ],
-                },
-                "single_properties": {
-                    "type": "single",
-                    "property_names": ["SMD_history", "SFRD_history"],
-                },
-            }
+                default_galaxy_properties_to_analyze = {
+                    "stellar_mass_bins": {
+                        "type": "binned",
+                        "bin_low": 8.0,
+                        "bin_high": 12.0,
+                        "bin_width": 0.1,
+                        "property_names": [
+                            "SMF", "red_SMF", "blue_SMF", "BMF", "GMF",
+                            "centrals_MF", "satellites_MF", "quiescent_galaxy_counts",
+                            "quiescent_centrals_counts", "quiescent_satellites_counts",
+                            "fraction_bulge_sum", "fraction_bulge_var",
+                            "fraction_disk_sum", "fraction_disk_var", "SMF_history",
+                        ],
+                    },
+                    "halo_mass_bins": {
+                        "type": "binned",
+                        "bin_low": 10.0,
+                        "bin_high": 14.0,
+                        "bin_width": 0.1,
+                        "property_names": ["fof_HMF"] + [f"halo_{component}_fraction_sum"
+                            for component in ["baryon", "stars", "cold", "hot", "ejected", "ICS", "bh"]
+                        ],
+                    },
+                    "scatter_properties": {
+                        "type": "scatter",
+                        "property_names": [
+                            "BTF_mass", "BTF_vel", "sSFR_mass", "sSFR_sSFR",
+                            "gas_frac_mass", "gas_frac", "metallicity_mass",
+                            "metallicity", "bh_mass", "bulge_mass", "reservoir_mvir",
+                            "reservoir_stars", "reservoir_cold", "reservoir_hot",
+                            "reservoir_ejected", "reservoir_ICS", "x_pos",
+                            "y_pos", "z_pos"
+                        ],
+                    },
+                    "single_properties": {
+                        "type": "single",
+                        "property_names": ["SMD_history", "SFRD_history"],
+                    },
+                }
 
         plots_that_need_smf : list of strings, optional
             The plot toggles that require the stellar mass function to be properly computed and analyzed. For example,
@@ -296,6 +310,7 @@ class GalaxyAnalysis:
         if plot_toggles is None:
             plot_toggles = default_plot_toggles
         self._plot_toggles = plot_toggles
+        print(f"Plot toggles are {plot_toggles}")
 
         if history_redshifts is None:
             history_redshifts = {
@@ -413,7 +428,7 @@ class GalaxyAnalysis:
     @property
     def models(self) -> List[Model]:
         """
-        list of :py:class:`~sage_analysis.model.Model` class instances : The :py:class:`~sage_analysis.model.Model`s
+        list of :py:class:`~sage_analysis.model.Model` class instances : The :py:class:`~sage_analysis.model.Model` s
         being analyzed.
         """
         return self._models
@@ -643,7 +658,9 @@ class GalaxyAnalysis:
         # Otherwise, they don't need the SMF.
         return False
 
-    def analyze_galaxies(self, snapshot: Optional[int] = None, analyze_history_snapshots: bool = True) -> None:
+    def analyze_galaxies(
+        self, snapshots: Optional[List[List[int]]] = None, analyze_history_snapshots: bool = True
+    ) -> None:
         """
         Analyses the galaxies of the initialized :py:attr:`~models`. These attributes will be updated directly, with
         the properties accessible via ``GalaxyAnalysis.models[<model_num>].properties[<snapshot>][<property_name>]``.
@@ -654,9 +671,17 @@ class GalaxyAnalysis:
 
         Parameters
         ----------
-        snapshot : int, optional
-            The snapshot that will be analyzed. If not specified, uses the highest snapshot (i.e., lowest redshift) as
-            dictated by the :py:attr:`~sage_analysis.model.Model.redsfhits` attribute.
+        snapshot : nested list of ints, optional
+            The snapshots to analyze for each model. If not specified, uses the highest snapshot (i.e., lowest
+            redshift) as dictated by the :py:attr:`~sage_analysis.model.Model.redshifts` attribute from the parameter
+            file read for each model.
+
+            The length of the outer list **MUST** be equal to :py:attr:`~num_models`.
+
+            Notes
+            -----
+            If ``analyze_history_snapshots`` is ``True``, then the snapshots iterated over will be the unique
+            combination of the snapshots required for history snapshots and those specified by this variable.
 
         analyze_history_snapshots : bool, optional
             Specifies whether the snapshots required to analyze the properties tracked over time (e.g., stellar mass or
@@ -664,9 +689,9 @@ class GalaxyAnalysis:
             analyzed.
 
         Notes
-        ----
+        -----
         If you wish to analyze different properties to when you initialized an instance of :py:class:`~GalaxyAnalysis`,
-        you **MUST** re-initialize another instant.  Otherwise, the properties will be non-zeroed and not initialized
+        you **MUST** re-initialize another instance.  Otherwise, the properties will be non-zeroed and not initialized
         correctly.
         """
 
@@ -674,25 +699,52 @@ class GalaxyAnalysis:
             logger.debug(f"No plot toggles specified.")
             return
 
-        for model in self._models:
+        # If the user hasn't explicitly specified which snapshots they want, use the lowest redshift ones.
+        if snapshots is None:
+            baseline_snapshots_models = [[len(model._redshifts) - 1] for model in self._models]
+        else:
+            baseline_snapshots_models = snapshots
 
-            if snapshot is None:
-                snapshot = len(model._redshifts) - 1
+        for model, baseline_snapshots in zip(self._models, baseline_snapshots_models):
 
-            model.calc_properties_all_files(model._calculation_functions, snapshot, debug=False)
+            logger.info(f"Analyzing baseline snapshots {baseline_snapshots}")
 
-            # Now handle calculate properties that are tracked over redshift (if any).
-            if model._history_snaps_to_loop is None or not analyze_history_snapshots:
-                continue
+            for snap in baseline_snapshots:
+                print(snap)
+                # First compute all of the "normal" properties that aren't tracked over time.
+                model.calc_properties_all_files(
+                    model._calculation_functions, snap, debug=False, close_file=False
+                )
 
-            for snap in model._history_snaps_to_loop:
+                # Then check if this is a snapshot we're analyzing properties over time.
+                if model._history_snaps_to_loop is None or not analyze_history_snapshots:
+                    continue
+
+                # Can't combine this condition with the line above because it would throw an error if ``None``.
+                if snap not in model._history_snaps_to_loop:
+                    continue
+
                 model.calc_properties_all_files(
                     model._history_calculation_functions, snap, debug=False, close_file=False
                 )
 
+            # Finally, determine if there are any remaining snapshots that need to be analyzed for the history
+            # properties.
+            if model._history_snaps_to_loop is None or not analyze_history_snapshots:
+                continue
+
+            history_snaps = list(set(model._history_snaps_to_loop).difference(set(baseline_snapshots)))
+            logger.info(f"Also analyzing snapshots {history_snaps} for the properties over redshift.")
+
+            for snap in history_snaps:
+                model.calc_properties_all_files(
+                    model._history_calculation_functions, snap, debug=False, close_file=False
+                )
+            model.data_class.close_file(model)
+
     def generate_plots(
         self,
-        snapshots: Optional[List[int]] = None,
+        snapshots: Optional[List[List[int]]] = None,
         plot_output_format: str = "png",
         plot_output_path: str = "./plots/",
     ) -> Optional[List[matplotlib.figure.Figure]]:
@@ -707,9 +759,17 @@ class GalaxyAnalysis:
 
         Parameters
         ----------
-        snapshots : list of ints, optional
-            The snapshot that will be plotted for each model. If not specified, uses the highest snapshot (i.e., lowest
-            redshift) as dictated by the :py:attr:`~sage_analysis.model.Model.redsfhits` attribute for each model.
+        snapshots : nested list of ints, optional
+            The snapshots to plot for each model. If not specified, uses the highest snapshot (i.e., lowest
+            redshift) as dictated by the :py:attr:`~sage_analysis.model.Model.redshifts` attribute from the parameter
+            file read for each model.
+
+            The length of the outer list **MUST** be equal to :py:attr:`~num_models`.
+
+            For properties that aren't analyzed over redshift, all snapshots for each model will be plotted on each
+            figure .  For example, if we are plotting a single model, setting this variable to ``[[63, 50]]`` will
+            give results for snapshot 63 and 50 on each figure. For some plots (e.g., those properties that are scatter
+            plotted), this is undesirable and one should instead iterate over single snapshot values instead.
 
         plot_output_format : string, optional
             The format of the saved plots.
@@ -735,7 +795,7 @@ class GalaxyAnalysis:
             os.makedirs(os.path.dirname(plot_output_path))
 
         if snapshots is None:
-            snapshots = [len(model._redshifts) - 1 for model in self._models]
+            snapshots = [[len(model._redshifts) - 1] for model in self._models]
 
         # Now do the plotting.
         figs: List[matplotlib.figure.Figure] = []

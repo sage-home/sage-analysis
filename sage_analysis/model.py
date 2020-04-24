@@ -10,8 +10,6 @@ data.
 
 To calculate (and plot) extra properties from the **SAGE** output, we refer to
 :doc:`../user/calc.rst` and :doc:`../user/plotting.rst`.
-
-Author: Jacob Seiler.
 """
 
 import logging
@@ -486,7 +484,6 @@ class Model(object):
 
         Parameters
         ----------
-
         calculation_functions: dict [string, list(function, dict[string, variable])]
             Specifies the functions used to calculate the properties of this
             :py:class:`~Model`. The key of this dictionary is the name of the plot toggle.
@@ -525,6 +522,7 @@ class Model(object):
         self.data_class.determine_num_gals(self, snapshot)
         if self._num_gals_all_files == 0:
             logger.info(f"There were no galaxies associated with this model at Snapshot {self._snapshot}.")
+            print(self._num_gals_all_files)
             return
 
         # If the user requested the number of galaxies plotted/calculated
@@ -550,16 +548,12 @@ class Model(object):
             if gals is None:
                 continue
 
+            print(calculation_functions)
             self.calc_properties(calculation_functions, gals, snapshot)
 
         # Some data formats (e.g., HDF5) have a single file we read from.
-        # For other formats, this method doesn't exist. Note: If we're calculating
-        # temporal results then we won't close here.
         if close_file:
-            try:
-                self.data_class.close_file(self)
-            except AttributeError:
-                pass
+            self.data_class.close_file(self)
 
         end_time = time.time()
         duration = end_time - start_time

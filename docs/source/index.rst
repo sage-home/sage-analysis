@@ -37,7 +37,6 @@ Maintainers
    introduction
    user/setting_up_sage
    user/analysing_sage
-   user/history
    user/multiple_models
    user/custom_calculations
    user/custom_data_classes
@@ -48,6 +47,7 @@ Maintainers
    :maxdepth: 2
    :caption: API Reference
 
+   api/galaxy_analysis
    api/model
    api/sage_hdf5
    api/sage_binary

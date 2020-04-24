@@ -1,12 +1,31 @@
+# Showing how to plot sub-populations.
+
 Analysing **SAGE** Output
 =========================
 
-On this page, we show how to analyse the **SAGE** output for a single snapshot.
-This full example is shown in the `galaxy_properties module`_ using the
-default parameter file.
+The output from **SAGE** is analyzed using the respective parameter files used to run **SAGE** itself. Here, we will
+assume the parameter file is located in ``/home/Desktop/sage-model/input/millennium.ini``.
 
-We explain how to analyse **SAGE** output across multiple snapshots
-:doc:`here <./history>`.
+Basic Analysis
+--------------
+
+Out of the box, **sage-analysis** will analyse the latest snapshot (i.e., the lowest redshift) and save the plots in
+the ``./plots`` directory.
+
+.. code-block:: python
+
+    from sage_analysis.galaxy_analysis import GalaxyAnalysis
+
+    par_fnames = ["/home/Desktop/sage-model/input/millennium.ini"]
+
+    galaxy_analysis = GalaxyAnalysis(par_fnames)
+    galaxy_analysis.analyze_galaxies()
+    galaxy_analysis.generate_plots()
+
+Changing the Snapshot
+---------------------
+
+The
 
 Setting Things Up
 -----------------
@@ -277,3 +296,4 @@ arguments and their corresponding value.
 .. _repository: https://github.com/sage-home/sage-model
 .. _galaxy_properties module: https://github.com/sage-home/sage-model/plotting/galaxy_properties.py
 .. _history module: https://github.com/sage-home/sage-model/plotting/history.py
+.. _**SAGE**: https://github.com/sage-home/sage-model

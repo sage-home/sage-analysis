@@ -131,3 +131,16 @@ class DataClass(ABC):
             Extra arguments to allow other data classes to pass extra arguments to their implementation.
         """
         pass  # pragma: no cover
+
+    @abstractmethod
+    def close_file(self, model: Model, **kwargs) -> None:
+        """
+        Closes an open galaxy file.  This is useful when reading the HDF5 data format where a single file contains many
+        snapshots. For the binary format, this is an empty method.
+
+        Parameters
+        ----------
+        **kwargs : any
+            Extra arguments to allow other data classes to pass extra arguments to their implementation.
+        """
+        pass  # pragma: no cover

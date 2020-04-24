@@ -336,3 +336,27 @@ def test_random_combinations(plot_toggles: Dict[str, bool]) -> None:
         return
 
     my_compare_images(baseline_image_path, generated_image_path)
+
+
+def test_multiple_snapshots():
+    """
+    The user can request to analyse + plot multiple snapshots at the same time.
+    """
+
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
+    sage_output_formats = ["sage_hdf5"]
+    labels = ["Mini-Millennium"]
+    random_seeds = [666]
+    generated_image_path = "test_data/generated_plots/"
+
+    galaxy_analysis = GalaxyAnalysis(
+        parameter_fnames,
+        sage_output_formats=sage_output_formats,
+        random_seeds=random_seeds,
+        labels=labels,
+    )
+
+    snapshots = [[63, 37, 32]]
+    galaxy_analysis.analyze_galaxies(snapshots=snapshots)
+
+    galaxy_analysis.generate_plots(plot_output_path=generated_image_path, snapshots=snapshots)

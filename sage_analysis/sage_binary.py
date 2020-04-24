@@ -357,3 +357,10 @@ class SageBinaryData(DataClass):
             if os.path.isfile(fname):
                 return fname
         return None
+
+    def close_file(self, model: Model):
+        """
+        An empty method to ensure consistency with the HDF5 data class. This is empty because snapshots are saved over
+        different files by default in the binary format.
+        """
+        pass
