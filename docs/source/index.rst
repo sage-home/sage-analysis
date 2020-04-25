@@ -36,10 +36,11 @@ Maintainers
 
    introduction
    user/setting_up_sage
-   user/analysing_sage
-   user/multiple_models
-   user/custom_calculations
-   user/custom_data_classes
+   user/analyzing_sage
+   user/defining_custom_properties
+   user/defining_custom_calculations
+   user/analyzing_custom_properties
+   user/analyzing_custom_data
 
 .. _api-docs:
 

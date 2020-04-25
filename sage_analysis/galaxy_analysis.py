@@ -21,10 +21,14 @@ import numpy as np
 import sage_analysis.example_calcs
 import sage_analysis.example_plots  # noqa: F401
 from sage_analysis.default_analysis_arguments import (
-    default_galaxy_properties_to_analyze, default_plot_toggles)
+    default_calculation_functions,
+    default_plot_functions,
+    default_galaxy_properties_to_analyze,
+    default_plot_toggles
+)
 from sage_analysis.model import Model
 from sage_analysis.sage_binary import SageBinaryData
-from sage_analysis.utils import generate_func_dict, read_generic_sage_params
+from sage_analysis.utils import generate_func_dict, read_generic_sage_params, find_closest_indices
 
 try:
     from sage_analysis.sage_hdf5 import SageHdf5Data
@@ -310,7 +314,6 @@ class GalaxyAnalysis:
         if plot_toggles is None:
             plot_toggles = default_plot_toggles
         self._plot_toggles = plot_toggles
-        print(f"Plot toggles are {plot_toggles}")
 
         if history_redshifts is None:
             history_redshifts = {
@@ -490,7 +493,7 @@ class GalaxyAnalysis:
             setattr(model, attrname, redshifts)
 
             # Find the snapshots that are closest to the requested redshifts.
-            property_snaps = [(np.abs(model._redshifts - redshift)).argmin() for redshift in redshifts]
+            property_snaps = find_closest_indices(model._redshifts, redshifts)
 
             attrname = f"_history_{property_name}_snapshots"
             setattr(model, attrname, property_snaps)
@@ -658,8 +661,75 @@ class GalaxyAnalysis:
         # Otherwise, they don't need the SMF.
         return False
 
+    def _determine_snapshots_to_use(
+        self, snapshots: Optional[List[List[int]]], redshifts: Optional[List[List[int]]]
+    ) -> List[List[int]]:
+        """
+        Determine which snapshots should be analyzed/plotted based on the input from the user.
+
+        Parameters
+        ---------
+        snapshots : nested list of ints or string, optional
+            The snapshots to analyze for each model. If both this variable and ``redshifts`` are not specified, uses
+            the highest snapshot (i.e., lowest redshift) as dictated by the
+            :py:attr:`~sage_analysis.model.Model.redshifts` attribute from the parameter file read for each model.
+
+            If an entry if ``"All"``, then all snapshots for that model will be analyzed.
+
+            The length of the outer list **MUST** be equal to :py:attr:`~num_models`.
+
+            Warnings
+            --------
+            Only **ONE** of ``snapshots`` and ``redshifts`` can be specified.
+
+        redshifts : nested list of ints, optional
+            The redshift to analyze for each model. If both this variable and ``snapshots`` are not specified, uses
+            the highest snapshot (i.e., lowest redshift) as dictated by the
+            :py:attr:`~sage_analysis.model.Model.redshifts` attribute from the parameter file read for each model.
+
+            The snapshots selected for analysis will be those that result in the redshifts closest to those requested.
+            If an entry if ``"All"``, then all snapshots for that model will be analyzed.
+
+            The length of the outer list **MUST** be equal to :py:attr:`~num_models`.
+
+            Warnings
+            --------
+            Only **ONE** of ``snapshots`` and ``redshifts`` can be specified.
+
+        Returns
+        -------
+        snapshots_for_models : nested list of ints
+            The snapshots to be analyzed for each model.
+
+        Errors
+        ------
+        ValueError
+            Thrown if **BOTH** ``snapshots`` and ``redshifts`` are specified.
+        """
+        # The user cannot have non-None values for both snapshots and redshifts.
+        if snapshots is not None and redshifts is not None:
+            raise ValueError("Both the ``snapshots`` and ``redshift`` arguments CANNOT be non-none. Only specify one.")
+
+        if snapshots is None and redshifts is None:
+            # User hasn't explicitly specified which snapshots or redshifts they want -> use the lowest redshift ones.
+            snapshots_for_models = [[len(model._redshifts) - 1] for model in self._models]
+        elif snapshots == "All" or redshifts == "All":
+            # User wants all snapshots (or equivalently redshifts).
+            snapshots_for_models = [list(np.arange(len(model._redshifts)) - 1) for model in self._models]
+        elif redshifts is not None:
+            # User has specified which redshifts they want; convert to the corresponding snapshots.
+            snapshots_for_models = [find_closest_indices(model._redshifts, redshifts) for model in self._models]
+        elif snapshots is not None:
+            # Otherwise the user has specified exactly what snapshots they want.
+            snapshots_for_models = snapshots
+
+        return snapshots_for_models
+
     def analyze_galaxies(
-        self, snapshots: Optional[List[List[int]]] = None, analyze_history_snapshots: bool = True
+        self,
+        snapshots: Optional[List[List[Union[int, str]]]] = None,
+        redshifts: Optional[List[List[Union[float, str]]]] = None,
+        analyze_history_snapshots: bool = True,
     ) -> None:
         """
         Analyses the galaxies of the initialized :py:attr:`~models`. These attributes will be updated directly, with
@@ -671,10 +741,12 @@ class GalaxyAnalysis:
 
         Parameters
         ----------
-        snapshot : nested list of ints, optional
-            The snapshots to analyze for each model. If not specified, uses the highest snapshot (i.e., lowest
-            redshift) as dictated by the :py:attr:`~sage_analysis.model.Model.redshifts` attribute from the parameter
-            file read for each model.
+        snapshots : nested list of ints or string, optional
+            The snapshots to analyze for each model. If both this variable and ``redshifts`` are not specified, uses
+            the highest snapshot (i.e., lowest redshift) as dictated by the
+            :py:attr:`~sage_analysis.model.Model.redshifts` attribute from the parameter file read for each model.
+
+            If an entry if ``"All"``, then all snapshots for that model will be analyzed.
 
             The length of the outer list **MUST** be equal to :py:attr:`~num_models`.
 
@@ -682,6 +754,29 @@ class GalaxyAnalysis:
             -----
             If ``analyze_history_snapshots`` is ``True``, then the snapshots iterated over will be the unique
             combination of the snapshots required for history snapshots and those specified by this variable.
+
+            Warnings
+            --------
+            Only **ONE** of ``snapshots`` and ``redshifts`` can be specified.
+
+        redshifts : nested list of ints, optional
+            The redshift to analyze for each model. If both this variable and ``snapshots`` are not specified, uses
+            the highest snapshot (i.e., lowest redshift) as dictated by the
+            :py:attr:`~sage_analysis.model.Model.redshifts` attribute from the parameter file read for each model.
+
+            The snapshots selected for analysis will be those that result in the redshifts closest to those requested.
+            If an entry if ``"All"``, then all snapshots for that model will be analyzed.
+
+            The length of the outer list **MUST** be equal to :py:attr:`~num_models`.
+
+            Notes
+            -----
+            If ``analyze_history_snapshots`` is ``True``, then the snapshots iterated over will be the unique
+            combination of the snapshots required for history snapshots and those specified by this variable.
+
+            Warnings
+            --------
+            Only **ONE** of ``snapshots`` and ``redshifts`` can be specified.
 
         analyze_history_snapshots : bool, optional
             Specifies whether the snapshots required to analyze the properties tracked over time (e.g., stellar mass or
@@ -693,24 +788,24 @@ class GalaxyAnalysis:
         If you wish to analyze different properties to when you initialized an instance of :py:class:`~GalaxyAnalysis`,
         you **MUST** re-initialize another instance.  Otherwise, the properties will be non-zeroed and not initialized
         correctly.
+
+        Errors
+        ------
+        ValueError
+            Thrown if **BOTH** ``snapshots`` and ``redshifts`` are specified.
         """
 
         if self._plot_toggles == {}:
             logger.debug(f"No plot toggles specified.")
             return
 
-        # If the user hasn't explicitly specified which snapshots they want, use the lowest redshift ones.
-        if snapshots is None:
-            baseline_snapshots_models = [[len(model._redshifts) - 1] for model in self._models]
-        else:
-            baseline_snapshots_models = snapshots
+        baseline_snapshots_models = self._determine_snapshots_to_use(snapshots, redshifts)
 
         for model, baseline_snapshots in zip(self._models, baseline_snapshots_models):
 
             logger.info(f"Analyzing baseline snapshots {baseline_snapshots}")
 
             for snap in baseline_snapshots:
-                print(snap)
                 # First compute all of the "normal" properties that aren't tracked over time.
                 model.calc_properties_all_files(
                     model._calculation_functions, snap, debug=False, close_file=False
@@ -744,7 +839,8 @@ class GalaxyAnalysis:
 
     def generate_plots(
         self,
-        snapshots: Optional[List[List[int]]] = None,
+        snapshots: Optional[List[List[Union[int, str]]]] = None,
+        redshifts: Optional[List[List[Union[float, str]]]] = None,
         plot_output_format: str = "png",
         plot_output_path: str = "./plots/",
     ) -> Optional[List[matplotlib.figure.Figure]]:
@@ -759,17 +855,42 @@ class GalaxyAnalysis:
 
         Parameters
         ----------
-        snapshots : nested list of ints, optional
-            The snapshots to plot for each model. If not specified, uses the highest snapshot (i.e., lowest
-            redshift) as dictated by the :py:attr:`~sage_analysis.model.Model.redshifts` attribute from the parameter
-            file read for each model.
+        snapshots : nested list of ints or string, optional
+            The snapshots to plot for each model. If both this variable and ``redshifts`` are not specified, uses
+            the highest snapshot (i.e., lowest redshift) as dictated by the
+            :py:attr:`~sage_analysis.model.Model.redshifts` attribute from the parameter file read for each model.
+
+            If an entry if ``"All"``, then all snapshots for that model will be analyzed.
 
             The length of the outer list **MUST** be equal to :py:attr:`~num_models`.
 
-            For properties that aren't analyzed over redshift, all snapshots for each model will be plotted on each
-            figure .  For example, if we are plotting a single model, setting this variable to ``[[63, 50]]`` will
+            For properties that aren't analyzed over redshift, the snapshots for each model will be plotted on each
+            figure.  For example, if we are plotting a single model, setting this variable to ``[[63, 50]]`` will
             give results for snapshot 63 and 50 on each figure. For some plots (e.g., those properties that are scatter
             plotted), this is undesirable and one should instead iterate over single snapshot values instead.
+
+            Notes
+            -----
+            If ``analyze_history_snapshots`` is ``True``, then the snapshots iterated over will be the unique
+            combination of the snapshots required for history snapshots and those specified by this variable.
+
+            Warnings
+            --------
+            Only **ONE** of ``snapshots`` and ``redshifts`` can be specified.
+
+        redshifts : nested list of ints, optional
+            The redshift to plot for each model. If both this variable and ``snapshots`` are not specified, uses
+            the highest snapshot (i.e., lowest redshift) as dictated by the
+            :py:attr:`~sage_analysis.model.Model.redshifts` attribute from the parameter file read for each model.
+
+            The snapshots selected for analysis will be those that result in the redshifts closest to those requested.
+            If an entry if ``"All"``, then all snapshots for that model will be analyzed.
+
+            The length of the outer list **MUST** be equal to :py:attr:`~num_models`.
+
+            Warnings
+            --------
+            Only **ONE** of ``snapshots`` and ``redshifts`` can be specified.
 
         plot_output_format : string, optional
             The format of the saved plots.
@@ -794,8 +915,7 @@ class GalaxyAnalysis:
         if not os.path.exists(os.path.dirname(plot_output_path)):
             os.makedirs(os.path.dirname(plot_output_path))
 
-        if snapshots is None:
-            snapshots = [[len(model._redshifts) - 1] for model in self._models]
+        snapshots = self._determine_snapshots_to_use(snapshots, redshifts)
 
         # Now do the plotting.
         figs: List[matplotlib.figure.Figure] = []

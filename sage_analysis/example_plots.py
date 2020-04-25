@@ -15,13 +15,11 @@ import matplotlib
 # valid DISPLAY variable -- MS 17/03/2020
 matplotlib.use('Agg')
 
-import numpy as np
-from matplotlib import pyplot as plt
+import numpy as np  # noqa: E402
+from matplotlib import pyplot as plt  # noqa: E402
 
-import sage_analysis.observations as obs
-from sage_analysis.model import Model
-
-
+import sage_analysis.observations as obs  # noqa: E402
+from sage_analysis.model import Model  # noqa: E402
 
 colors = ["r", "b", "g", "m", "c"]
 linestyles = ["-", ":", "--", "-.", "-:"]
@@ -144,20 +142,24 @@ def plot_SMF(
                 label=f"{label} - z = {model._redshifts[snapshot]:.2f} - All",
             )
 
-            # Be careful to not overcrowd the plot.
             if plot_sub_populations:
+                print("ROEROE")
                 norm_red = model.properties[f"snapshot_{snapshot}"]["red_SMF"] / normalization_factor
                 norm_blue = model.properties[f"snapshot_{snapshot}"]["blue_SMF"] / normalization_factor
 
                 ax.plot(
                     bin_middles,
-                    norm_red, "r:",
+                    norm_red,
+                    color=color,
+                    ls=linestyles[model_num+1],
                     lw=2,
                     label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Red"
                 )
                 ax.plot(
                     bin_middles,
-                    norm_blue, "b:",
+                    norm_blue,
+                    color=color,
+                    ls=linestyles[model_num+2],
                     lw=2,
                     label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Blue"
                 )
@@ -1057,7 +1059,7 @@ def plot_baryon_fraction(
                 res_labels = ["Stars", "Cold", "Hot", "Ejected", "ICS"]
                 res_colors = ["k", "b", "r", "g", "y"]
 
-                for (attr, res_label, rest_color) in zip(attrs, labels, res_colors):
+                for (attr, res_label, res_color) in zip(attrs, res_labels, res_colors):
                     dict_key = "halo_{0}_fraction_sum".format(attr)
                     mean = model.properties[f"snapshot_{snapshot}"][dict_key] / \
                         model.properties[f"snapshot_{snapshot}"]["fof_HMF"]
@@ -1066,8 +1068,8 @@ def plot_baryon_fraction(
                         bin_middles,
                         mean,
                         label=f"{label} - z = {model._redshifts[snapshot]:.2f} - {res_label}",
-                        res_color=color,
-                        ls=linestyle,
+                        color=res_color,
+                        ls=ls,
                     )
 
     ax.set_xlabel(r"$\mathrm{Central}\ \log_{10} M_{\mathrm{vir}}\ (M_{\odot})$")
@@ -1314,7 +1316,7 @@ def plot_spatial_3d(pos, output_file, box_size) -> matplotlib.figure.Figure:
     None.  A plot will be saved as ``output_file``.
     """
 
-    from mpl_toolkits.mplot3d import Axes3D  # noqa:
+    from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
     from random import sample
 
     fig = plt.figure()
@@ -1349,7 +1351,7 @@ def plot_spatial_3d(pos, output_file, box_size) -> matplotlib.figure.Figure:
 
 def plot_SMF_history(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format="png"
 ) -> matplotlib.figure.Figure:
@@ -1364,7 +1366,7 @@ def plot_SMF_history(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : list of ints
+    snapshots : nested list of ints
         This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
     plot_output_path : string
@@ -1435,7 +1437,7 @@ def plot_SMF_history(
 
 def plot_SFRD_history(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png"
 ) -> matplotlib.figure.Figure:
@@ -1448,7 +1450,7 @@ def plot_SFRD_history(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : List of ints
+    snapshots : nested list of ints
         This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
     plot_output_path : string
@@ -1488,7 +1490,7 @@ def plot_SFRD_history(
         # Only use a line if we have enough snapshots to plot.
         if len(non_zero_inds) > 20:
             ax.plot(
-                redshifts,[non_zero_inds],
+                redshifts[non_zero_inds],
                 np.log10(SFRD[non_zero_inds] / model._volume*pow(model.hubble_h, 3)),
                 label=label,
                 color=color,
@@ -1528,7 +1530,7 @@ def plot_SFRD_history(
 
 def plot_SMD_history(
     models: List[Model],
-    snapshots: List[int],
+    snapshots: List[List[int]],
     plot_output_path: str,
     plot_output_format: str = "png"
 ) -> matplotlib.figure.Figure:
@@ -1541,7 +1543,7 @@ def plot_SMD_history(
         Models that will be plotted. These instances contain the properties necessary to create the plot, accessed via
         ``Model.properties["snapshot_<snapshot>"]["property_name"]``.
 
-    snapshots : List of ints
+    snapshots : nested list of ints
         This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
     plot_output_path : string

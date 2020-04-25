@@ -12,7 +12,10 @@ import hypothesis.strategies as st
 from hypothesis import given, settings
 from matplotlib.testing.compare import compare_images
 
-from sage_analysis.default_analysis_arguments import default_plot_toggles
+from sage_analysis.default_analysis_arguments import (
+    default_plot_toggles, default_calculation_functions,
+    default_plot_functions
+)
 from sage_analysis.utils import generate_func_dict
 from sage_analysis.galaxy_analysis import GalaxyAnalysis
 from sage_analysis.model import Model
@@ -359,4 +362,116 @@ def test_multiple_snapshots():
     snapshots = [[63, 37, 32]]
     galaxy_analysis.analyze_galaxies(snapshots=snapshots)
 
+    # galaxy_analysis.generate_plots(plot_output_path=generated_image_path, snapshots=snapshots)
+
+    # Check these plots to ensure they're all good.
+
+
+def test_keyword_arguments():
+
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
+    sage_output_formats = ["sage_hdf5"]
+    labels = ["Mini-Millennium"]
+    random_seeds = [666]
+    generated_image_path = "test_data/generated_plots/keyword_args"
+
+    plot_toggles = {"SMF": True, "quiescent": True, "baryon_fraction": True}
+
+    kwargs = {"SMF": {"calc_sub_populations": True}}
+    calculation_functions = generate_func_dict(plot_toggles, "sage_analysis.example_calcs", "calc_", kwargs)
+
+    kwargs = {
+        "SMF": {"plot_sub_populations": True},
+        "quiescent": {"plot_sub_populations": True},
+        "baryon_fraction": {"plot_sub_populations": True}
+    }
+    plot_functions = generate_func_dict(plot_toggles, "sage_analysis.example_plots", "plot_", kwargs)
+
+
+    galaxy_analysis = GalaxyAnalysis(
+        parameter_fnames,
+        sage_output_formats=sage_output_formats,
+        random_seeds=random_seeds,
+        labels=labels,
+        plot_toggles=plot_toggles,
+        calculation_functions=calculation_functions,
+        plot_functions=plot_functions
+    )
+
+    galaxy_analysis.analyze_galaxies()
+    # galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
+
+
+def test_both_snapshots_and_redshift():
+    """
+    User requests to read both snapshots and redshifts. Should throw an error.
+    """
+
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
+    sage_output_formats = ["sage_hdf5"]
+
+    galaxy_analysis = GalaxyAnalysis(
+        parameter_fnames,
+        sage_output_formats=sage_output_formats,
+    )
+
+    snapshots = "All"
+    redshifts = "All"
+
+    with pytest.raises(ValueError):
+        galaxy_analysis.analyze_galaxies(snapshots=snapshots, redshifts=redshifts)
+
+    with pytest.raises(ValueError):
+        galaxy_analysis.generate_plots(snapshots=snapshots, redshifts=redshifts)
+
+def test_highest_snapshot():
+    """
+    User explicitly asked for Snapshot 63 (the highest snapshot).  This should correspond to the default scenario.
+    """
+
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
+    sage_output_formats = ["sage_hdf5"]
+    labels = ["Mini-Millennium"]
+    random_seeds = [666]
+    generated_image_path = "test_data/generated_plots/"
+
+    galaxy_analysis = GalaxyAnalysis(
+        parameter_fnames,
+        sage_output_formats=sage_output_formats,
+        random_seeds=random_seeds,
+        labels=labels,
+    )
+
+    snapshots = [[63]]
+    galaxy_analysis.analyze_galaxies(snapshots=snapshots)
+
     galaxy_analysis.generate_plots(plot_output_path=generated_image_path, snapshots=snapshots)
+
+    my_compare_images(baseline_image_path, generated_image_path)
+
+
+
+def test_redshift_zero():
+    """
+    User explicitly asked for redshift 0.  This should correspond to the default scenario.
+    """
+
+    parameter_fnames = [f"{test_path}/test_data/mini-millennium.par"]
+    sage_output_formats = ["sage_hdf5"]
+    labels = ["Mini-Millennium"]
+    random_seeds = [666]
+    generated_image_path = "test_data/generated_plots/"
+
+    galaxy_analysis = GalaxyAnalysis(
+        parameter_fnames,
+        sage_output_formats=sage_output_formats,
+        random_seeds=random_seeds,
+        labels=labels,
+    )
+
+    redshifts = [[0.0]]
+    galaxy_analysis.analyze_galaxies(redshifts=redshifts)
+
+    galaxy_analysis.generate_plots(plot_output_path=generated_image_path, redshifts=redshifts)
+
+    my_compare_images(baseline_image_path, generated_image_path)

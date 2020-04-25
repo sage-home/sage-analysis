@@ -548,7 +548,6 @@ class Model(object):
             if gals is None:
                 continue
 
-            print(calculation_functions)
             self.calc_properties(calculation_functions, gals, snapshot)
 
         # Some data formats (e.g., HDF5) have a single file we read from.

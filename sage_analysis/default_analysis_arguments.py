@@ -1,3 +1,5 @@
+from sage_analysis.utils import generate_func_dict
+
 default_plot_toggles = {
     "SMF" : True,  # Stellar mass function.
     "BMF" : True,  # Baryonic mass function.
@@ -56,3 +58,7 @@ default_galaxy_properties_to_analyze = {
         "property_names": ["SMD_history", "SFRD_history"],
     },
 }
+
+
+default_calculation_functions = generate_func_dict(default_plot_toggles, "sage_analysis.example_calcs", "calc_")
+default_plot_functions = generate_func_dict(default_plot_toggles, "sage_analysis.example_calcs", "calc_")

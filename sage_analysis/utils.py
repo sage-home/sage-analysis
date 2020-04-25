@@ -1,7 +1,7 @@
 import sys
 import logging
 import os
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple, List
 
 import numpy as np
 
@@ -248,3 +248,11 @@ def read_generic_sage_params(sage_file_path: str) -> Dict[str, Any]:
     model_dict["_num_sim_tree_files"] = int(SAGE_dict["NumSimulationTreeFiles"])
 
     return model_dict
+
+def find_closest_indices(values: List[float], target_values: List[float]) -> List[int]:
+    """
+    Finds the indices in ``values`` that result in values closest to ``target_values``.
+    """
+
+    closest_indices = [(np.abs(values - target_value)).argmin() for target_value in target_values]
+    return closest_indices
