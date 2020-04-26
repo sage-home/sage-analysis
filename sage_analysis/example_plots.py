@@ -143,7 +143,6 @@ def plot_SMF(
             )
 
             if plot_sub_populations:
-                print("ROEROE")
                 norm_red = model.properties[f"snapshot_{snapshot}"]["red_SMF"] / normalization_factor
                 norm_blue = model.properties[f"snapshot_{snapshot}"]["blue_SMF"] / normalization_factor
 

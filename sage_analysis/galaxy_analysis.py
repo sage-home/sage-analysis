@@ -167,7 +167,7 @@ class GalaxyAnalysis:
             variable value (e.g., ``True``).
 
             The functions in this dictionary are called for all files analyzed and **MUST** have a signature
-            ``func(Model, gals, snapshot, optional_keyword_arguments)``. This dict can be generated using
+            ``func(model, gals, snapshot, optional_keyword_arguments)``. This dict can be generated using
             :py:func:`~sage_analysis.utils.generate_func_dict`.
 
             If not specified, will use the functions found in :py:mod:`~sage_analysis.example_calcs`, filtered to
@@ -181,7 +181,7 @@ class GalaxyAnalysis:
             variable value (e.g., ``True``).
 
             The functions in this dictionary are called for all files analyzed and **MUST** have a signature
-            ``func(Models, snapshots, plot_output_path, plot_output_format, optional_keyword_arguments)``. This dict
+            ``func(models, snapshots, plot_output_path, plot_output_format, optional_keyword_arguments)``. This dict
             can be generated using :py:func:`~sage_analysis.utils.generate_func_dict`.
 
             If not specified, will use the functions found in :py:mod:`~sage_analysis.example_plots`, filtered to

@@ -38,7 +38,6 @@ Maintainers
    user/setting_up_sage
    user/analyzing_sage
    user/defining_custom_properties
-   user/defining_custom_calculations
    user/analyzing_custom_properties
    user/analyzing_custom_data
 

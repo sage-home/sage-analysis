@@ -281,8 +281,8 @@ Adding Extra Keywords for Analysis and Plotting
 
 Some properties can be broken down into sub-populations and analyzed separately. For example, the stellar mass function
 can be split into red and blue galaxies or the baryon fraction can be split into its constituent reservoirs.  To access
-these extra functionalities, the :py:attr:`~sage_analysis.model.Model.calculation_functions`` and
-:py:attr:`~sage_analysis.model.Model.plot_functions`` dictionaries passed to the
+these extra functionalities, the :py:attr:`~sage_analysis.model.Model.calculation_functions` and
+:py:attr:`~sage_analysis.model.Model.plot_functions` dictionaries passed to the
 :py:class:`~sage_analysis.galaxy_analysis.GalaxyAnalysis` constructor need to be adjusted.
 
 .. code-block:: python

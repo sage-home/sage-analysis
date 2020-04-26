@@ -64,7 +64,8 @@ def generate_func_dict(
     except KeyError:
         raise KeyError(
             f"Module ``{module_name}`` has not been imported.\nPerhaps you need to create an empty ``__init__.py`` "
-            f"file to ensure your package can be imported."
+            f"file to ensure your package can be imported.\nAlso, ensure ``import {module_name}`` is at the top of "
+            f"your script, before ``generate_func_dict`` is called."
         )
 
     # Only populate those methods that have been marked in the `plot_toggles` dictionary.
