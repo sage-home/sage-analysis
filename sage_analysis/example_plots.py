@@ -20,68 +20,17 @@ from matplotlib import pyplot as plt  # noqa: E402
 
 import sage_analysis.observations as obs  # noqa: E402
 from sage_analysis.model import Model  # noqa: E402
+from sage_analysis.plot_helper import PlotHelper  # noqa: E402
 
 colors = ["r", "b", "g", "m", "c"]
 linestyles = ["-", ":", "--", "-.", "-:"]
 markers = ["x", "o", "v", "*", "D"]
 
 
-def setup_matplotlib_options():
-    """
-    Set the default plotting parameters.
-    """
-
-    matplotlib.rcdefaults()
-    plt.rc('xtick', labelsize='x-large')
-    plt.rc('ytick', labelsize='x-large')
-    plt.rc('lines', linewidth='2.0')
-    plt.rc('legend', numpoints=1, fontsize='x-large')
-
-
-def adjust_legend(ax, location="upper right", scatter_plot=0):
-    """
-    Adjusts the legend of a specified axis.
-
-    Parameters
-    ----------
-    ax : ``matplotlib`` axes object
-        The axis whose legend we're adjusting
-
-    location : String, default "upper right". See ``matplotlib`` docs for full options
-        Location for the legend to be placed.
-
-    scatter_plot : {0, 1}
-        For plots involved scattered-plotted data, we adjust the size and alpha of the
-        legend points.
-
-    Returns
-    -------
-    None. The legend is placed directly onto the axis.
-    """
-
-    legend = ax.legend(loc=location)
-    handles = legend.legendHandles
-
-    legend.draw_frame(False)
-
-    # First adjust the text sizes.
-    for t in legend.get_texts():
-        t.set_fontsize("medium")
-
-    # For scatter plots, we want to increase the marker size.
-    if scatter_plot:
-        for handle in handles:
-            # We may have lines in the legend which we don't want to touch here.
-            if isinstance(handle, matplotlib.collections.PathCollection):
-                handle.set_alpha(1.0)
-                handle.set_sizes([10.0])
-
-
 def plot_SMF(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png",
+    plot_helper: PlotHelper,
     plot_sub_populations: bool = False
 ) -> matplotlib.figure.Figure:
     """
@@ -99,21 +48,20 @@ def plot_SMF(
         The length of the outer list **MUST** be equal to the length of ``models``. For each model, the stellar mass
         function of all snapshots are plotted on the figure.
 
-    plot_output_path : string
-        Path to where the plot will be saved.
-
-    plot_output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     plot_sub_populations : Boolean, default False
         If ``True``, plots the stellar mass function for red and blue sub-populations.
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>1.StellarMassFunction.<plot_output_format>"
+    The plot will be saved as "<output_path>1.StellarMassFunction.<output_format>"
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     # Go through each of the models and plot.
@@ -127,11 +75,11 @@ def plot_SMF(
         normalization_factor = model._volume / pow(model.hubble_h, 3) * bin_widths
 
         # Colour will be used for the snapshot, linestyle for the model.
-        ls = linestyles[model_num]
+        ls = plot_helper.linestyles[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = colors[snapshot_num]
+            color = plot_helper.colors[snapshot_num]
 
             norm_SMF = model.properties[f"snapshot_{snapshot}"]["SMF"] / normalization_factor
             ax.plot(
@@ -179,11 +127,11 @@ def plot_SMF(
 
     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.1))
 
-    adjust_legend(ax, location="lower left", scatter_plot=0)
+    plot_helper.adjust_legend(ax, location="lower left", scatter_plot=0)
 
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}1.StellarMassFunction.{plot_output_format}"
+    output_file = f"{plot_helper.output_path}1.StellarMassFunction.{plot_helper.output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -194,8 +142,7 @@ def plot_SMF(
 def plot_BMF(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png"
+    plot_helper: PlotHelper,
 ) -> matplotlib.figure.Figure:
     """
     Plots the baryonic mass function for the specified models. This is the mass
@@ -213,18 +160,17 @@ def plot_BMF(
         The length of the outer list **MUST** be equal to the length of ``models``. For each model, the baryonic mass
         function of all snapshots are plotted on the figure.
 
-    plot_output_path : string
-        Path to where the plot will be saved.
-
-    plot_output_format : string, optional
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>2.BaryonicMassFunction.<plot_output_format>"
+    The plot will be saved as "<output_path>2.BaryonicMassFunction.<output_format>"
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
@@ -237,11 +183,11 @@ def plot_BMF(
         normalization_factor = model._volume / pow(model.hubble_h, 3) * bin_widths
 
         # Colour will be used for the snapshot, linestyle for the model.
-        ls = linestyles[model_num]
+        ls = plot_helper.linestyles[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = colors[snapshot_num]
+            color = plot_helper.colors[snapshot_num]
             ax.plot(
                 bin_middles,
                 model.properties[f"snapshot_{snapshot}"]["BMF"] / normalization_factor,
@@ -266,11 +212,11 @@ def plot_BMF(
 
     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.1))
 
-    adjust_legend(ax, location="lower left", scatter_plot=0)
+    plot_helper.adjust_legend(ax, location="lower left", scatter_plot=0)
 
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}2.BaryonicMassFunction.{plot_output_format}"
+    output_file = f"{plot_helper.output_path}2.BaryonicMassFunction.{plot_helper.output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -281,8 +227,7 @@ def plot_BMF(
 def plot_GMF(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png"
+    plot_helper: PlotHelper,
 ) -> matplotlib.figure.Figure:
     """
     Plots the gas mass function for the specified models. This is the mass function for the cold gas.
@@ -299,18 +244,17 @@ def plot_GMF(
         The length of the outer list **MUST** be equal to the length of ``models``. For each model, the gas mass
         function of all snapshots are plotted on the figure.
 
-    plot_output_path : string
-        Path to where the plot will be saved.
-
-    plot_output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>3.GasMassFunction.<plot_output_format>"
+    The plot will be saved as "<output_path>3.GasMassFunction.<output_format>"
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
@@ -323,11 +267,11 @@ def plot_GMF(
         normalization_factor = model._volume / pow(model.hubble_h, 3) * bin_widths
 
         # Colour will be used for the snapshot, linestyle for the model.
-        ls = linestyles[model_num]
+        ls = plot_helper.linestyles[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = colors[snapshot_num]
+            color = plot_helper.colors[snapshot_num]
 
             ax.plot(
                 bin_middles,
@@ -353,11 +297,11 @@ def plot_GMF(
 
     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.1))
 
-    adjust_legend(ax, location="lower left", scatter_plot=0)
+    plot_helper.adjust_legend(ax, location="lower left", scatter_plot=0)
 
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}3.GasMassFunction.{plot_output_format}"
+    output_file = f"{plot_helper.output_path}3.GasMassFunction.{plot_helper.output_format}"
     fig.savefig(output_file)  # Save the figure
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -368,8 +312,7 @@ def plot_GMF(
 def plot_BTF(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png"
+    plot_helper: PlotHelper,
 ) -> matplotlib.figure.Figure:
     """
     Plots the baryonic Tully-Fisher relationship for the specified models.
@@ -386,29 +329,28 @@ def plot_BTF(
         The length of the outer list **MUST** be equal to the length of ``models``. For each model, the baryonic
         Tully-Fisher relationship of all snapshots are plotted on the figure.
 
-    plot_output_path : string
-        Path to where the plot will be saved.
-
-    plot_output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>4.BaryonicTullyFisher.<plot_output_format>"
+    The plot will be saved as "<output_path>4.BaryonicTullyFisher.<output_format>"
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     # Go through each of the models and plot.
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         # Colour will be used for the snapshot, marker style for the model.
-        marker = markers[model_num]
+        marker = plot_helper.markers[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = colors[snapshot_num]
+            color = plot_helper.colors[snapshot_num]
 
             ax.scatter(
                 model.properties[f"snapshot_{snapshot}"]["BTF_vel"],
@@ -431,11 +373,11 @@ def plot_BTF(
 
     ax = obs.plot_btf_data(ax)
 
-    adjust_legend(ax, location="upper left", scatter_plot=1)
+    plot_helper.adjust_legend(ax, location="upper left", scatter_plot=1)
 
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}4.BaryonicTullyFisher.{plot_output_format}"
+    output_file = f"{plot_helper.output_path}4.BaryonicTullyFisher.{plot_helper.output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -446,8 +388,7 @@ def plot_BTF(
 def plot_sSFR(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png"
+    plot_helper: PlotHelper,
 ) -> matplotlib.figure.Figure:
     """
     Plots the specific star formation rate as a function of stellar mass for the specified
@@ -465,26 +406,28 @@ def plot_sSFR(
         The length of the outer list **MUST** be equal to the length of ``models``. For each model, the specific star
         formation rate of all snapshots are plotted on the figure.
 
-    plot_output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>5.SpecificStarFormationRate.<plot_output_format>"
+    The plot will be saved as "<output_path>5.SpecificStarFormationRate.<output_format>"
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     # Go through each of the models and plot.
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         # Colour will be used for the snapshot, marker style for the model.
-        marker = markers[model_num]
+        marker = plot_helper.markers[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = colors[snapshot_num]
+            color = plot_helper.colors[snapshot_num]
 
             ax.scatter(
                 model.properties[f"snapshot_{snapshot}"]["sSFR_mass"],
@@ -510,11 +453,11 @@ def plot_sSFR(
     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.05))
     ax.yaxis.set_minor_locator(plt.MultipleLocator(0.25))
 
-    adjust_legend(ax, scatter_plot=1)
+    plot_helper.adjust_legend(ax, scatter_plot=1)
 
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}5.SpecificStarFormationRate.{plot_output_format}"
+    output_file = f"{plot_helper.output_path}5.SpecificStarFormationRate.{plot_helper.output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -525,8 +468,7 @@ def plot_sSFR(
 def plot_gas_fraction(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png"
+    plot_helper: PlotHelper,
 ) -> matplotlib.figure.Figure:
     """
     Plots the fraction of baryons that are in the cold gas reservoir as a function of
@@ -544,29 +486,28 @@ def plot_gas_fraction(
         The length of the outer list **MUST** be equal to the length of ``models``. For each model, the gas fraction
         of all snapshots are plotted on the figure.
 
-    plot_output_path : string
-        Path to where the plot will be saved.
-
-    plot_output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>6.GasFraction.<plot_output_format>"
+    The plot will be saved as "<output_path>6.GasFraction.<output_format>"
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     # Go through each of the models and plot.
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         # Colour will be used for the snapshot, marker style for the model.
-        marker = markers[model_num]
+        marker = plot_helper.markers[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = colors[snapshot_num]
+            color = plot_helper.colors[snapshot_num]
 
             ax.scatter(
                 model.properties[f"snapshot_{snapshot}"]["gas_frac_mass"],
@@ -587,11 +528,11 @@ def plot_gas_fraction(
     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.05))
     ax.yaxis.set_minor_locator(plt.MultipleLocator(0.25))
 
-    adjust_legend(ax, scatter_plot=1)
+    plot_helper.adjust_legend(ax, scatter_plot=1)
 
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}6.GasFraction.{plot_output_format}"
+    output_file = f"{plot_helper.output_path}6.GasFraction.{plot_helper.output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -602,8 +543,7 @@ def plot_gas_fraction(
 def plot_metallicity(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png"
+    plot_helper: PlotHelper,
 ) -> matplotlib.figure.Figure:
     """
     Plots the metallicity as a function of stellar mass for the speicifed models.
@@ -620,29 +560,28 @@ def plot_metallicity(
         The length of the outer list **MUST** be equal to the length of ``models``. For each model, the metallicity
         of all snapshots are plotted on the figure.
 
-    plot_output_path : string
-        Path to where the plot will be saved.
-
-    plot_output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>7.Metallicity.<plot_output_format>"
+    The plot will be saved as "<output_path>7.Metallicity.<output_format>"
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     # Go through each of the models and plot.
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         # Colour will be used for the snapshot, marker style for the model.
-        marker = markers[model_num]
+        marker = plot_helper.markers[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = colors[snapshot_num]
+            color = plot_helper.colors[snapshot_num]
 
             ax.scatter(
                 model.properties[f"snapshot_{snapshot}"]["metallicity_mass"],
@@ -668,11 +607,11 @@ def plot_metallicity(
     ax.yaxis.set_minor_locator(plt.MultipleLocator(0.25))
 
     # Since we're doing a scatter plot, we need to resize the legend points.
-    adjust_legend(ax, location="upper right", scatter_plot=1)
+    plot_helper.adjust_legend(ax, location="upper right", scatter_plot=1)
 
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}7.Metallicity.{plot_output_format}"
+    output_file = f"{plot_helper.output_path}7.Metallicity.{plot_helper.output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -683,8 +622,7 @@ def plot_metallicity(
 def plot_bh_bulge(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png"
+    plot_helper: PlotHelper,
 ) -> matplotlib.figure.Figure:
     """
     Plots the black-hole bulge relationship for the specified models.
@@ -700,29 +638,29 @@ def plot_bh_bulge(
 
         The length of the outer list **MUST** be equal to the length of ``models``. For each model, the black hole
         bulge relationship of all snapshots are plotted on the figure.
-    plot_output_path : string
-        Path to where the plot will be saved.
 
-    plot_output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>8.BlackHoleBulgeRelationship.<plot_output_format>"
+    The plot will be saved as "<output_path>8.BlackHoleBulgeRelationship.<output_format>"
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     # Go through each of the models and plot.
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         # Colour will be used for the snapshot, marker style for the model.
-        marker = markers[model_num]
+        marker = plot_helper.markers[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = colors[snapshot_num]
+            color = plot_helper.colors[snapshot_num]
 
             ax.scatter(
                 model.properties[f"snapshot_{snapshot}"]["bulge_mass"],
@@ -745,11 +683,11 @@ def plot_bh_bulge(
     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.05))
     ax.yaxis.set_minor_locator(plt.MultipleLocator(0.25))
 
-    adjust_legend(ax, location="upper right", scatter_plot=1)
+    plot_helper.adjust_legend(ax, location="upper right", scatter_plot=1)
 
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}8.BlackHoleBulgeRelationship.{plot_output_format}"
+    output_file = f"{plot_helper.output_path}8.BlackHoleBulgeRelationship.{plot_helper.output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -760,8 +698,7 @@ def plot_bh_bulge(
 def plot_quiescent(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png",
+    plot_helper: PlotHelper,
     plot_sub_populations: bool = False
 ) -> matplotlib.figure.Figure:
     """
@@ -780,21 +717,20 @@ def plot_quiescent(
         The length of the outer list **MUST** be equal to the length of ``models``. For each model, the quiescent
         fraction of all snapshots are plotted on the figure.
 
-    plot_output_path : string
-        Path to where the plot will be saved.
-
-    plot_output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     plot_sub_populations : Boolean, default False
         If ``True``, plots the centrals and satellite sub-populations.
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>9.QuiescentFraction.<plot_output_format>"
+    The plot will be saved as "<output_path>9.QuiescentFraction.<output_format>"
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     # Go through each of the models and plot.
@@ -805,11 +741,11 @@ def plot_quiescent(
         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # Colour will be used for the snapshot, linestyle for the model.
-        ls = linestyles[model_num]
+        ls = plot_helper.linestyles[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = colors[snapshot_num]
+            color = plot_helper.colors[snapshot_num]
 
             quiescent_fraction = model.properties[f"snapshot_{snapshot}"]["quiescent_galaxy_counts"] / \
                 model.properties[f"snapshot_{snapshot}"]["SMF"]
@@ -851,11 +787,11 @@ def plot_quiescent(
     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.25))
     ax.yaxis.set_minor_locator(plt.MultipleLocator(0.10))
 
-    adjust_legend(ax, location="upper left", scatter_plot=0)
+    plot_helper.adjust_legend(ax, location="upper left", scatter_plot=0)
 
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}9.QuiescentFraction.{plot_output_format}"
+    output_file = f"{plot_helper.output_path}9.QuiescentFraction.{plot_helper.output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -866,8 +802,7 @@ def plot_quiescent(
 def plot_bulge_fraction(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png",
+    plot_helper: PlotHelper,
     plot_disk_fraction: bool = False,
     plot_var: bool = False
 ) -> matplotlib.figure.Figure:
@@ -887,24 +822,24 @@ def plot_bulge_fraction(
         The length of the outer list **MUST** be equal to the length of ``models``. For each model, the bulge fraction
         of all snapshots are plotted on the figure.
 
-    plot_output_path : string, optional
-        Path to where the plot will be saved.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     plot_disk_fraction : bool, optional
         If specified, will also plot the disk fraction.
-
-    plot_output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
 
     plot_var : Boolean, default False
         If ``True``, plots the variance as shaded regions.
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>10.BulgeMassFraction.<plot_output_format>"
+    The plot will be saved as :py:attr:`~sage_analysis.plot_helper.PlotHelper.output_path`10.BulgeMassFraction.
+    :py:attr:`~sage_analysis.plot_helper.PlotHelper.output_format`.
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     # Go through each of the models and plot.
@@ -915,11 +850,11 @@ def plot_bulge_fraction(
         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # Colour will be used for the snapshot, linestyle for the model.
-        ls = linestyles[model_num]
+        ls = plot_helper.linestyles[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = colors[snapshot_num]
+            color = plot_helper.colors[snapshot_num]
 
             # Remember we need to average the properties in each bin.
             bulge_mean = model.properties[f"snapshot_{snapshot}"]["fraction_bulge_sum"] / \
@@ -975,11 +910,11 @@ def plot_bulge_fraction(
     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.25))
     ax.yaxis.set_minor_locator(plt.MultipleLocator(0.10))
 
-    adjust_legend(ax, location="upper left", scatter_plot=0)
+    plot_helper.adjust_legend(ax, location="upper left", scatter_plot=0)
 
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}10.BulgeMassFraction.{plot_output_format}"
+    output_file = f"{plot_helper.output_path}10.BulgeMassFraction.{plot_helper.output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -990,8 +925,7 @@ def plot_bulge_fraction(
 def plot_baryon_fraction(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png",
+    plot_helper: PlotHelper,
     plot_sub_populations: bool = False
 ) -> matplotlib.figure.Figure:
     """
@@ -1009,11 +943,10 @@ def plot_baryon_fraction(
         The length of the outer list **MUST** be equal to the length of ``models``. For each model, the baryon fraction
         of all snapshots are plotted on the figure.
 
-    plot_output_path : string
-        Path to where the plot will be saved.
-
-    plot_output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     plot_sub_populations : Boolean, default False
         If ``True``, plots the baryon fraction for each reservoir. Otherwise, only plots
@@ -1021,10 +954,10 @@ def plot_baryon_fraction(
 
     Generates
     ---------
-    The plot will be saved as "<plot_output_path>11.BaryonFraction.<plot_output_format>"
+    The plot will be saved as "<output_path>11.BaryonFraction.<output_format>"
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     # Go through each of the models and plot.
@@ -1035,11 +968,11 @@ def plot_baryon_fraction(
         bin_middles = model.bins["stellar_mass_bins"][:-1] + bin_widths
 
         # Colour will be used for the snapshot, linestyle for the model.
-        ls = linestyles[model_num]
+        ls = plot_helper.linestyles[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = colors[snapshot_num]
+            color = plot_helper.colors[snapshot_num]
 
             # Remember we need to average the properties in each bin.
             baryon_mean = model.properties[f"snapshot_{snapshot}"]["halo_baryon_fraction_sum"] / \
@@ -1080,9 +1013,9 @@ def plot_baryon_fraction(
     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.25))
     ax.yaxis.set_minor_locator(plt.MultipleLocator(0.05))
 
-    adjust_legend(ax, location="upper left", scatter_plot=0)
+    plot_helper.adjust_legend(ax, location="upper left", scatter_plot=0)
 
-    output_file = f"{plot_output_path}11.BaryonFraction.{plot_output_format}"
+    output_file = f"{plot_helper.output_path}11.BaryonFraction.{plot_helper.output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -1093,8 +1026,7 @@ def plot_baryon_fraction(
 def plot_reservoirs(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png"
+    plot_helper: PlotHelper,
 ) -> List[matplotlib.figure.Figure]:
     """
     Plots the mass in each reservoir as a function of halo mass for the
@@ -1112,15 +1044,14 @@ def plot_reservoirs(
         The length of the outer list **MUST** be equal to the length of ``models``. For each model, each snapshot will
         be plotted and saved as a separate figure.
 
-    plot_output_path : string
-        Path to where the plot will be saved.
-
-    plot_output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     Generates
     ---------
-    A plot will be saved as ``"<plot_output_path>12.MassReservoirs<model.label>.<plot_output_format>"`` for each mode.
+    A plot will be saved as ``"<output_path>12.MassReservoirs<model.label>.<output_format>"`` for each mode.
     """
 
     # This scatter plot will be messy so we're going to make one for each model.
@@ -1128,18 +1059,19 @@ def plot_reservoirs(
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         label = model.label
-        marker = markers[model_num]
+        marker = plot_helper.markers[model_num]
 
         # Furthermore, make one for each snapshot we requested.
         for snapshot_num, snapshot in enumerate(model_snapshots):
 
-            fig = plt.figure()
+            fig = plt.figure(figsize=plot_helper.figsize)
             ax = fig.add_subplot(111)
 
             attribute_names = ["stars", "cold", "hot", "ejected", "ICS"]
             res_labels = ["Stars", "ColdGas", "HotGas", "EjectedGas", "IntraclusterStars"]
+            res_colors = ["k", "b", "r", "g", "y"]
 
-            for (attribute_name, res_label) in zip(attribute_names, res_labels):
+            for (attribute_name, res_label, res_color) in zip(attribute_names, res_labels, res_colors):
 
                 dict_key = f"reservoir_{attribute_name}"
                 ax.scatter(
@@ -1147,7 +1079,8 @@ def plot_reservoirs(
                     model.properties[f"snapshot_{snapshot}"][dict_key],
                     marker=marker,
                     s=0.3,
-                    label=res_label
+                    label=res_label,
+                    color=res_color,
                 )
 
             ax.set_xlabel(r"$\log\ M_{\mathrm{vir}}\ (M_{\odot})$")
@@ -1159,11 +1092,11 @@ def plot_reservoirs(
             ax.xaxis.set_minor_locator(plt.MultipleLocator(0.25))
             ax.yaxis.set_minor_locator(plt.MultipleLocator(0.25))
 
-            adjust_legend(ax, location="upper left", scatter_plot=1)
+            plot_helper.adjust_legend(ax, location="upper left", scatter_plot=1)
 
             fig.tight_layout()
 
-            output_file = f"{plot_output_path}12.MassReservoirs_{label}_snapshot{snapshot}.{plot_output_format}"
+            output_file = f"{plot_helper.output_path}12.MassReservoirs_{label}_snapshot{snapshot}.{plot_helper.output_format}"
             fig.savefig(output_file)
             print(f"Saved file to {output_file}")
             plt.close()
@@ -1176,8 +1109,7 @@ def plot_reservoirs(
 def plot_spatial(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png"
+    plot_helper: PlotHelper,
 ) -> matplotlib.figure.Figure:
     """
     Plots the spatial distribution of the galaxies for specified models.
@@ -1194,20 +1126,19 @@ def plot_spatial(
         The length of the outer list **MUST** be equal to the length of ``models``. For each model, the spatial
         position of all snapshots are plotted on the figure.
 
-    plot_output_path : string
-        Path to where the plot will be saved.
-
-    plot_output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     Generates
     ---------
 
-    A plot will be saved as ``"<plot_output_path>13.SpatialDistribution<model.label>.<plot_output_format>"`` for each
+    A plot will be saved as ``"<output_path>13.SpatialDistribution<model.label>.<output_format>"`` for each
     model.
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
 
     # 4-panel plot.
     ax1 = fig.add_subplot(221)
@@ -1219,11 +1150,11 @@ def plot_spatial(
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
         # Colour will be used for the snapshot, marker style for the model.
-        marker = markers[model_num]
+        marker = plot_helper.markers[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = colors[snapshot_num]
+            color = plot_helper.colors[snapshot_num]
 
             ax1.scatter(
                 model.properties[f"snapshot_{snapshot}"]["x_pos"],
@@ -1283,12 +1214,12 @@ def plot_spatial(
         ax.xaxis.set_minor_locator(plt.MultipleLocator(5))
         ax.yaxis.set_minor_locator(plt.MultipleLocator(5))
 
-    adjust_legend(ax4, location="upper left", scatter_plot=1)
+    plot_helper.adjust_legend(ax4, location="upper left", scatter_plot=1)
 
     # Make sure everything remains nicely layed out.
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}13.SpatialDistribution.{plot_output_format}"
+    output_file = f"{plot_helper.output_path}13.SpatialDistribution.{plot_helper.output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -1351,8 +1282,8 @@ def plot_spatial_3d(pos, output_file, box_size) -> matplotlib.figure.Figure:
 def plot_SMF_history(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format="png"
+    output_path: str,
+    output_format="png"
 ) -> matplotlib.figure.Figure:
     """
     Plots the evolution of the stellar mass function for the specified models.
@@ -1368,16 +1299,16 @@ def plot_SMF_history(
     snapshots : nested list of ints
         This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
-    plot_output_path : string
+    output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default "png"
+    output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
     ---------
 
-    The plot will be saved as "<plot_output_path>A.StellarMassFunction.<plot_output_format>"
+    The plot will be saved as "<output_path>A.StellarMassFunction.<output_format>"
     """
 
     fig = plt.figure()
@@ -1422,11 +1353,11 @@ def plot_SMF_history(
 
     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.1))
 
-    adjust_legend(ax, location="lower left", scatter_plot=0)
+    plot_helper.adjust_legend(ax, location="lower left", scatter_plot=0)
 
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}A.StellarMassFunction.{plot_output_format}"
+    output_file = f"{output_path}A.StellarMassFunction.{output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -1437,8 +1368,8 @@ def plot_SMF_history(
 def plot_SFRD_history(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png"
+    output_path: str,
+    output_format: str = "png"
 ) -> matplotlib.figure.Figure:
     """
     Plots the evolution of star formation rate density for the specified models.
@@ -1452,19 +1383,19 @@ def plot_SFRD_history(
     snapshots : nested list of ints
         This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
-    plot_output_path : string
+    output_path : string
         Path to where the plot will be saved.
 
     snapshot : int
         This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
-    plot_output_format : string, default "png"
+    output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
     ---------
 
-    The plot will be saved as "<plot_output_path>B.SFRDensity.<plot_output_format>"
+    The plot will be saved as "<output_path>B.SFRDensity.<output_format>"
     """
 
     fig = plt.figure()
@@ -1515,11 +1446,11 @@ def plot_SFRD_history(
     ax.xaxis.set_minor_locator(plt.MultipleLocator(1))
     ax.yaxis.set_minor_locator(plt.MultipleLocator(0.5))
 
-    adjust_legend(ax, location="lower left", scatter_plot=0)
+    plot_helper.adjust_legend(ax, location="lower left", scatter_plot=0)
 
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}/B.SFRDensity.{plot_output_format}"
+    output_file = f"{output_path}/B.SFRDensity.{output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()
@@ -1530,8 +1461,8 @@ def plot_SFRD_history(
 def plot_SMD_history(
     models: List[Model],
     snapshots: List[List[int]],
-    plot_output_path: str,
-    plot_output_format: str = "png"
+    output_path: str,
+    output_format: str = "png"
 ) -> matplotlib.figure.Figure:
     """
     Plots the evolution of stellar mass density for the specified models.
@@ -1545,16 +1476,16 @@ def plot_SMD_history(
     snapshots : nested list of ints
         This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
-    plot_output_path : string
+    output_path : string
         Path to where the plot will be saved.
 
-    plot_output_format : string, default "png"
+    output_format : string, default "png"
         Format the plot will be saved in, includes the full stop.
 
     Generates
     ---------
 
-    The plot will be saved as "<plot_output_path>C.StellarMassDensity.<plot_output_format>"
+    The plot will be saved as "<output_path>C.StellarMassDensity.<output_format>"
     """
 
     fig = plt.figure()
@@ -1608,11 +1539,11 @@ def plot_SMD_history(
     ax.xaxis.set_minor_locator(plt.MultipleLocator(1))
     ax.yaxis.set_minor_locator(plt.MultipleLocator(0.5))
 
-    adjust_legend(ax, location="lower left", scatter_plot=0)
+    plot_helper.adjust_legend(ax, location="lower left", scatter_plot=0)
 
     fig.tight_layout()
 
-    output_file = f"{plot_output_path}C.StellarMassDensity.{plot_output_format}"
+    output_file = f"{output_path}C.StellarMassDensity.{output_format}"
     fig.savefig(output_file)
     print("Saved file to {0}".format(output_file))
     plt.close()

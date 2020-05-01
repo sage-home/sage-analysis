@@ -31,12 +31,14 @@ sum of stellar mass divided by the volume at snapshot 63 in file 0 is added to
 ``model.properties["snapshot_63"]["SMD_history"]``.  The stellar mass density at snapshot 63 in file 1 is then added,
 and so on.
 
-Worked Example
---------------
+Worked Examples
+---------------
 
-Here we compute the number of particles in the background FoF halo (as a binned property), the mass of hot gas as a
-function of cold gas (as a scatter property), and the time of last major merger (as a single property) tracked over
-redshift.
+We show here how to compute the number of particles in the background FoF halo (as a binned property), the mass of hot
+gas as a function of cold gas (as a scatter property), and the time of last major merger (as a single property) tracked
+over redshift.
+
+Number of Particles
 
 Plot Toggles
 ~~~~~~~~~~~~

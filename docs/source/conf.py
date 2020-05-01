@@ -50,8 +50,10 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'h5py': ('https://h5py.readthedocs.io/en/stable', None)}
 
 # Autodoc configuration
-autodoc_default_options = {'members': None,
-                           'private-members': None}
+autodoc_default_options = {
+    'members': None,
+    "special-members": "__init__",
+}
 autodoc_member_order = 'groupwise'
 autodoc_inherit_docstrings = False
 

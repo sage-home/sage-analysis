@@ -19,12 +19,14 @@ from sage_analysis.default_analysis_arguments import (
 from sage_analysis.utils import generate_func_dict
 from sage_analysis.galaxy_analysis import GalaxyAnalysis
 from sage_analysis.model import Model
+from sage_analysis.plot_helper import PlotHelper
 
 logger = logging.getLogger(__name__)
 
 test_path = Path(__file__).parent
 baseline_image_path = f"{test_path}/test_data/baseline_plots/"
 generated_image_path = f"{test_path}/test_data/generated_plots/"
+plot_helper = PlotHelper(output_path=generated_image_path)
 
 
 def calc_num_particles_in_halo(model: Model, gals, snapshot: int):
@@ -80,9 +82,9 @@ def test_sage_output_format(sage_output_formats):
     )
 
     galaxy_analysis.analyze_galaxies()
-    galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
+    galaxy_analysis.generate_plots(plot_helper=plot_helper)
 
-    my_compare_images(baseline_image_path, generated_image_path, True)
+    my_compare_images(baseline_image_path, generated_image_path, False)
 
 
 def test_binary_sage_num_output_file_error():
@@ -224,7 +226,7 @@ def test_defaults(caplog):
     galaxy_analysis._models[0]._label = "Mini-Millennium"
 
     generated_image_path = "test_data/generated_plots/"
-    galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
+    galaxy_analysis.generate_plots(plot_helper=plot_helper)
 
     my_compare_images(baseline_image_path, generated_image_path)
 
@@ -279,7 +281,7 @@ def test_additional_property(caplog):
     galaxy_analysis.analyze_galaxies()
     assert f"Initialized galaxy properties {galaxy_properties_to_analyze['stellar_mass_bins']} for Snapshot 63" in caplog.text
     assert f"Initialized galaxy properties {galaxy_properties_to_analyze['halo_len_bins']} for Snapshot 63" in caplog.text
-    galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
+    galaxy_analysis.generate_plots(plot_helper=plot_helper)
     assert "Passed through ``plot_num_particles_in_halo``." in caplog.text
     os.remove(f"{generated_image_path}/1.StellarMassFunction.png")
 
@@ -331,7 +333,7 @@ def test_random_combinations(plot_toggles: Dict[str, bool]) -> None:
     )
 
     galaxy_analysis.analyze_galaxies()
-    figs = galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
+    figs = galaxy_analysis.generate_plots(plot_helper=plot_helper)
 
     # When ``plot_toggles = {}``, no figures are generated. This is still a valid scenario to test however there isn't
     # anything we want to be comparing.
@@ -362,7 +364,7 @@ def test_multiple_snapshots():
     snapshots = [[63, 37, 32]]
     galaxy_analysis.analyze_galaxies(snapshots=snapshots)
 
-    # galaxy_analysis.generate_plots(plot_output_path=generated_image_path, snapshots=snapshots)
+    # galaxy_analysis.generate_plots(plot_helper=plot_helper, snapshots=snapshots)
 
     # Check these plots to ensure they're all good.
 
@@ -399,7 +401,7 @@ def test_keyword_arguments():
     )
 
     galaxy_analysis.analyze_galaxies()
-    # galaxy_analysis.generate_plots(plot_output_path=generated_image_path)
+    # galaxy_analysis.generate_plots(plot_helper=plot_helper)
 
 
 def test_both_snapshots_and_redshift():
@@ -445,7 +447,7 @@ def test_highest_snapshot():
     snapshots = [[63]]
     galaxy_analysis.analyze_galaxies(snapshots=snapshots)
 
-    galaxy_analysis.generate_plots(plot_output_path=generated_image_path, snapshots=snapshots)
+    galaxy_analysis.generate_plots(plot_helper=plot_helper, snapshots=snapshots)
 
     my_compare_images(baseline_image_path, generated_image_path)
 
@@ -472,6 +474,6 @@ def test_redshift_zero():
     redshifts = [[0.0]]
     galaxy_analysis.analyze_galaxies(redshifts=redshifts)
 
-    galaxy_analysis.generate_plots(plot_output_path=generated_image_path, redshifts=redshifts)
+    galaxy_analysis.generate_plots(plot_helper=plot_helper, redshifts=redshifts)
 
     my_compare_images(baseline_image_path, generated_image_path)

@@ -1,6 +1,5 @@
 sage_analysis.GalaxyAnalysis
 ============================
 
-.. automodule:: sage_analysis.galaxy_analysis
+.. autoclass:: sage_analysis.GalaxyAnalysis
     :members:
-    :special-members:

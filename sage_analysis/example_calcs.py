@@ -374,7 +374,6 @@ def calc_baryon_fraction(model, gals, snapshot: int):
 
     Notes
     -----
-
     The halo virial mass we use is the **background FoF halo**, not the immediate host halo of each galaxy.
 
     We only **sum** the baryon mass in each stellar mass bin.  When converting this to the mass fraction, one must
@@ -415,10 +414,12 @@ def calc_baryon_fraction(model, gals, snapshot: int):
     for (component_key, attr_name) in zip(components, attrs_different_name):
 
         # The bins are defined in log. However the other properties are all in 1.0e10 Msun/h.
-        fraction_sum, _, _ = stats.binned_statistic(fof_halo_mass_log,
-                                                    gals[component_key][:][non_zero_mvir] / fof_halo_mass,
-                                                    statistic=np.sum,
-                                                    bins=model.bins["halo_mass_bins"])
+        fraction_sum, _, _ = stats.binned_statistic(
+            fof_halo_mass_log,
+            gals[component_key][:][non_zero_mvir] / fof_halo_mass,
+            statistic=np.sum,
+            bins=model.bins["halo_mass_bins"]
+        )
 
         dict_key = "halo_{0}_fraction_sum".format(attr_name)
         model.properties[f"snapshot_{snapshot}"][dict_key] += fraction_sum

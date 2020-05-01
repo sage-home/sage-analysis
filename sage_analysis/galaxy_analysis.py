@@ -27,6 +27,7 @@ from sage_analysis.default_analysis_arguments import (
     default_plot_toggles
 )
 from sage_analysis.model import Model
+from sage_analysis.plot_helper import PlotHelper
 from sage_analysis.sage_binary import SageBinaryData
 from sage_analysis.utils import generate_func_dict, read_generic_sage_params, find_closest_indices
 
@@ -841,8 +842,7 @@ class GalaxyAnalysis:
         self,
         snapshots: Optional[List[List[Union[int, str]]]] = None,
         redshifts: Optional[List[List[Union[float, str]]]] = None,
-        plot_output_format: str = "png",
-        plot_output_path: str = "./plots/",
+        plot_helper: Optional[PlotHelper] = None,
     ) -> Optional[List[matplotlib.figure.Figure]]:
         """
         Generates the plots for the :py:attr:`~models` being analyzed. The plots to be created are defined by the
@@ -892,11 +892,14 @@ class GalaxyAnalysis:
             --------
             Only **ONE** of ``snapshots`` and ``redshifts`` can be specified.
 
-        plot_output_format : string, optional
-            The format of the saved plots.
+        plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`, optional
+            A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+            the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+            how to initialize this class and its use.
 
-        plot_output_path : string, optional
-            The path where the plots will be saved. If the base directory does not exist, it will be created.
+            If not specified, then will initialize a default instance of
+            :py:class:`~sage_analysis.plot_helper.PlotHelper`. Refer to the
+            :py:class:`~sage_analysis.plot_helper.PlotHelper` documentation for a list of default attributes.
 
         Returns
         -------
@@ -911,9 +914,8 @@ class GalaxyAnalysis:
             logger.debug(f"No plot toggles specified.")
             return None
 
-        # Check to see if the directory exists. If ``plot_output_path`` is "directory/tag" then we create "directory/".
-        if not os.path.exists(os.path.dirname(plot_output_path)):
-            os.makedirs(os.path.dirname(plot_output_path))
+        if plot_helper is None:
+            plot_helper = PlotHelper()
 
         snapshots = self._determine_snapshots_to_use(snapshots, redshifts)
 
@@ -924,8 +926,7 @@ class GalaxyAnalysis:
             fig = func(
                     self._models,
                     snapshots,
-                    plot_output_path,
-                    plot_output_format,
+                    plot_helper,
                     **kwargs
                 )
 
