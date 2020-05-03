@@ -345,20 +345,20 @@ def plot_BTF(
     # Go through each of the models and plot.
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
-        # Colour will be used for the snapshot, marker style for the model.
-        marker = plot_helper.markers[model_num]
+        # Colour will be used for the model, marker style for the snapshot.
+        color = plot_helper.colors[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = plot_helper.colors[snapshot_num]
+            marker = plot_helper.markers[snapshot_num]
 
             ax.scatter(
                 model.properties[f"snapshot_{snapshot}"]["BTF_vel"],
                 model.properties[f"snapshot_{snapshot}"]["BTF_mass"],
                 marker=marker,
-                s=1,
+                s=5,
                 color=color,
-                alpha=0.5,
+                alpha=0.8,
                 label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Sb/c galaxies",
             )
 
@@ -422,20 +422,20 @@ def plot_sSFR(
     # Go through each of the models and plot.
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
-        # Colour will be used for the snapshot, marker style for the model.
-        marker = plot_helper.markers[model_num]
+        # Colour will be used for the model, marker style for the snapshot.
+        color = plot_helper.colors[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = plot_helper.colors[snapshot_num]
+            marker = plot_helper.markers[snapshot_num]
 
             ax.scatter(
                 model.properties[f"snapshot_{snapshot}"]["sSFR_mass"],
                 model.properties[f"snapshot_{snapshot}"]["sSFR_sSFR"],
                 marker=marker,
-                s=1,
+                s=5,
                 color=color,
-                alpha=0.5,
+                alpha=0.8,
                 label=f"{label} - z = {model._redshifts[snapshot]:.2f}",
             )
 
@@ -502,18 +502,18 @@ def plot_gas_fraction(
     # Go through each of the models and plot.
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
-        # Colour will be used for the snapshot, marker style for the model.
-        marker = plot_helper.markers[model_num]
+        # Colour will be used for the model, marker style for the snapshot.
+        color = plot_helper.colors[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = plot_helper.colors[snapshot_num]
+            marker = plot_helper.markers[snapshot_num]
 
             ax.scatter(
                 model.properties[f"snapshot_{snapshot}"]["gas_frac_mass"],
                 model.properties[f"snapshot_{snapshot}"]["gas_frac"],
                 marker=marker,
-                s=1,
+                s=20,
                 color=color,
                 alpha=0.5,
                 label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Sb/c galaxies",
@@ -576,20 +576,20 @@ def plot_metallicity(
     # Go through each of the models and plot.
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
-        # Colour will be used for the snapshot, marker style for the model.
-        marker = plot_helper.markers[model_num]
+        # Colour will be used for the model, marker style for the snapshot.
+        color = plot_helper.colors[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = plot_helper.colors[snapshot_num]
+            marker = plot_helper.markers[snapshot_num]
 
             ax.scatter(
                 model.properties[f"snapshot_{snapshot}"]["metallicity_mass"],
                 model.properties[f"snapshot_{snapshot}"]["metallicity"],
                 marker=marker,
-                s=1,
+                s=5,
                 color=color,
-                alpha=0.5,
+                alpha=0.8,
                 label=f"{label} - z = {model._redshifts[snapshot]:.2f}",
             )
 
@@ -655,20 +655,20 @@ def plot_bh_bulge(
     # Go through each of the models and plot.
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
-        # Colour will be used for the snapshot, marker style for the model.
-        marker = plot_helper.markers[model_num]
+        # Colour will be used for the model, marker style for the snapshot.
+        color = plot_helper.colors[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = plot_helper.colors[snapshot_num]
+            marker = plot_helper.markers[snapshot_num]
 
             ax.scatter(
                 model.properties[f"snapshot_{snapshot}"]["bulge_mass"],
                 model.properties[f"snapshot_{snapshot}"]["bh_mass"],
                 marker=marker,
-                s=1,
+                s=5,
                 color=color,
-                alpha=0.5,
+                alpha=0.8,
                 label=f"{label} - z = {model._redshifts[snapshot]:.2f}",
             )
 
@@ -747,10 +747,12 @@ def plot_quiescent(
         for snapshot_num, snapshot in enumerate(model_snapshots):
             color = plot_helper.colors[snapshot_num]
 
-            quiescent_fraction = model.properties[f"snapshot_{snapshot}"]["quiescent_galaxy_counts"] / \
-                model.properties[f"snapshot_{snapshot}"]["SMF"]
+            non_zero_SMF = np.where(model.properties[f"snapshot_{snapshot}"]["SMF"] > 0)
+            quiescent_fraction = model.properties[f"snapshot_{snapshot}"]["quiescent_galaxy_counts"][non_zero_SMF] / \
+                model.properties[f"snapshot_{snapshot}"]["SMF"][non_zero_SMF]
+
             ax.plot(
-                bin_middles,
+                bin_middles[non_zero_SMF],
                 quiescent_fraction,
                 color=color,
                 ls=ls,
@@ -759,19 +761,26 @@ def plot_quiescent(
 
             # Be careful to not overcrowd the plot.
             if plot_sub_populations:
-                quiescent_central_fraction = model.properties[f"snapshot_{snapshot}"]["quiescent_centrals_counts"] / \
-                    model.properties[f"snapshot_{snapshot}"]["centrals_MF"]
+
+                non_zero_MF = np.where(model.properties[f"snapshot_{snapshot}"]["centrals_MF"])[0]
+                quiescent_central_fraction = \
+                    model.properties[f"snapshot_{snapshot}"]["quiescent_centrals_counts"][non_zero_MF] / \
+                    model.properties[f"snapshot_{snapshot}"]["centrals_MF"][non_zero_MF]
+
                 ax.plot(
-                    bin_middles,
+                    bin_middles[non_zero_MF],
                     quiescent_central_fraction,
                     color=color,
                     linestyle="--",
                 )
 
-                quiescent_sat_fraction = model.properties[f"snapshot_{snapshot}"]["quiescent_satellites_counts"] / \
-                    model.properties[f"snapshot_{snapshot}"]["satellites_MF"]
+                non_zero_MF = np.where(model.properties[f"snapshot_{snapshot}"]["satellites_MF"])[0]
+                quiescent_sat_fraction = \
+                    model.properties[f"snapshot_{snapshot}"]["quiescent_satellites_counts"][non_zero_MF] / \
+                    model.properties[f"snapshot_{snapshot}"]["satellites_MF"][non_zero_MF]
+
                 ax.plot(
-                    bin_middles,
+                    bin_middles[non_zero_MF],
                     quiescent_sat_fraction,
                     color=color,
                     linestyle="-.",
@@ -857,17 +866,18 @@ def plot_bulge_fraction(
             color = plot_helper.colors[snapshot_num]
 
             # Remember we need to average the properties in each bin.
-            bulge_mean = model.properties[f"snapshot_{snapshot}"]["fraction_bulge_sum"] / \
-                model.properties[f"snapshot_{snapshot}"]["SMF"]
-            disk_mean = model.properties[f"snapshot_{snapshot}"]["fraction_disk_sum"] / \
-                model.properties[f"snapshot_{snapshot}"]["SMF"]
+            non_zero_SMF = np.where(model.properties[f"snapshot_{snapshot}"]["SMF"] > 0)
+            bulge_mean = model.properties[f"snapshot_{snapshot}"]["fraction_bulge_sum"][non_zero_SMF] / \
+                model.properties[f"snapshot_{snapshot}"]["SMF"][non_zero_SMF]
+            disk_mean = model.properties[f"snapshot_{snapshot}"]["fraction_disk_sum"][non_zero_SMF] / \
+                model.properties[f"snapshot_{snapshot}"]["SMF"][non_zero_SMF]
 
             # The variance has already been weighted when we calculated it.
-            bulge_var = model.properties[f"snapshot_{snapshot}"]["fraction_bulge_var"]
-            disk_var = model.properties[f"snapshot_{snapshot}"]["fraction_disk_var"]
+            bulge_var = model.properties[f"snapshot_{snapshot}"]["fraction_bulge_var"][non_zero_SMF]
+            disk_var = model.properties[f"snapshot_{snapshot}"]["fraction_disk_var"][non_zero_SMF]
 
             ax.plot(
-                bin_middles,
+                bin_middles[non_zero_SMF],
                 bulge_mean,
                 color=color,
                 ls=ls,
@@ -975,11 +985,12 @@ def plot_baryon_fraction(
             color = plot_helper.colors[snapshot_num]
 
             # Remember we need to average the properties in each bin.
-            baryon_mean = model.properties[f"snapshot_{snapshot}"]["halo_baryon_fraction_sum"] / \
-                model.properties[f"snapshot_{snapshot}"]["fof_HMF"]
+            non_zero_HMF = np.where(model.properties[f"snapshot_{snapshot}"]["fof_HMF"] > 0)
+            baryon_mean = model.properties[f"snapshot_{snapshot}"]["halo_baryon_fraction_sum"][non_zero_HMF] / \
+                model.properties[f"snapshot_{snapshot}"]["fof_HMF"][non_zero_HMF]
 
             ax.plot(
-                bin_middles,
+                bin_middles[non_zero_HMF],
                 baryon_mean,
                 label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Total",
                 color=color,
@@ -993,11 +1004,12 @@ def plot_baryon_fraction(
 
                 for (attr, res_label, res_color) in zip(attrs, res_labels, res_colors):
                     dict_key = "halo_{0}_fraction_sum".format(attr)
-                    mean = model.properties[f"snapshot_{snapshot}"][dict_key] / \
-                        model.properties[f"snapshot_{snapshot}"]["fof_HMF"]
+
+                    mean = model.properties[f"snapshot_{snapshot}"][dict_key][non_zero_HMF] / \
+                        model.properties[f"snapshot_{snapshot}"]["fof_HMF"][non_zero_HMF]
 
                     ax.plot(
-                        bin_middles,
+                        bin_middles[non_zero_HMF],
                         mean,
                         label=f"{label} - z = {model._redshifts[snapshot]:.2f} - {res_label}",
                         color=res_color,
@@ -1074,6 +1086,7 @@ def plot_reservoirs(
             for (attribute_name, res_label, res_color) in zip(attribute_names, res_labels, res_colors):
 
                 dict_key = f"reservoir_{attribute_name}"
+                print(f"{dict_key = }\t Num Gals {len(model.properties[f'snapshot_{snapshot}'][dict_key])}")
                 ax.scatter(
                     model.properties[f"snapshot_{snapshot}"]["reservoir_mvir"],
                     model.properties[f"snapshot_{snapshot}"][dict_key],
@@ -1149,12 +1162,12 @@ def plot_spatial(
     # Go through each of the models and plot.
     for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
 
-        # Colour will be used for the snapshot, marker style for the model.
-        marker = plot_helper.markers[model_num]
+        # Colour will be used for the model, marker style for the snapshot.
+        color = plot_helper.colors[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = plot_helper.colors[snapshot_num]
+            marker = plot_helper.markers[snapshot_num]
 
             ax1.scatter(
                 model.properties[f"snapshot_{snapshot}"]["x_pos"],

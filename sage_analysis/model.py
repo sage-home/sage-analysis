@@ -97,6 +97,7 @@ class Model(object):
         self._sample_size = sample_size
         self._sSFRcut = sSFRcut
 
+        self._num_files_analyzed = 0
         self._bins = {}
         self._properties = defaultdict(dict)
 
@@ -549,6 +550,7 @@ class Model(object):
                 continue
 
             self.calc_properties(calculation_functions, gals, snapshot)
+            self._num_files_analyzed += 1
 
         # Some data formats (e.g., HDF5) have a single file we read from.
         if close_file:
@@ -595,3 +597,54 @@ class Model(object):
 
             # **kwargs unpacks the `kwargs` dictionary, passing each keyword properly to the function.
             func(self, gals, snapshot, **kwargs)
+
+    def select_random_galaxy_indices(self, inds: np.ndarray, num_inds_selected_already: int) -> np.ndarray:
+        """
+        Selects random indices (representing galaxies) from ``inds``.  This method assumes that the total number of
+        galaxies selected across all **SAGE** files analyzed is :py:attr:`~sample_size` and that (preferably) these
+        galaxies should be selected **equally** amongst all files analyzed.
+
+        For example, if we are analyzing 8 **SAGE** output files and wish to select 10,000 galaxies, this function
+        would hence select 1,250 indices from ``inds``.
+
+        If the length of ``inds`` is less than the number of requested values (e.g., ``inds`` only contains 1,000
+        values), then the next file analyzed will attempt to select 1,500 random galaxies (1,250 base plus an addition
+        250 as the previous file could not find enough galaxies).
+
+        At the end of the analysis, if there have not been enough galaxies selected, then a message is sent to the
+        user.
+        """
+
+        if self._random_seed is not None:
+            np.random.seed(self._random_seed)
+
+        # Firstly, how many indices should ideally be drawn from each file?
+        num_inds_per_file = self._sample_size / (self._last_file_to_analyze - self._first_file_to_analyze + 1)
+
+        # Based on the number of files that have been analyzed so far, how far are we off our target?
+        target_num_inds_so_far = self._num_files_analyzed * num_inds_per_file
+        num_inds_defecit = target_num_inds_so_far - num_inds_selected_already
+
+        logger.info(
+            f"Thus far, analyzed {self._num_files_analyzed} files and selected {num_inds_selected_already} random "
+            f"galaxies.\nBy now, {target_num_inds_so_far} galaxies should have been selected, introducing a deficit "
+            f"of {num_inds_defecit} galaxies."
+        )
+
+        # The number of indices that we need to select is hence the baseline plus any defecit we have missed.
+        num_inds_this_file = num_inds_per_file + num_inds_defecit
+
+        selected_inds = np.random.choice(inds, size=int(num_inds_this_file))
+
+        # If this is the last file to analyze and we still haven't selected enough galaxies, print a message.
+        if self._num_files_analyzed == (self._last_file_to_analyze - self._first_file_to_analyze):
+            if num_inds_this_file < len(selected_inds):
+                msg =  f"When attempting to select {self._sample_size} random galaxies, only " \
+                    f"{num_inds_selected_already + len(selected_inds)} could be selected (missing " \
+                    f"{num_inds_this_file - len(selected_inds)}.\nEither apply less stringent cuts on your galaxy " \
+                    f"sample or reduce ``sample_size``."
+
+                print(msg)
+                logger.info(msg)
+
+        return selected_inds

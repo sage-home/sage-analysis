@@ -2,6 +2,7 @@ from typing import List, Optional, Tuple
 import os
 
 import matplotlib
+import matplotlib.pyplot as plt
 
 class PlotHelper():
     """
@@ -14,7 +15,7 @@ class PlotHelper():
         markers: Optional[List[str]] = None,
         linestyles: Optional[List[str]] = None,
         output_format: str = "png",
-        output_path: str = "./plots",
+        output_path: str = "./plots/",
         figsize: List[float] = None,
     ) -> None:
         """
@@ -34,19 +35,27 @@ class PlotHelper():
         self._markers = markers
 
         if linestyles is None:
-            linestyles = ["--", "-.", "."]
+            linestyles = ["-", "--", "-.", "."]
         self._linestyles = linestyles
 
         self._output_format = output_format
         self._output_path = output_path
 
         if figsize is None:
-            figsize = [12.0, 12.0]
+            figsize = [10.0, 10.0]
         self._figsize = figsize
 
         # Check to see if the directory exists. If ``output_path`` is "directory/tag" then we create "directory/".
         if not os.path.exists(os.path.dirname(output_path)):
             os.makedirs(os.path.dirname(output_path))
+
+        matplotlib.rcdefaults()
+        plt.rc("font", size=20)
+        plt.rc("xtick", labelsize=16, direction="in")
+        plt.rc("ytick", labelsize=16, direction="in")
+        plt.rc("lines", linewidth=2.0)
+        plt.rc("legend", numpoints=1, fontsize="x-large")
+
 
     @property
     def colors(self) -> List[str]:
@@ -89,18 +98,6 @@ class PlotHelper():
         str(float, float) : the size of the figures that are created.
         """
         return self._figsize
-
-    def setup_matplotlib_options(self):
-        """
-        Set the default plotting parameters.
-        """
-
-        matplotlib.rcdefaults()
-        plt.rc('xtick', labelsize='x-large')
-        plt.rc('ytick', labelsize='x-large')
-        plt.rc('lines', linewidth='2.0')
-        plt.rc('legend', numpoints=1, fontsize='x-large')
-
 
     def adjust_legend(self, ax, location="upper right", scatter_plot=0):
         """

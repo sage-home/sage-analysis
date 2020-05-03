@@ -185,7 +185,7 @@ def test_multiple_models() -> None:
     # To ensure we have visual difference between the stellar mass function, let's add some offset to one model and
     # then plot the output.
     galaxy_analysis._models[0].properties["snapshot_63"]["SMF"] *= 1.5
-    # galaxy_analysis.generate_plots()
+    galaxy_analysis.generate_plots()
 
     # Save these and test equality.
 # Test to ensure that wrong number of parameters yield error.

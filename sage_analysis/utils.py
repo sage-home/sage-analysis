@@ -104,7 +104,13 @@ def select_random_indices(
     seed: Optional[int] = None,
 ) -> np.ndarray:
     """
-    Flag this with Manodeep to exactly use a descriptive docstring.
+    Select a random subset of indices if the total number of indices (across all files) is known.  This function is
+    used if selecting (e.g.,) 100 galaxies from a sample of 10,000.
+
+    However, if the total number of indices is **NOT** known, then this function is not valid.  For example, if one
+    wanted to select 100 spiral galaxies, we may not know how many spiral galaxies are present across all files. In
+    such scenarios,
+    :py:meth:`~sage_analysis.model.Model.select_random_indices_assumed_equal_distribution` should be used.
 
     Parameters
     ----------

@@ -98,9 +98,6 @@ def plot_smf_data(ax, hubble_h, imf):
                     facecolor='purple', alpha=0.25,
                     label='Baldry et al. 2008 (z=0.1)')
 
-    # This next line is just to get the shaded region to appear correctly in the legend.
-    ax.plot(np.nan, np.nan, label='Baldry et al. 2008', color='purple', alpha=0.3)
-
     return ax
 
 
