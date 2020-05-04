@@ -1086,7 +1086,6 @@ def plot_reservoirs(
             for (attribute_name, res_label, res_color) in zip(attribute_names, res_labels, res_colors):
 
                 dict_key = f"reservoir_{attribute_name}"
-                print(f"{dict_key = }\t Num Gals {len(model.properties[f'snapshot_{snapshot}'][dict_key])}")
                 ax.scatter(
                     model.properties[f"snapshot_{snapshot}"]["reservoir_mvir"],
                     model.properties[f"snapshot_{snapshot}"][dict_key],
