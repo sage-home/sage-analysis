@@ -39,15 +39,207 @@ gas as a function of cold gas (as a scatter property), and the time of last majo
 over redshift.
 
 Number of Particles
-
-Plot Toggles
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 Firstly, we need to tell **sage_analysis** the properties that we are analyzing and plotting.
 
 .. code-block:: python
 
-   plot_toggles = {"halo_parts": True, "hot_cold": True, "major_merger_history": True}
+   plot_toggles = {"halo_parts": True}
+
+Now, lets define the properties that will be used to store all of our results. As outlined in
+:doc:`defining_custom_properties`, each property type is defined in a slightly different manner.
+
+.. code-block:: python
+
+    galaxy_properties_to_analyze = {
+        "number_particles_bins": {
+            "type": "binned",
+            "bin_low": 0,
+            "bin_high": 5,
+            "bin_width": 0.1,
+            "property_names": ["particle_mass_function"],
+        },
+
+Next, we need the function that will compute the values relevant for this property.
+
+.. code-block:: python
+
+    # Saved in ``my_calculations_functions.py``.
+    from typing import Any
+
+    import numpy as np
+
+    from sage_analysis.model import Model
+
+    def calc_halo_parts(model: Model, gals: Any, snapshot: int) -> None:
+
+        non_zero_parts = np.where(gals["Len"][:] > 0)[0]
+        halo_len = np.log10(gals["Len"][:][non_zero_parts])  # Ensure that the data is the same units as bins.
+        gals_per_bin, _ = np.histogram(halo_len, bins=model.bins["number_particles_bins"])
+
+        # Update properties to keep persistent across files.
+        model.properties[f"snapshot_{snapshot}"]["particle_mass_function"] += gals_per_bin
+
+Then, the function that will plot the results.
+
+.. code-block:: python
+
+    # Save as ``my_plot_functions.py``.
+    from typing import List
+
+    from sage_analysis.model import Model
+
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    colors = ["r", "g", "b", "c"]
+    linestyles = ["--", "-.", "."]
+    markers = ["x", "o"]
+
+
+    def plot_halo_parts(
+        models: List[Model], snapshots: List[List[int]], plot_output_path: str, plot_output_format: str = "png",
+    ) -> matplotlib.figure.Figure:
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
+        # Go through each of the models and plot.
+        for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
+
+            # Set the x-axis values to be the centre of the bins.
+            bin_widths = model.bins["number_particles_bins"][1::] - model.bins["number_particles_bins"][0:-1]
+            bin_middles = model.bins["number_particles_bins"][:-1] + bin_widths
+
+            # Colour will be used for the snapshot, linestyle for the model.
+            ls = linestyles[model_num]
+            label = model.label
+
+            for snapshot_num, snapshot in enumerate(model_snapshots):
+                color = colors[snapshot_num]
+                ax.plot(
+                    bin_middles,
+                    model.properties[f"snapshot_{snapshot}"]["particle_mass_function"],
+                    color=color,
+                    ls=ls,
+                    label=f"{label} - z = {model._redshifts[snapshot]:.2f}",
+                )
+
+        ax.set_xlabel(r"$\log_{10} Number Particles in Halo$")
+        ax.set_ylabel(r"$N$")
+
+        ax.set_yscale("log", nonposy="clip")
+        ax.legend()
+
+        fig.tight_layout()
+
+        output_file = f"{plot_output_path}particles_in_halos.{plot_output_format}"
+        fig.savefig(output_file)
+        print(f"Saved file to {output_file}")
+        plt.close()
+
+        return fig
+
+With everything defined and our functions written, we are now ready to execute **sage-analysis** itself.
+
+.. code-block:: python
+
+    from sage_analysis.galaxy_analysis import GalaxyAnalysis
+    from sage_analysis.utils import generate_func_dict
+
+    par_fnames = ["/home/Desktop/sage-model/input/millennium.ini"]
+
+    # Generate the dictionaries with our custom functions.
+    calculation_functions = generate_func_dict(plot_toggles, __name__, "calc_")
+    plot_functions = generate_func_dict(plot_toggles, __name__, "plot_")
+
+    # We're good to go now!
+    galaxy_analysis = GalaxyAnalysis(
+        par_fnames,
+        plot_toggles=plot_toggles,
+        galaxy_properties_to_analyze=galaxy_properties_to_analyze,
+        history_redshifts=history_redshifts,
+        calculation_functions=calculation_functions,
+        plot_functions=plot_functions
+    )
+
+    galaxy_analysis.analyze_galaxies()
+    galaxy_analysis.generate_plots()
+
+Mass of Hot Gas as Function of Cold Gas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    plot_toggles = {"hot_cold": True}
+    galaxy_properties_to_analyze = {
+        "hot_cold_scatter": {
+            "type": "scatter",
+            "property_names": ["hot_gas", "cold_gas"],
+        },
+    }
+
+
+    def calc_hot_cold(model: Model, gals: Any, snapshot: int) -> None:
+
+        non_zero_stellar = np.where(gals["StellarMass"][:] > 0.0)[0]
+
+        # Remember that mass is kept in units of 1.0e10 Msun/h. Convert to log10(Msun).
+        hot_gas_mass = np.log10(gals["HotGas"][:][non_zero_stellar] * 1.0e10 / model.hubble_h)
+        cold_gas_mass = np.log10(gals["ColdGas"][:][non_zero_stellar] * 1.0e10 / model.hubble_h)
+
+        # Append to properties to keep persistent across files.
+        model.properties[f"snapshot_{snapshot}"]["hot_gas"] = np.append(
+            model.properties[f"snapshot_{snapshot}"]["hot_gas"], hot_gas_mass
+        )
+
+        model.properties[f"snapshot_{snapshot}"]["cold_gas"] = np.append(
+            model.properties[f"snapshot_{snapshot}"]["cold_gas"], cold_gas_mass
+        )
+
+
+    def plot_hot_cold(
+        models: List[Model], snapshots: List[List[int]], plot_output_path: str, plot_output_format: str = "png",
+    ) -> matplotlib.figure.Figure:
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
+        # Go through each of the models and plot.
+        for model_num, (model, model_snapshots) in enumerate(zip(models, snapshots)):
+
+            # Colour will be used for the snapshot, marker style for the model.
+            marker = markers[model_num]
+            label = model.label
+
+            for snapshot_num, snapshot in enumerate(model_snapshots):
+                color = colors[snapshot_num]
+
+                ax.scatter(
+                    model.properties[f"snapshot_{snapshot}"]["cold_gas"],
+                    model.properties[f"snapshot_{snapshot}"]["hot_gas"],
+                    marker=marker,
+                    s=1,
+                    color=color,
+                    alpha=0.5,
+                    label=f"{label} - z = {model._redshifts[snapshot]:.2f}",
+                )
+
+        ax.set_xlabel(r"$\log_{10} Cold Gas Mass [M_\odot]$")
+        ax.set_ylabel(r"$\log_{10} Hot Gas Mass [M_\odot]$")
+
+        ax.legend()
+
+        fig.tight_layout()
+
+        output_file = f"{plot_output_path}hot_cold.{plot_output_format}"
+        fig.savefig(output_file)
+        print(f"Saved file to {output_file}")
+        plt.close()
+
+        return fig
 
 Defining the Properties
 ~~~~~~~~~~~~~~~~~~~~~~~

@@ -54,15 +54,20 @@ def calc_SMF(
 
     non_zero_stellar = np.where(gals["StellarMass"][:] > 0.0)[0]
 
+    if len(non_zero_stellar) == 0:
+        logger.info(f"Could not find any galaxies with non-zero stellar mass for the stellar mass function.")
+        return
+
     stellar_mass = np.log10(gals["StellarMass"][:][non_zero_stellar] * 1.0e10 / model.hubble_h)
-    sSFR = (gals["SfrDisk"][:][non_zero_stellar] + gals["SfrBulge"][:][non_zero_stellar]) / \
-        (gals["StellarMass"][:][non_zero_stellar] * 1.0e10 / model.hubble_h)
 
     gals_per_bin, _ = np.histogram(stellar_mass, bins=model.bins["stellar_mass_bins"])
     model.properties[f"snapshot_{snapshot}"][f"{smf_property_name}"] += gals_per_bin
 
     # We often want to plot the red and blue subpopulations. So bin them if requested.
     if calc_sub_populations:
+
+        sSFR = (gals["SfrDisk"][:][non_zero_stellar] + gals["SfrBulge"][:][non_zero_stellar]) / \
+            (gals["StellarMass"][:][non_zero_stellar] * 1.0e10 / model.hubble_h)
         red_gals = np.where(sSFR < 10.0**model._sSFRcut)[0]
         red_mass = stellar_mass[red_gals]
         counts, _ = np.histogram(red_mass, bins=model.bins["stellar_mass_bins"])
@@ -123,6 +128,10 @@ def calc_BTF(model, gals, snapshot: int):
                        (gals["StellarMass"][:][w] > 0.0) & (gals["ColdGas"][:][w] > 0.0) &
                        (gals["BulgeMass"][:][w] / gals["StellarMass"][:][w] > 0.1) &
                        (gals["BulgeMass"][:][w] / gals["StellarMass"][:][w] < 0.5))[0]
+
+    if len(spirals) == 0:
+        logger.info(f"Could not find any spiral galaxies for analysis of the baryonic Tully-Fisher relationship.")
+        return
 
     # Careful here, ``spirals`` is selecting on ``w``.  We want to select on ``gals``.
     spirals = w[spirals]

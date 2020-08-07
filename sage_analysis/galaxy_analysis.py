@@ -333,8 +333,8 @@ class GalaxyAnalysis:
         ]
 
         # ``parameters`` is a matrix of parameters with each "column" specifying the parameters for a single model.
-        # Hence we want to iteratre through column-wise and use these to build the ``Model`` class instance. Here, the
-        # ``map`` function does this tranpose into a column-wise iterable.
+        # Hence we want to iterate through column-wise and use these to build the ``Model`` class instance. Here, the
+        # ``map`` function does this transpose into a column-wise iterable.
         models = [
             Model(*model_parameters, *global_model_parameters)
             for model_parameters in map(list, zip(*individual_model_parameters))

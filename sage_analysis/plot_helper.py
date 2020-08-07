@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 import os
 
 import matplotlib
@@ -17,6 +17,7 @@ class PlotHelper():
         output_format: str = "png",
         output_path: str = "./plots/",
         figsize: List[float] = None,
+        usetex: bool = False,
     ) -> None:
         """
         plot_output_format : string, optional
@@ -27,7 +28,14 @@ class PlotHelper():
         """
 
         if colors is None:
-            colors = ["r", "g", "b", "c", "m"]
+            # Colours selected from colorbrewer2.org/ to be colorblind + Black/White friendly.
+            colors = [
+                "#1b9e77",
+                "#d95f02",
+                "#7570b3",
+                "c",
+                "m",
+            ]
         self._colors = colors
 
         if markers is None:
@@ -35,7 +43,7 @@ class PlotHelper():
         self._markers = markers
 
         if linestyles is None:
-            linestyles = ["-", "--", "-.", "."]
+            linestyles = ["-", "--", "-.", ":"]
         self._linestyles = linestyles
 
         self._output_format = output_format
@@ -44,6 +52,7 @@ class PlotHelper():
         if figsize is None:
             figsize = [10.0, 10.0]
         self._figsize = figsize
+        self._usetex = usetex
 
         # Check to see if the directory exists. If ``output_path`` is "directory/tag" then we create "directory/".
         if not os.path.exists(os.path.dirname(output_path)):
@@ -54,7 +63,10 @@ class PlotHelper():
         plt.rc("xtick", labelsize=16, direction="in")
         plt.rc("ytick", labelsize=16, direction="in")
         plt.rc("lines", linewidth=2.0)
-        plt.rc("legend", numpoints=1, fontsize="x-large")
+        plt.rc("legend", numpoints=1, fontsize="x-large", handletextpad=0.1, handlelength=1.5)
+
+        if self._usetex:
+            plt.rc("text", usetex=usetex)
 
 
     @property
@@ -99,7 +111,14 @@ class PlotHelper():
         """
         return self._figsize
 
-    def adjust_legend(self, ax, location="upper right", scatter_plot=0):
+    def adjust_legend(
+        self,
+        ax,
+        location: str = "upper right",
+        scatter_plot: bool = False,
+        fontsize: int = 14,
+        linewidth: int = 2,
+    ):
         """
         Adjusts the legend of a specified axis.
 
@@ -111,7 +130,7 @@ class PlotHelper():
         location : String, default "upper right". See ``matplotlib`` docs for full options
             Location for the legend to be placed.
 
-        scatter_plot : {0, 1}
+        scatter_plot
             For plots involved scattered-plotted data, we adjust the size and alpha of the
             legend points.
 
@@ -127,7 +146,7 @@ class PlotHelper():
 
         # First adjust the text sizes.
         for t in legend.get_texts():
-            t.set_fontsize("medium")
+            t.set_fontsize(fontsize)
 
         # For scatter plots, we want to increase the marker size.
         if scatter_plot:
@@ -137,4 +156,11 @@ class PlotHelper():
                     handle.set_alpha(1.0)
                     handle.set_sizes([10.0])
 
+        for handle in handles:
+            handle.set_linewidth(linewidth)
+
+
         return ax
+
+    def update_rc_attribute(self, attribute_name: str, attribute_dict: Dict[str, Union[str, float]]) -> None:
+        matplotlib.rc(attribute_name, **attribute_dict)

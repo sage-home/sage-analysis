@@ -226,7 +226,12 @@ def read_generic_sage_params(sage_file_path: str) -> Dict[str, Any]:
     model_dict = {}
 
     model_dict["_label"] = SAGE_dict["FileNameGalaxies"]
-    model_dict["_output_format"] = SAGE_dict["OutputFormat"]
+
+    try:
+        model_dict["_output_format"] = SAGE_dict["OutputFormat"]
+    except KeyError:
+        pass
+
     model_dict["_parameter_dirpath"] = os.path.dirname(sage_file_path)
 
     # ``FileWithSnapList`` may either be an absolute or relative path (wrt to ``_parameter_dirpath``).
@@ -249,7 +254,6 @@ def read_generic_sage_params(sage_file_path: str) -> Dict[str, Any]:
     model_dict["_base_sage_output_path_relative"] = base_sage_output_path_relative
 
     model_dict["_output_dir"] = SAGE_dict['OutputDir']
-
     model_dict["_hubble_h"] = float(SAGE_dict["Hubble_h"])
     model_dict["_box_size"] = float(SAGE_dict["BoxSize"])
     model_dict["_num_sim_tree_files"] = int(SAGE_dict["NumSimulationTreeFiles"])

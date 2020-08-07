@@ -23,8 +23,8 @@ the ``./plots`` directory.
     galaxy_analysis.analyze_galaxies()
     galaxy_analysis.generate_plots()
 
-The output path can be changed by specifying ``plot_output_path`` as
-``galaxy_analysis.generate_plots(plot_output_path="<new>/<output>/<path>/")``.
+The output path can be changed by adjusting the ``plot_output_path`` variable passed to
+:py:meth:`~sage_analysis.galaxy_analysis.GalaxyAnalysis.generate_plots`.
 
 If you ran **SAGE** using ``sage-binary`` output, you will need to specify the
 :py:attr:`~sage_analysis.model.Model.first_file_to_analyze`, :py:attr:`~sage_analysis.model.Model.last_file_to_analyze`, and
@@ -53,7 +53,7 @@ the following examples. For brevity, we will omit them in the following and assu
 Analyze Only a Subset of Files
 ------------------------------
 
-For extremey large simulations, it may be prudent to analyze only a subset of files. For example, if **SAGE** run in
+For extremely large simulations, it may be prudent to analyze only a subset of files. For example, if **SAGE** run in
 parallel across 32 processors, we may only wish to analyze a quarter of these. This can be achieved by specifying the
 :py:attr:`~sage_analysis.model.Model.first_file_to_analyze` and
 :py:attr:`~sage_analysis.model.Model.last_file_to_analyze` for each model.
@@ -115,8 +115,7 @@ By adjusting these properties, or specifying a custom set, you can control which
     par_fnames = ["/home/Desktop/sage-model/input/millennium.ini"]
 
     # Plot only the stellar mass function and black hole-bulge relationship.
-    plot_toggles = {"SMF": True, "bh_bulge": True}
-    galaxy_analysis = GalaxyAnalysis(par_fnames, plot_toggles=plot_toggles)
+    galaxy_analysis = GalaxyAnalysis(par_fnames, plot_toggles={"SMF": True, "bh_bulge": True})
     galaxy_analysis.analyze_galaxies()
     galaxy_analysis.generate_plots()
 
@@ -145,9 +144,10 @@ These extra properties can be set by turning their respective entries in ``plot_
     from sage_analysis.galaxy_analysis import GalaxyAnalysis
 
     par_fnames = ["/home/Desktop/sage-model/input/millennium.ini"]
-    plot_toggles = {"SMF_history": True, "SMD_history": True, "SFRD_history": True}
 
-    galaxy_analysis = GalaxyAnalysis(par_fnames, plot_toggles=plot_toggles)
+    galaxy_analysis = GalaxyAnalysis(
+        par_fnames, plot_toggles={"SMF_history": True, "SMD_history": True, "SFRD_history": True},
+    )
     galaxy_analysis.analyze_galaxies()
     galaxy_analysis.generate_plots()
 
@@ -161,10 +161,12 @@ specific redshifts.
     from sage_analysis.galaxy_analysis import GalaxyAnalysis
 
     par_fnames = ["/home/Desktop/sage-model/input/millennium.ini"]
-    plot_toggles = {"SMF_history": True}
-    history_redshifts = {"SMF_history": [0.0, 0.5, 1.0, 2.0, 3.0]}
 
-    galaxy_analysis = GalaxyAnalysis(par_fnames, plot_toggles=plot_toggles, history_redshifts=history_redshifts)
+    galaxy_analysis = GalaxyAnalysis(
+        par_fnames,
+        plot_toggles={"SMF_history": True},
+        history_redshifts={"SMF_history": [0.0, 0.5, 1.0, 2.0, 3.0]},
+       )
     galaxy_analysis.analyze_galaxies()
     galaxy_analysis.generate_plots()
 
@@ -256,7 +258,7 @@ function at z = 1 for *Millennium* and *Bolshoi*.
 
     galaxy_analysis = GalaxyAnalysis(par_fnames, labels=labels)
 
-    redshifts = [[1.0], [1.0]]  # Specify the redshift for each model.
+    redshifts = [[1.0], [1.0]]  # Specify the redshift for each model; necessary because the snapshots are not aligned.
     galaxy_analysis.analyze_galaxies(redshifts=redshifts)
     galaxy_analysis.generate_plots(redshifts=redshifts)
 

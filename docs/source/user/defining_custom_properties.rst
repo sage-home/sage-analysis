@@ -156,27 +156,3 @@ For example, the default single properties are initialized using:
 
 The properties are accessed as ``model.properties["<propety_name>"]`` (e.g., ``model.properties["SMD_history"]`` or
 ``model.properties["SFRD_history"]``.  Each property is initialized with a value of ``0.0``.
-
-
-
-
-After calculating each
-property, they are stored in the
-:py:attr:`~sage_analysis.model.Model.properties` attribute and carried across
-files.  The pseudo-code looks like this:
-
-.. code-block:: python
-
-    for file in num_files:
-
-        compute stellar mass function for file
-        add stellar mass function to Model.properties["SMF"] array.
-
-        calculate black hole bulge relationship for file
-        extend the Model.properties["bh_mass"] and Model.properties["bulge_mass"] lists
-
-        ...complete for other properties...
-
-To calculate each of these properties, a function named ``calc_<property_name>`` is
-called; for example, :py:func:`~sage_analysis.example_calcs.calc_SMF` is called to
-compute the stellar mass function of each **SAGE** file.

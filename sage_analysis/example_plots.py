@@ -74,12 +74,12 @@ def plot_SMF(
         # The SMF is normalized by the simulation volume which is in Mpc/h.
         normalization_factor = model._volume / pow(model.hubble_h, 3) * bin_widths
 
-        # Colour will be used for the snapshot, linestyle for the model.
-        ls = plot_helper.linestyles[model_num]
+        # Colour will be used for the model, linestyle for the snapshot.
+        color = plot_helper.colors[model_num]
         label = model.label
 
         for snapshot_num, snapshot in enumerate(model_snapshots):
-            color = plot_helper.colors[snapshot_num]
+            ls = plot_helper.linestyles[snapshot_num]
 
             norm_SMF = model.properties[f"snapshot_{snapshot}"]["SMF"] / normalization_factor
             ax.plot(
