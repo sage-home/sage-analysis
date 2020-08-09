@@ -5,8 +5,8 @@ This module defines the ``SageHdf5Data`` class. This class interfaces with the
 The value of :py:attr:`~sage_analysis.model.Model.sage_output_format` is generally
 ``sage_hdf5`` if it is to be read with this class.
 
-We refer to :doc:`../user/custom_data_classes` for more information about adding your
-own Data Class to ingest data.
+If you wish to ingest data from your own flavour of SAGE, please open a Github issue, I plan to add this documentation
+in future :)
 
 Author: Jacob Seiler.
 """

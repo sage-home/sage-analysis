@@ -50,6 +50,43 @@ the following examples. For brevity, we will omit them in the following and assu
     galaxy_analysis.analyze_galaxies()
     galaxy_analysis.generate_plots()
 
+Accessing Galaxy Properties
+---------------------------
+
+Galaxy properties can be accessed via the :py:attr:`~sage_analysis.mode.Model.properties` attribute of an individual
+:py:class:`~sage_analysis.model.Model` class.  It can be useful to generate only the properties and not performing
+plotting (e.g., if you wish to use the properties for your own purpose).
+
+.. code-block:: python
+
+    from sage_analysis.galaxy_analysis import GalaxyAnalysis
+
+    par_fnames = ["/home/Desktop/sage-model/input/millennium.ini"]
+
+    galaxy_analysis = GalaxyAnalysis(par_fnames)
+    galaxy_analysis.analyze_galaxies()
+
+    print(galaxy_analysis.models)
+    print(galaxy_analysis.models[0].bins["stellar_mass_bins"])  # The stellar mass bins (log10 Msun).
+    print(galaxy_analysis.models[0].properties["snapshot_63"]["SMF"])  # The number of galaxies in each bin.
+
+    >>> [========================
+    ... Model Mini-Millennium
+    ... SAGE File:/home/Desktop/sage-model/input/millennium.ini
+    ... SAGE Output Format: sage_hdf5
+    ... First file to read: 0
+    ... Last file to read: 0
+    ... ========================]
+
+    >>> [ 8.   8.1  8.2  8.3  8.4  8.5  8.6  8.7  8.8  8.9  9.   9.1  9.2  9.3
+    ...  9.4  9.5  9.6  9.7  9.8  9.9 10.  10.1 10.2 10.3 10.4 10.5 10.6 10.7
+    ...  10.8 10.9 11.  11.1 11.2 11.3 11.4 11.5 11.6 11.7 11.8 11.9 12. ]
+
+    >>> [1148. 1328. 1456. 1698. 1836. 1824. 1778. 1576. 1313. 1091.  955.  830.
+    ...  791.  734.  656.  662.  659.  593.  550.  552.  496.  483.  475.  425.
+    ...  401.  291.  293.  248.  229.  190.  124.   71.   47.   18.    3.    0.
+    ...  0.    0.    0.    0.]
+
 Analyze Only a Subset of Files
 ------------------------------
 

@@ -30,9 +30,7 @@ class PlotHelper():
         if colors is None:
             # Colours selected from colorbrewer2.org/ to be colorblind + Black/White friendly.
             colors = [
-                "#1b9e77",
-                "#d95f02",
-                "#7570b3",
+                "r",
                 "c",
                 "m",
             ]
@@ -50,7 +48,7 @@ class PlotHelper():
         self._output_path = output_path
 
         if figsize is None:
-            figsize = [10.0, 10.0]
+            figsize = [12.0, 12.0]
         self._figsize = figsize
         self._usetex = usetex
 
