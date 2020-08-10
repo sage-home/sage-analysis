@@ -1,6 +1,19 @@
+import sys
+import logging
+import os
+from typing import Any, Callable, Dict, Optional, Tuple, List
+
 import numpy as np
 
-def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args={}):
+logger = logging.getLogger(__name__)
+
+
+def generate_func_dict(
+    plot_toggles,
+    module_name,
+    function_prefix,
+    keyword_args={}
+) -> Dict[str, Tuple[Callable, Dict[str, Any]]]:
     """
     Generates a dictionary where the keys are the function name and the value is a list
     containing the function itself (0th element) and keyword arguments as a dictionary
@@ -37,70 +50,28 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
     Returns
     -------
 
-    func_dict: dict [string, list(function, dict[string, variable])]
+    func_dict: dict [string, tuple(function, dict[string, variable])]
         The key of this dictionary is the name of the function.  The value is a list with
         the 0th element being the function and the 1st element being a dictionary of
         additional keyword arguments to be passed to the function. The inner dictionary is
         keyed by the keyword argument names with the value specifying the keyword argument
         value.
-
-    Examples
-    --------
-    >>> import sage_analysis.example_calcs
-    >>> import sage_analysis.example_plots
-    >>> plot_toggles = {"SMF": 1}
-    >>> module_name = "sage_analysis.example_calcs"
-    >>> function_prefix = "calc_"
-    >>> generate_func_dict(plot_toggles, module_name, function_prefix) #doctest: +ELLIPSIS
-    {'calc_SMF': [<function calc_SMF at 0x...>, {}]}
-    >>> module_name = "sage_analysis.example_plots"
-    >>> function_prefix = "plot_"
-    >>> generate_func_dict(plot_toggles, module_name, function_prefix) #doctest: +ELLIPSIS
-    {'plot_SMF': [<function plot_SMF at 0x...>, {}]}
-
-    >>> import sage_analysis.example_plots
-    >>> plot_toggles = {"SMF": 1}
-    >>> module_name = "sage_analysis.example_plots"
-    >>> function_prefix = "plot_"
-    >>> keyword_args = {"SMF": {"plot_sub_populations": True}}
-    >>> generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args) #doctest: +ELLIPSIS
-    {'plot_SMF': [<function plot_SMF at 0x...>, {'plot_sub_populations': True}]}
-
-    >>> import sage_analysis.example_plots
-    >>> plot_toggles = {"SMF": 1, "quiescent": 1}
-    >>> module_name = "sage_analysis.example_plots"
-    >>> function_prefix = "plot_"
-    >>> keyword_args = {"SMF": {"plot_sub_populations": True},
-    ...                 "quiescent": {"plot_output_format": "pdf", "plot_sub_populations": True}}
-    >>> generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args) #doctest: +ELLIPSIS
-    {'plot_SMF': [<function plot_SMF at 0x...>, {'plot_sub_populations': True}], \
-'plot_quiescent': [<function plot_quiescent at 0x...>, {'plot_output_format': 'pdf', \
-'plot_sub_populations': True}]}
     """
 
-    # If the functions are defined in this module, then `module_name` is empty. Need to
-    # treat this differently.
-    import sys
-    if module_name == "":
+    # Check if the specified module is present.
+    try:
+        module = sys.modules[module_name]
+    except KeyError:
+        raise KeyError(
+            f"Module ``{module_name}`` has not been imported.\nPerhaps you need to create an empty ``__init__.py`` "
+            f"file to ensure your package can be imported.\nAlso, ensure ``import {module_name}`` is at the top of "
+            f"your script, before ``generate_func_dict`` is called."
+        )
 
-        # Get the name of this module.
-        module = sys.modules[__name__]
-
-    else:
-
-        # Otherwise, check if the specified module is present.
-        try:
-            module = sys.modules[module_name]
-        except KeyError:
-            msg = "Module {0} has not been imported.\nPerhaps you need to create an empty " \
-                  "`__init__.py` file to ensure your package can be imported.".format(module_name)
-            raise KeyError(msg)
-
-    # Only populate those methods that have been marked in the `plot_toggles`
-    # dictionary.
+    # Only populate those methods that have been marked in the `plot_toggles` dictionary.
     func_dict = {}
-    for toggle in plot_toggles.keys():
-        if plot_toggles[toggle]:
+    for toggle, value in plot_toggles.items():
+        if value:
 
             func_name = "{0}{1}".format(function_prefix, toggle)
 
@@ -109,11 +80,10 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
             try:
                 func = getattr(module, func_name)
             except AttributeError:
-                msg = "Tried to get the func named '{0}' corresponding to " \
-                      "'plot_toggle' value '{1}'.  However, no func named '{0}' " \
-                      "could be found in '{2}' module.".format(func_name,
-                      toggle, module_name)
-                raise AttributeError(msg)
+                raise AttributeError(
+                    "Tried to get the func named ``{func_name}`` corresponding to ``plot_toggle`` value ``{toggle}``. "
+                    f"However, no func named ``{func_name}`` could be found in ``{module_name}`` module."
+                )
 
             # We may have specified some keyword arguments for this plot toggle. Check.
             try:
@@ -122,62 +92,48 @@ def generate_func_dict(plot_toggles, module_name, function_prefix, keyword_args=
                 # No extra arguments for this.
                 key_args = {}
 
-            func_dict[func_name] = [func, key_args]
+            func_dict[toggle] = (func, key_args)
 
     return func_dict
 
 
-def select_random_indices(inds, global_num_inds_available, global_num_inds_requested):
+def select_random_indices(
+    inds: np.ndarray,
+    global_num_inds_available: int,
+    global_num_inds_requested: int,
+    seed: Optional[int] = None,
+) -> np.ndarray:
     """
-    Flag this with Manodeep to exactly use a descriptive docstring.
+    Select a random subset of indices if the total number of indices (across all files) is known.  This function is
+    used if selecting (e.g.,) 100 galaxies from a sample of 10,000.
+
+    However, if the total number of indices is **NOT** known, then this function is not valid.  For example, if one
+    wanted to select 100 spiral galaxies, we may not know how many spiral galaxies are present across all files. In
+    such scenarios,
+    :py:meth:`~sage_analysis.model.Model.select_random_indices_assumed_equal_distribution` should be used.
 
     Parameters
     ----------
-
-    vals: :obj:`~numpy.ndarray` of values
+    vals : :obj:`~numpy.ndarray` of values
         Values that the random subset is selected from.
 
-    global_num_inds_available: int
+    global_num_inds_available : int
         The total number of indices available across all files.
 
-    global_num_inds_requested: int
+    global_num_inds_requested : int
         The total number of indices requested across all files.
+
+    seed : int, optional
+        If specified, seeds the random number generator with the specified seed.
 
     Returns
     -------
-
-    random_vals: :obj:`~numpy.ndarray` of values
+    random_inds : :obj:`~numpy.ndarray` of values
         Values chosen.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> np.random.seed(666)
-    >>> inds = np.arange(10)
-    >>> global_num_inds_available = 100
-    >>> global_num_inds_requested = 50 # Request less than the number of inds available
-    ...                                # across all files, but more than is in this file.
-    >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested) # Returns a random subset.
-    array([2, 6, 9, 4, 3])
-
-    >>> import numpy as np
-    >>> np.random.seed(666)
-    >>> inds = np.arange(30)
-    >>> global_num_inds_available = 100
-    >>> global_num_inds_requested = 10 # Request less than the number of inds available
-    ...                                # across all files, and also less than what is
-    ...                                # available in this file.
-    >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested) # Returns a random subset.
-    array([12,  2, 13])
-
-    >>> import numpy as np
-    >>> inds = np.arange(10)
-    >>> global_num_inds_available = 100
-    >>> global_num_inds_requested = 500 # Request more than the number of inds available
-    ...                                 # across all file.
-    >>> select_random_indices(inds, global_num_inds_available, global_num_inds_requested) # All input indices are returned.
-    array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     """
+
+    if seed is not None:
+        np.random.seed(seed)
 
     # First find out the fraction of value that we need to select.
     num_inds_to_choose = int(len(inds) / global_num_inds_available * global_num_inds_requested)
@@ -192,6 +148,122 @@ def select_random_indices(inds, global_num_inds_available, global_num_inds_reque
 
     return random_inds
 
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+
+def read_generic_sage_params(sage_file_path: str) -> Dict[str, Any]:
+    """
+    Reads the **SAGE** parameter file values. This function is used for the default ``sage_binary`` and ``sage_hdf5``
+    formats. If you have a custom format, you will need to write a ``read_sage_params`` function in your own data
+    class.
+
+    Parameters
+    ----------
+    sage_file_path: string
+        Path to the **SAGE** parameter file.
+
+    Returns
+    -------
+    model_dict: dict [str, var]
+        Dictionary containing the parameter names and their values.
+
+    Errors
+    ------
+    FileNotFoundError
+        Raised if the specified **SAGE** parameter file is not found.
+    """
+
+    # Fields that we will be reading from the ini file.
+    SAGE_fields = [
+        "FileNameGalaxies",
+        "OutputDir",
+        "FirstFile",
+        "LastFile",
+        "OutputFormat",
+        "NumSimulationTreeFiles",
+        "FileWithSnapList",
+        "Hubble_h",
+        "BoxSize",
+        "PartMass"
+    ]
+    SAGE_dict = {}
+
+    # Ignore lines starting with one of these.
+    comment_characters = [";", "%", "-"]
+
+    try:
+        with open(sage_file_path, "r") as SAGE_file:
+            data = SAGE_file.readlines()
+
+            # Each line in the parameter file is of the form...
+            # parameter_name       parameter_value.
+            for line in range(len(data)):
+
+                # Remove surrounding whitespace from the line.
+                stripped = data[line].strip()
+
+                # May have been an empty line.
+                try:
+                    first_char = stripped[0]
+                except IndexError:
+                    continue
+
+                # Check for comment.
+                if first_char in comment_characters:
+                    continue
+
+                # Split into [name, value] list.
+                split = stripped.split()
+
+                # Then check if the field is one we care about.
+                if split[0] in SAGE_fields:
+
+                    SAGE_dict[split[0]] = split[1]
+
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Could not find SAGE ini file {sage_file_path}")
+
+    # Now we have all the fields, rebuild the dictionary to be exactly what we need for
+    # initialising the model.
+    model_dict = {}
+
+    model_dict["_label"] = SAGE_dict["FileNameGalaxies"]
+
+    try:
+        model_dict["_output_format"] = SAGE_dict["OutputFormat"]
+    except KeyError:
+        pass
+
+    model_dict["_parameter_dirpath"] = os.path.dirname(sage_file_path)
+
+    # ``FileWithSnapList`` may either be an absolute or relative path (wrt to ``_parameter_dirpath``).
+    try:
+        fname_absolute = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['FileWithSnapList']}"
+        alist = np.loadtxt(fname_absolute)
+    except IOError:
+        fname_relative = f"{SAGE_dict['FileWithSnapList']}"
+        logger.debug(f"Could not find snapshot file {fname_absolute}. Trying as {fname_relative} instead.")
+        alist = np.loadtxt(f"{SAGE_dict['FileWithSnapList']}")
+
+    redshifts = 1.0 / alist - 1.0
+    model_dict["_redshifts"] = redshifts
+    model_dict["_snapshot"] = len(alist) - 1  # By default, plot the final snapshot.
+
+    base_sage_output_path_absolute = f"{model_dict['_parameter_dirpath']}/{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}"  # noqa: E501
+    model_dict["_base_sage_output_path_absolute"] = base_sage_output_path_absolute
+
+    base_sage_output_path_relative = f"{SAGE_dict['OutputDir']}/{SAGE_dict['FileNameGalaxies']}"  # noqa: E501
+    model_dict["_base_sage_output_path_relative"] = base_sage_output_path_relative
+
+    model_dict["_output_dir"] = SAGE_dict['OutputDir']
+    model_dict["_hubble_h"] = float(SAGE_dict["Hubble_h"])
+    model_dict["_box_size"] = float(SAGE_dict["BoxSize"])
+    model_dict["_num_sim_tree_files"] = int(SAGE_dict["NumSimulationTreeFiles"])
+
+    return model_dict
+
+def find_closest_indices(values: List[float], target_values: List[float]) -> List[int]:
+    """
+    Finds the indices in ``values`` that result in values closest to ``target_values``.
+    """
+
+    closest_indices = [(np.abs(values - target_value)).argmin() for target_value in target_values]
+    return closest_indices

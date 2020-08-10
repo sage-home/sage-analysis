@@ -98,10 +98,8 @@ def plot_smf_data(ax, hubble_h, imf):
                     facecolor='purple', alpha=0.25,
                     label='Baldry et al. 2008 (z=0.1)')
 
-    # This next line is just to get the shaded region to appear correctly in the legend.
-    ax.plot(np.nan, np.nan, label='Baldry et al. 2008', color='purple', alpha=0.3)
-
     return ax
+
 
 def plot_temporal_smf_data(ax, imf):
     """
@@ -194,9 +192,9 @@ def plot_bmf_data(ax, hubble_h, imf):
 
     # Bell et al. 2003 BMF. They assume h=1.0.
     M = np.arange(7.0, 13.0, 0.01)
-    Mstar = np.log10(5.3*1.0e10 /hubble_h/hubble_h)
+    Mstar = np.log10(5.3*1.0e10 / hubble_h / hubble_h)
     alpha = -1.21
-    phistar = 0.0108 *hubble_h*hubble_h*hubble_h
+    phistar = 0.0108 * hubble_h * hubble_h * hubble_h
     xval = 10.0 ** (M-Mstar)
     yval = np.log(10.) * phistar * xval ** (alpha+1) * np.exp(-xval)
 
@@ -215,6 +213,7 @@ def plot_bmf_data(ax, hubble_h, imf):
             label='Bell et al. 2003')
 
     return ax
+
 
 def plot_gmf_data(ax, hubble_h):
     """
@@ -238,74 +237,90 @@ def plot_gmf_data(ax, hubble_h):
     """
 
     # Baldry+ 2008 modified data used for the MCMC fitting
-    Zwaan = np.array([[6.933,   -0.333],
-        [7.057,   -0.490],
-        [7.209,   -0.698],
-        [7.365,   -0.667],
-        [7.528,   -0.823],
-        [7.647,   -0.958],
-        [7.809,   -0.917],
-        [7.971,   -0.948],
-        [8.112,   -0.927],
-        [8.263,   -0.917],
-        [8.404,   -1.062],
-        [8.566,   -1.177],
-        [8.707,   -1.177],
-        [8.853,   -1.312],
-        [9.010,   -1.344],
-        [9.161,   -1.448],
-        [9.302,   -1.604],
-        [9.448,   -1.792],
-        [9.599,   -2.021],
-        [9.740,   -2.406],
-        [9.897,   -2.615],
-        [10.053,  -3.031],
-        [10.178,  -3.677],
-        [10.335,  -4.448],
-        [10.492,  -5.083]        ], dtype=np.float32)
+    Zwaan = np.array(
+        [
+            [6.933,   -0.333],
+            [7.057,   -0.490],
+            [7.209,   -0.698],
+            [7.365,   -0.667],
+            [7.528,   -0.823],
+            [7.647,   -0.958],
+            [7.809,   -0.917],
+            [7.971,   -0.948],
+            [8.112,   -0.927],
+            [8.263,   -0.917],
+            [8.404,   -1.062],
+            [8.566,   -1.177],
+            [8.707,   -1.177],
+            [8.853,   -1.312],
+            [9.010,   -1.344],
+            [9.161,   -1.448],
+            [9.302,   -1.604],
+            [9.448,   -1.792],
+            [9.599,   -2.021],
+            [9.740,   -2.406],
+            [9.897,   -2.615],
+            [10.053,  -3.031],
+            [10.178,  -3.677],
+            [10.335,  -4.448],
+            [10.492,  -5.083],
+        ],
+        dtype=np.float32
+    )
 
-    ObrRaw = np.array([
-        [7.300,   -1.104],
-        [7.576,   -1.302],
-        [7.847,   -1.250],
-        [8.133,   -1.240],
-        [8.409,   -1.344],
-        [8.691,   -1.479],
-        [8.956,   -1.792],
-        [9.231,   -2.271],
-        [9.507,   -3.198],
-        [9.788,   -5.062 ]        ], dtype=np.float32)
+    ObrRaw = np.array(
+        [
+            [7.300,   -1.104],
+            [7.576,   -1.302],
+            [7.847,   -1.250],
+            [8.133,   -1.240],
+            [8.409,   -1.344],
+            [8.691,   -1.479],
+            [8.956,   -1.792],
+            [9.231,   -2.271],
+            [9.507,   -3.198],
+            [9.788,   -5.062],
+        ],
+        dtype=np.float32
+    )
 
-    ObrCold = np.array([
-        [8.009,   -1.042],
-        [8.215,   -1.156],
-        [8.409,   -0.990],
-        [8.604,   -1.156],
-        [8.799,   -1.208],
-        [9.020,   -1.333],
-        [9.194,   -1.385],
-        [9.404,   -1.552],
-        [9.599,   -1.677],
-        [9.788,   -1.812],
-        [9.999,   -2.312],
-        [10.172,  -2.656],
-        [10.362,  -3.500],
-        [10.551,  -3.635],
-        [10.740,  -5.010]        ], dtype=np.float32)
+    ObrCold = np.array(
+        [
+            [8.009,   -1.042],
+            [8.215,   -1.156],
+            [8.409,   -0.990],
+            [8.604,   -1.156],
+            [8.799,   -1.208],
+            [9.020,   -1.333],
+            [9.194,   -1.385],
+            [9.404,   -1.552],
+            [9.599,   -1.677],
+            [9.788,   -1.812],
+            [9.999,   -2.312],
+            [10.172,  -2.656],
+            [10.362,  -3.500],
+            [10.551,  -3.635],
+            [10.740,  -5.010],
+        ],
+        dtype=np.float32
+    )
 
-    ObrCold_xval = np.log10(10**(ObrCold[:, 0])  /hubble_h/hubble_h)
-    ObrCold_yval = (10**(ObrCold[:, 1]) * hubble_h*hubble_h*hubble_h)
-    Zwaan_xval = np.log10(10**(Zwaan[:, 0]) /hubble_h/hubble_h)
-    Zwaan_yval = (10**(Zwaan[:, 1]) * hubble_h*hubble_h*hubble_h)
-    ObrRaw_xval = np.log10(10**(ObrRaw[:, 0])  /hubble_h/hubble_h)
-    ObrRaw_yval = (10**(ObrRaw[:, 1]) * hubble_h*hubble_h*hubble_h)
+    ObrCold_xval = np.log10(10**(ObrCold[:, 0]) / hubble_h / hubble_h)
+    ObrCold_yval = (10**(ObrCold[:, 1]) * hubble_h * hubble_h * hubble_h)
+    Zwaan_xval = np.log10(10**(Zwaan[:, 0]) / hubble_h / hubble_h)
+    Zwaan_yval = (10**(Zwaan[:, 1]) * hubble_h * hubble_h * hubble_h)
+    ObrRaw_xval = np.log10(10**(ObrRaw[:, 0]) / hubble_h / hubble_h)
+    ObrRaw_yval = (10**(ObrRaw[:, 1]) * hubble_h * hubble_h * hubble_h)
 
-    ax.plot(ObrCold_xval, ObrCold_yval, color='black', lw = 7, alpha=0.25,
-            label='Obr. \& Raw. 2009 (Cold Gas)')
-    ax.plot(Zwaan_xval, Zwaan_yval, color='cyan', lw = 7, alpha=0.25,
-            label='Zwaan et al. 2005 (HI)')
-    ax.plot(ObrRaw_xval, ObrRaw_yval, color='magenta', lw = 7, alpha=0.25,
-            label='Obr. \& Raw. 2009 (H2)')
+    ax.plot(  # noqa: W605.
+        ObrCold_xval, ObrCold_yval, color='black', lw=7, alpha=0.25, label='Obr. \& Raw. 2009 (Cold Gas)'
+    )
+    ax.plot(  # noqa: W605.
+        Zwaan_xval, Zwaan_yval, color='cyan', lw=7, alpha=0.25, label='Zwaan et al. 2005 (HI)'
+    )
+    ax.plot(  # noqa: W605.
+        ObrRaw_xval, ObrRaw_yval, color='magenta', lw=7, alpha=0.25, label='Obr. \& Raw. 2009 (H2)'
+    )
 
     return ax
 
@@ -330,7 +345,7 @@ def plot_btf_data(ax):
 
     w = np.arange(0.5, 10.0, 0.5)
     TF = 3.94*w + 1.79
-    ax.plot(w, TF, 'b-', lw=2.0, label='Stark, McGaugh \& Swatters 2009')
+    ax.plot(w, TF, 'b-', lw=2.0, label='Stark, McGaugh \& Swatters 2009')  # noqa: W605
 
     return ax
 
@@ -397,7 +412,7 @@ def plot_bh_bulge_data(ax):
     # Haring & Rix 2004
     w = 10. ** np.arange(20)
     BHdata = 10. ** (8.2 + 1.12 * np.log10(w / 1.0e11))
-    ax.plot(np.log10(w), np.log10(BHdata), 'b-', label="Haring \& Rix 2004")
+    ax.plot(np.log10(w), np.log10(BHdata), 'b-', label="Haring \& Rix 2004")  # noqa: W605
 
     return ax
 
@@ -461,7 +476,18 @@ def plot_sfrd_data(ax):
     yErrLo = np.log10(ObsSFRdensity[:, 1])-np.log10(ObsSFRdensity[:, 4])
     yErrHi = np.log10(ObsSFRdensity[:, 5])-np.log10(ObsSFRdensity[:, 1])
 
-    ax.errorbar(ObsRedshift, ObsSFR, yerr=[yErrLo, yErrHi], xerr=[xErrLo, xErrHi], color='g', lw=1.0, alpha=0.3, marker='o', ls='none', label='Observations')
+    ax.errorbar(
+        ObsRedshift,
+        ObsSFR,
+        yerr=[yErrLo, yErrHi],
+        xerr=[xErrLo, xErrHi],
+        color='g',
+        lw=1.0,
+        alpha=0.3,
+        marker='o',
+        ls='none',
+        label='Observations'
+    )
 
     return ax
 
@@ -491,67 +517,112 @@ def plot_smd_data(ax, imf):
 
     # SMD observations taken from Marchesini+ 2009, h=0.7
     # Values are (minz, maxz, rho,-err,+err)
-    dickenson2003 = np.array(((0.6,1.4,8.26,0.08,0.08),
-                     (1.4,2.0,7.86,0.22,0.33),
-                     (2.0,2.5,7.58,0.29,0.54),
-                     (2.5,3.0,7.52,0.51,0.48)),float)
+    dickenson2003 = np.array(
+        (
+            (0.60, 1.40, 8.26, 0.08, 0.08),
+            (1.40, 2.00, 7.86, 0.22, 0.33),
+            (2.00, 2.50, 7.58, 0.29, 0.54),
+            (2.50, 3.00, 7.52, 0.51, 0.48)
+        ),
+        float
+    )
 
-    drory2005 = np.array(((0.25,0.75,8.3,0.15,0.15),
-                (0.75,1.25,8.16,0.15,0.15),
-                (1.25,1.75,8.0,0.16,0.16),
-                (1.75,2.25,7.85,0.2,0.2),
-                (2.25,3.0,7.75,0.2,0.2),
-                (3.0,4.0,7.58,0.2,0.2)),float)
+    drory2005 = np.array(
+        (
+            (0.25, 0.75, 8.30, 0.15, 0.15),
+            (0.75, 1.25, 8.16, 0.15, 0.15),
+            (1.25, 1.75, 8.00, 0.16, 0.16),
+            (1.75, 2.25, 7.85, 0.20, 0.20),
+            (2.25, 3.00, 7.75, 0.20, 0.20),
+            (3.00, 4.00, 7.58, 0.20, 0.20)
+        ),
+        float
+    )
 
     # Perez-Gonzalez (2008)
-    pg2008 = np.array(((0.2,0.4,8.41,0.06,0.06),
-             (0.4,0.6,8.37,0.04,0.04),
-             (0.6,0.8,8.32,0.05,0.05),
-             (0.8,1.0,8.24,0.05,0.05),
-             (1.0,1.3,8.15,0.05,0.05),
-             (1.3,1.6,7.95,0.07,0.07),
-             (1.6,2.0,7.82,0.07,0.07),
-             (2.0,2.5,7.67,0.08,0.08),
-             (2.5,3.0,7.56,0.18,0.18),
-             (3.0,3.5,7.43,0.14,0.14),
-             (3.5,4.0,7.29,0.13,0.13)),float)
+    pg2008 = np.array(
+        (
+            (0.2, 0.4, 8.41, 0.06, 0.06),
+            (0.4, 0.6, 8.37, 0.04, 0.04),
+            (0.6, 0.8, 8.32, 0.05, 0.05),
+            (0.8, 1.0, 8.24, 0.05, 0.05),
+            (1.0, 1.3, 8.15, 0.05, 0.05),
+            (1.3, 1.6, 7.95, 0.07, 0.07),
+            (1.6, 2.0, 7.82, 0.07, 0.07),
+            (2.0, 2.5, 7.67, 0.08, 0.08),
+            (2.5, 3.0, 7.56, 0.18, 0.18),
+            (3.0, 3.5, 7.43, 0.14, 0.14),
+            (3.5, 4.0, 7.29, 0.13, 0.13)
+        ),
+        float
+    )
 
-    glazebrook2004 = np.array(((0.8,1.1,7.98,0.14,0.1),
-                     (1.1,1.3,7.62,0.14,0.11),
-                     (1.3,1.6,7.9,0.14,0.14),
-                     (1.6,2.0,7.49,0.14,0.12)),float)
+    glazebrook2004 = np.array(
+        (
+            (0.8, 1.1, 7.98, 0.14, 0.10),
+            (1.1, 1.3, 7.62, 0.14, 0.11),
+            (1.3, 1.6, 7.90, 0.14, 0.14),
+            (1.6, 2.0, 7.49, 0.14, 0.12)
+        ),
+        float
+    )
 
-    fontana2006 = np.array(((0.4,0.6,8.26,0.03,0.03),
-                  (0.6,0.8,8.17,0.02,0.02),
-                  (0.8,1.0,8.09,0.03,0.03),
-                  (1.0,1.3,7.98,0.02,0.02),
-                  (1.3,1.6,7.87,0.05,0.05),
-                  (1.6,2.0,7.74,0.04,0.04),
-                  (2.0,3.0,7.48,0.04,0.04),
-                  (3.0,4.0,7.07,0.15,0.11)),float)
+    fontana2006 = np.array(
+        (
+            (0.4, 0.6, 8.26, 0.03, 0.03),
+            (0.6, 0.8, 8.17, 0.02, 0.02),
+            (0.8, 1.0, 8.09, 0.03, 0.03),
+            (1.0, 1.3, 7.98, 0.02, 0.02),
+            (1.3, 1.6, 7.87, 0.05, 0.05),
+            (1.6, 2.0, 7.74, 0.04, 0.04),
+            (2.0, 3.0, 7.48, 0.04, 0.04),
+            (3.0, 4.0, 7.07, 0.15, 0.11)
+        ),
+        float
+    )
 
-    rudnick2006 = np.array(((0.0,1.0,8.17,0.27,0.05),
-                  (1.0,1.6,7.99,0.32,0.05),
-                  (1.6,2.4,7.88,0.34,0.09),
-                  (2.4,3.2,7.71,0.43,0.08)),float)
+    rudnick2006 = np.array(
+        (
+            (0.0, 1.0, 8.17, 0.27, 0.05),
+            (1.0, 1.6, 7.99, 0.32, 0.05),
+            (1.6, 2.4, 7.88, 0.34, 0.09),
+            (2.4, 3.2, 7.71, 0.43, 0.08)
+        ),
+        float
+    )
 
-    elsner2008 = np.array(((0.25,0.75,8.37,0.03,0.03),
-                 (0.75,1.25,8.17,0.02,0.02),
-                 (1.25,1.75,8.02,0.03,0.03),
-                 (1.75,2.25,7.9,0.04,0.04),
-                 (2.25,3.0,7.73,0.04,0.04),
-                 (3.0,4.0,7.39,0.05,0.05)),float)
+    elsner2008 = np.array(
+        (
+            (0.25, 0.75, 8.37, 0.03, 0.03),
+            (0.75, 1.25, 8.17, 0.02, 0.02),
+            (1.25, 1.75, 8.02, 0.03, 0.03),
+            (1.75, 2.25, 7.90, 0.04, 0.04),
+            (2.25, 3.00, 7.73, 0.04, 0.04),
+            (3.00, 4.00, 7.39, 0.05, 0.05)
+        ),
+        float
+    )
 
-    obs = (dickenson2003,drory2005,pg2008,glazebrook2004,
-           fontana2006,rudnick2006,elsner2008)
+    obs = (
+        dickenson2003, drory2005, pg2008, glazebrook2004, fontana2006, rudnick2006, elsner2008
+    )
 
     for o in obs:
-        xval = ((o[:,1]-o[:,0])/2.)+o[:,0]
+        xval = ((o[:, 1] - o[:, 0]) / 2.) + o[:, 0]
         if imf == "Salpeter":
             yval = np.log10(10**o[:, 2] * 1.6)
         elif imf == "Chabrier":
             yval = np.log10(10**o[:, 2] * 1.6 / 1.8)
 
-        ax.errorbar(xval, yval, xerr=(xval-o[:,0], o[:,1]-xval), yerr=(o[:,3], o[:,4]), alpha=0.3, lw=1.0, marker='o', ls='none')
+        ax.errorbar(
+            xval,
+            yval,
+            xerr=(xval - o[:, 0], o[:, 1] - xval),
+            yerr=(o[:, 3], o[:, 4]),
+            alpha=0.3,
+            lw=1.0,
+            marker='o',
+            ls='none'
+        )
 
     return ax
