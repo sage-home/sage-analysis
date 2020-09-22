@@ -1,30 +1,28 @@
-from typing import List, Dict
-import warnings
 import logging
+import os
+import warnings
+from pathlib import Path
+from typing import Dict, List
 
+import hypothesis.strategies as st
+import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-import matplotlib.pyplot as plt
-import os
-
-from pathlib import Path
-import hypothesis.strategies as st
 from hypothesis import given, settings
 from matplotlib.testing.compare import compare_images
 
 from sage_analysis.default_analysis_arguments import (
-    default_plot_toggles, default_calculation_functions,
-    default_plot_functions
-)
-from sage_analysis.utils import generate_func_dict
+    default_calculation_functions, default_plot_functions,
+    default_plot_toggles)
 from sage_analysis.galaxy_analysis import GalaxyAnalysis
 from sage_analysis.model import Model
 from sage_analysis.plot_helper import PlotHelper
 from sage_analysis.sage_binary import SageBinaryData
-from sage_analysis.sage_hdf5 import SageHdf5Data
-from sage_analysis.sage_dusty import SageDustyData
 from sage_analysis.sage_dark import SageDarkData
-
+from sage_analysis.sage_dusty import SageDustyData
+from sage_analysis.sage_hdf5 import SageHdf5Data
+from sage_analysis.utils import generate_func_dict
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +40,9 @@ def calc_num_particles_in_halo(model: Model, gals, snapshot: int):
     halos_per_bin, _ = np.histogram(halo_len, bins=model.bins["halo_len_bins"])
     model.properties[f"snapshot_{snapshot}"]["halo_len"] += halos_per_bin
 
-def plot_num_particles_in_halo(models: List[Model], snapshot: int, plot_output_path: str, plot_output_format: str = "png"):
+def plot_num_particles_in_halo(
+    models: List[Model], snapshot: int, plot_helper: PlotHelper
+) -> matplotlib.figure.Figure:
 
     # This should make a matplotlib plot but it's adequate enough to just test that we pass through this function.
     logger.info(f"Passed through ``plot_num_particles_in_halo``.")
