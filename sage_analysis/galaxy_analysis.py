@@ -182,7 +182,7 @@ class GalaxyAnalysis:
             variable value (e.g., ``True``).
 
             The functions in this dictionary are called for all files analyzed and **MUST** have a signature
-            ``func(models, snapshots, plot_output_path, plot_output_format, optional_keyword_arguments)``. This dict
+            ``func(models, snapshots, plot_helper, optional_keyword_arguments)``. This dict
             can be generated using :py:func:`~sage_analysis.utils.generate_func_dict`.
 
             If not specified, will use the functions found in :py:mod:`~sage_analysis.example_plots`, filtered to
@@ -454,7 +454,7 @@ class GalaxyAnalysis:
         ``"plot_sub_populations"``) and values as the variable value (e.g., ``True``).
 
         The functions in this dictionary are called for all files analyzed and **MUST** have a signature ``func(Models,
-        snapshot, plot_output_path, plot_output_format, optional_keyword_arguments)``. This dict can be generated using
+        snapshot, plot_helper, plot_output_format, optional_keyword_arguments)``. This dict can be generated using
         :py:func:`~sage_analysis.utils.generate_func_dict`.
         """
         return self._plot_functions

@@ -22,10 +22,6 @@ import sage_analysis.observations as obs  # noqa: E402
 from sage_analysis.model import Model  # noqa: E402
 from sage_analysis.plot_helper import PlotHelper  # noqa: E402
 
-colors = ["r", "b", "g", "m", "c"]
-linestyles = ["-", ":", "--", "-.", "-:"]
-markers = ["x", "o", "v", "*", "D"]
-
 
 def plot_SMF(
     models: List[Model],
@@ -98,7 +94,7 @@ def plot_SMF(
                     bin_middles,
                     norm_red,
                     color=color,
-                    ls=linestyles[model_num+1],
+                    ls=plot_helper.linestyles[model_num+1],
                     lw=2,
                     label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Red"
                 )
@@ -106,7 +102,7 @@ def plot_SMF(
                     bin_middles,
                     norm_blue,
                     color=color,
-                    ls=linestyles[model_num+2],
+                    ls=plot_helper.linestyles[model_num+2],
                     lw=2,
                     label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Blue"
                 )
@@ -133,7 +129,7 @@ def plot_SMF(
 
     output_file = f"{plot_helper.output_path}1.StellarMassFunction.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -218,7 +214,7 @@ def plot_BMF(
 
     output_file = f"{plot_helper.output_path}2.BaryonicMassFunction.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -303,7 +299,7 @@ def plot_GMF(
 
     output_file = f"{plot_helper.output_path}3.GasMassFunction.{plot_helper.output_format}"
     fig.savefig(output_file)  # Save the figure
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -379,7 +375,7 @@ def plot_BTF(
 
     output_file = f"{plot_helper.output_path}4.BaryonicTullyFisher.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -459,7 +455,7 @@ def plot_sSFR(
 
     output_file = f"{plot_helper.output_path}5.SpecificStarFormationRate.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -534,7 +530,7 @@ def plot_gas_fraction(
 
     output_file = f"{plot_helper.output_path}6.GasFraction.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -613,7 +609,7 @@ def plot_metallicity(
 
     output_file = f"{plot_helper.output_path}7.Metallicity.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -689,7 +685,7 @@ def plot_bh_bulge(
 
     output_file = f"{plot_helper.output_path}8.BlackHoleBulgeRelationship.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -802,7 +798,7 @@ def plot_quiescent(
 
     output_file = f"{plot_helper.output_path}9.QuiescentFraction.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -889,7 +885,7 @@ def plot_bulge_fraction(
                     bin_middles,
                     disk_mean,
                     color=color,
-                    ls=linestyles[model_num+1],
+                    ls=plot_helper.linestyles[model_num+1],
                     label=f"{label} - z = {model._redshifts[snapshot]:.2f} - Disk",
                 )
 
@@ -926,7 +922,7 @@ def plot_bulge_fraction(
 
     output_file = f"{plot_helper.output_path}10.BulgeMassFraction.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -1029,7 +1025,7 @@ def plot_baryon_fraction(
 
     output_file = f"{plot_helper.output_path}11.BaryonFraction.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -1233,7 +1229,7 @@ def plot_spatial(
 
     output_file = f"{plot_helper.output_path}13.SpatialDistribution.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -1285,7 +1281,7 @@ def plot_spatial_3d(pos, output_file, box_size) -> matplotlib.figure.Figure:
     fig.tight_layout()
 
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -1294,8 +1290,7 @@ def plot_spatial_3d(pos, output_file, box_size) -> matplotlib.figure.Figure:
 def plot_SMF_history(
     models: List[Model],
     snapshots: List[List[int]],
-    output_path: str,
-    output_format="png"
+    plot_helper: PlotHelper,
 ) -> matplotlib.figure.Figure:
     """
     Plots the evolution of the stellar mass function for the specified models.
@@ -1311,11 +1306,10 @@ def plot_SMF_history(
     snapshots : nested list of ints
         This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
-    output_path : string
-        Path to where the plot will be saved.
-
-    output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     Generates
     ---------
@@ -1323,13 +1317,13 @@ def plot_SMF_history(
     The plot will be saved as "<output_path>A.StellarMassFunction.<output_format>"
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     # Go through each of the models and plot.
     for (model_num, model) in enumerate(models):
 
-        ls = linestyles[model_num]
+        ls = plot_helper.linestyles[model_num]
 
         # Set the x-axis values to be the centre of the bins.
         bin_widths = model.bins["stellar_mass_bins"][1::] - model.bins["stellar_mass_bins"][0:-1]
@@ -1369,9 +1363,9 @@ def plot_SMF_history(
 
     fig.tight_layout()
 
-    output_file = f"{output_path}A.StellarMassFunction.{output_format}"
+    output_file = f"{plot_helper.output_path}A.StellarMassFunction.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -1380,8 +1374,7 @@ def plot_SMF_history(
 def plot_SFRD_history(
     models: List[Model],
     snapshots: List[List[int]],
-    output_path: str,
-    output_format: str = "png"
+    plot_helper: PlotHelper,
 ) -> matplotlib.figure.Figure:
     """
     Plots the evolution of star formation rate density for the specified models.
@@ -1395,14 +1388,10 @@ def plot_SFRD_history(
     snapshots : nested list of ints
         This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
-    output_path : string
-        Path to where the plot will be saved.
-
-    snapshot : int
-        This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
-
-    output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     Generates
     ---------
@@ -1410,15 +1399,15 @@ def plot_SFRD_history(
     The plot will be saved as "<output_path>B.SFRDensity.<output_format>"
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     for (model_num, model) in enumerate(models):
 
         label = model.label
-        color = colors[model_num]
-        linestyle = linestyles[model_num]
-        marker = markers[model_num]
+        color = plot_helper.colors[model_num]
+        linestyle = plot_helper.linestyles[model_num]
+        marker = plot_helper.markers[model_num]
 
         SFRD = np.array(
             [model.properties[f"snapshot_{snap}"]["SFRD_history"] for snap in model._history_SFRD_history_snapshots]
@@ -1462,9 +1451,9 @@ def plot_SFRD_history(
 
     fig.tight_layout()
 
-    output_file = f"{output_path}/B.SFRDensity.{output_format}"
+    output_file = f"{plot_helper.output_path}B.SFRDensity.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig
@@ -1473,8 +1462,7 @@ def plot_SFRD_history(
 def plot_SMD_history(
     models: List[Model],
     snapshots: List[List[int]],
-    output_path: str,
-    output_format: str = "png"
+    plot_helper: PlotHelper,
 ) -> matplotlib.figure.Figure:
     """
     Plots the evolution of stellar mass density for the specified models.
@@ -1488,11 +1476,10 @@ def plot_SMD_history(
     snapshots : nested list of ints
         This is a dummy variable that is present to ensure the signature is identical to the other plot functions.
 
-    output_path : string
-        Path to where the plot will be saved.
-
-    output_format : string, default "png"
-        Format the plot will be saved in, includes the full stop.
+    plot_helper : :py:class:`~sage_analysis.plot_helper.PlotHelper`
+        A helper class that contains attributes and methods to assist with plotting. In particular, the path where
+        the plots will be saved and the output format.  Refer to :doc:`../user/plot_helper` for more information on
+        how to initialize this class and its use.
 
     Generates
     ---------
@@ -1500,15 +1487,15 @@ def plot_SMD_history(
     The plot will be saved as "<output_path>C.StellarMassDensity.<output_format>"
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=plot_helper.figsize)
     ax = fig.add_subplot(111)
 
     for (model_num, model) in enumerate(models):
 
         label = model.label
-        color = colors[model_num]
-        linestyle = linestyles[model_num]
-        marker = markers[model_num]
+        color = plot_helper.colors[model_num]
+        linestyle = plot_helper.linestyles[model_num]
+        marker = plot_helper.markers[model_num]
 
         SMD = np.array(
             [model.properties[f"snapshot_{snap}"]["SMD_history"] for snap in model._history_SMD_history_snapshots]
@@ -1555,9 +1542,9 @@ def plot_SMD_history(
 
     fig.tight_layout()
 
-    output_file = f"{output_path}C.StellarMassDensity.{output_format}"
+    output_file = f"{plot_helper.output_path}C.StellarMassDensity.{plot_helper.output_format}"
     fig.savefig(output_file)
-    print("Saved file to {0}".format(output_file))
+    print(f"Saved file to {output_file}")
     plt.close()
 
     return fig

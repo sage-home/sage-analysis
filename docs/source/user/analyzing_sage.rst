@@ -168,7 +168,7 @@ Analyzing Basic Properties Over Redshift
 ----------------------------------------
 
 It can also be very useful to investigate how properties evolve over many snapshots.  By default, **sage-analysis**
-supports analyzing the stellar mass function, stellar mass density, and star formation rate density.
+supports analyzing the stellar mass function, stellar mass density, and star formation rate density over redshift.
 
 .. note::
     Ensure that **SAGE** has outputs for multiple snapshots.  Try setting ``NumOutputs`` to ``-1`` and re-running
@@ -212,7 +212,7 @@ fraction, etc), use and update the ``default_plot_toggles`` value.
 
 .. code-block:: python
 
-    from sage_analaysis.default_analysis_arguments import default_plot_toggles
+    from sage_analysis.default_analysis_arguments import default_plot_toggles
 
     plot_toggles = default_plot_toggles.copy()  # Copy to ensure ``default_plot_toggles`` aren't overwritten.
 

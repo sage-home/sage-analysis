@@ -523,7 +523,7 @@ class Model(object):
         self.data_class.determine_num_gals(self, snapshot)
         if self._num_gals_all_files == 0:
             logger.info(f"There were no galaxies associated with this model at Snapshot {self._snapshot}.")
-            print(self._num_gals_all_files)
+            print(f"There were no galaxies associated with this model at Snapshot {self._snapshot}.")
             return
 
         # If the user requested the number of galaxies plotted/calculated
