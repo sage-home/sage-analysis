@@ -6,9 +6,9 @@ sage-analysis
 Package to ingest, analyse, and plot all the SAGE data products
 
 .. |TRAVIS| image::
-  https://img.shields.io/travis/com/jacobseiler/sage-analysis/master.svg?logo=travis&logoColor=white&label=Travis%20CI
+  https://img.shields.io/travis/com/sage-home/sage-analysis/master.svg?logo=travis&logoColor=white&label=Travis%20CI
   :alt: Travis Badge
-  :target: https://travis-ci.com/jacobseiler/sage-analysis
+  :target: https://travis-ci.com/sage-home/sage-analysis
 .. |PyPI| image:: https://img.shields.io/pypi/v/sage-analysis.svg
    :target: https://pypi.org/project/sage-analysis/
    :alt: PyPI Release
