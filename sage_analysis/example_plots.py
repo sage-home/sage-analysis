@@ -116,7 +116,7 @@ def plot_SMF(
     ax.set_xlabel(r"$\log_{10} M_{\mathrm{stars}}\ (M_{\odot})$")
     ax.set_ylabel(r"$\phi\ (\mathrm{Mpc}^{-3}\ \mathrm{dex}^{-1})$")
 
-    ax.set_yscale("log", nonposy="clip")
+    ax.set_yscale("log", nonpositive="clip")
 
     ax.set_xlim([8.0, 12.0])
     ax.set_ylim([1.0e-6, 1.0e-1])
@@ -201,7 +201,7 @@ def plot_BMF(
     ax.set_xlabel(r"$\log_{10}\ M_{\mathrm{bar}}\ (M_{\odot})$")
     ax.set_ylabel(r"$\phi\ (\mathrm{Mpc}^{-3}\ \mathrm{dex}^{-1})$")
 
-    ax.set_yscale("log", nonposy="clip")
+    ax.set_yscale("log", nonpositive="clip")
 
     ax.set_xlim([7.8, 12.2])
     ax.set_ylim([1.0e-6, 1.0e-1])
@@ -285,7 +285,7 @@ def plot_GMF(
     ax.set_xlabel(r"$\log_{10} M_{\mathrm{X}}\ (M_{\odot})$")
     ax.set_ylabel(r"$\phi\ (\mathrm{Mpc}^{-3}\ \mathrm{dex}^{-1})$")
 
-    ax.set_yscale("log", nonposy="clip")
+    ax.set_yscale("log", nonpositive="clip")
 
     # Find the models that have the smallest/largest stellar mass bin.
     ax.set_xlim([7.8, 12.2])
@@ -1352,7 +1352,7 @@ def plot_SMF_history(
     ax.set_xlabel(r"$\log_{10} M_{\mathrm{stars}}\ (M_{\odot})$")
     ax.set_ylabel(r"$\phi\ (\mathrm{Mpc}^{-3}\ \mathrm{dex}^{-1})$")
 
-    ax.set_yscale("log", nonposy="clip")
+    ax.set_yscale("log", nonpositive="clip")
 
     ax.set_xlim([8.0, 12.0])
     ax.set_ylim([1.0e-6, 1.0e-1])
