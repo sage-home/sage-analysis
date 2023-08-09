@@ -15,12 +15,6 @@ Please install the latest version of ``sage-analysis`` using the following steps
     $ cd sage-analysis
     $ python -m pip install -e .
 
-Alternatively, you can install from the PyPI server - however, that might be an older version.
-
-::
-
-    $ python -m pip install sage-analysis
-
 
 Documentation
 -------------
