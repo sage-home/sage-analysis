@@ -130,7 +130,7 @@ Then, the function that will plot the results.
         ax.set_xlabel(r"$\log_{10} Number Particles in Halo$")
         ax.set_ylabel(r"$N$")
 
-        ax.set_yscale("log", nonposy="clip")
+        ax.set_yscale("log", nonpositive="clip")
         ax.legend()
 
         fig.tight_layout()
@@ -405,7 +405,7 @@ With our calculation functions defined, we now need to define the plot functions
         ax.set_xlabel(r"$\log_{10} Number Particles in Halo$")
         ax.set_ylabel(r"$N$")
 
-        ax.set_yscale("log", nonposy="clip")
+        ax.set_yscale("log", nonpositive="clip")
         ax.legend()
 
         fig.tight_layout()
